@@ -159,6 +159,7 @@ namespace Client.Scenes.Views
         }
 
         #region Methods
+
         public void CreateTabs()
         {
             foreach (KeyValuePair<MagicSchool, MagicTab> pair in SchoolTabs)
@@ -187,7 +188,7 @@ namespace Client.Scenes.Views
 
             foreach (MagicInfo magic in magics)
             {
-                if (magic.Class != MapObject.User.Class || magic.School == MagicSchool.None) continue;
+                if (magic.Class != MapObject.User.Class || magic.School == MagicSchool.None || magic.School == MagicSchool.Discipline) continue;
 
                 MagicTab tab;
 
@@ -213,6 +214,13 @@ namespace Client.Scenes.Views
                 dxTab.Value.Parent = TabControl;
             }
         }
+
+        public void RefreshMagic(MagicInfo info)
+        {
+            if (Magics.ContainsKey(info))
+                Magics[info].Refresh();
+        }
+
         #endregion
 
         #region IDisposable
@@ -436,6 +444,7 @@ namespace Client.Scenes.Views
 
             UpdateLocations();
         }
+
         #endregion
 
         #region IDisposable
@@ -488,7 +497,7 @@ namespace Client.Scenes.Views
         }
         #endregion
 
-        public DXImageControl Background, Image;
+        public DXImageControl Background, Image, Level4Border;
         public DXImageControl ExperienceBar;
         public DXLabel NameLabel, LevelLabel, ExperienceLabel, KeyLabel;
 
@@ -508,6 +517,16 @@ namespace Client.Scenes.Views
                 IsControl = false
             };
 
+            Level4Border = new DXImageControl
+            {
+                Parent = this,
+                LibraryFile = LibraryFile.GameInter2,
+                Location = new Point(4, 4),
+                Visible = false
+            };
+            Level4Border.MouseEnter += (o, e) => OnMouseEnter();
+            Level4Border.MouseLeave += (o, e) => OnMouseLeave();
+
             Image = new DXImageControl
             {
                 Parent = this,
@@ -516,6 +535,8 @@ namespace Client.Scenes.Views
             };
             Image.MouseClick += Image_MouseClick;
             Image.KeyDown += Image_KeyDown;
+            Image.MouseEnter += (o, e) => OnMouseEnter();
+            Image.MouseLeave += (o, e) => OnMouseLeave();
 
             ExperienceBar = new DXImageControl
             {
@@ -546,7 +567,9 @@ namespace Client.Scenes.Views
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter
             };
             KeyLabel.SizeChanged += (o, e) => KeyLabel.Location = new Point(Image.Size.Width - KeyLabel.Size.Width, Image.Size.Height - KeyLabel.Size.Height);
-            
+            KeyLabel.MouseEnter += (o, e) => OnMouseEnter();
+            KeyLabel.MouseLeave += (o, e) => OnMouseLeave();
+
             LevelLabel = new DXLabel
             {
                 Parent = this,
@@ -715,25 +738,33 @@ namespace Client.Scenes.Views
                 if (pair.Value.Set1Key == magic.Set1Key && magic.Set1Key != SpellKey.None)
                 {
                     pair.Value.Set1Key = SpellKey.None;
-                    GameScene.Game.MagicBox.Magics[pair.Key].Refresh();
+
+                    GameScene.Game.MagicBox.RefreshMagic(pair.Key);
+                    GameScene.Game.CharacterBox.RefreshDisciplineMagic(pair.Key);
                 }
 
                 if (pair.Value.Set2Key == magic.Set2Key && magic.Set2Key != SpellKey.None)
                 {
                     pair.Value.Set2Key = SpellKey.None;
-                    GameScene.Game.MagicBox.Magics[pair.Key].Refresh();
+
+                    GameScene.Game.MagicBox.RefreshMagic(pair.Key);
+                    GameScene.Game.CharacterBox.RefreshDisciplineMagic(pair.Key);
                 }
 
                 if (pair.Value.Set3Key == magic.Set3Key && magic.Set3Key != SpellKey.None)
                 {
                     pair.Value.Set3Key = SpellKey.None;
-                    GameScene.Game.MagicBox.Magics[pair.Key].Refresh();
+
+                    GameScene.Game.MagicBox.RefreshMagic(pair.Key);
+                    GameScene.Game.CharacterBox.RefreshDisciplineMagic(pair.Key);
                 }
 
                 if (pair.Value.Set4Key == magic.Set4Key && magic.Set4Key != SpellKey.None)
                 {
                     pair.Value.Set4Key = SpellKey.None;
-                    GameScene.Game.MagicBox.Magics[pair.Key].Refresh();
+
+                    GameScene.Game.MagicBox.RefreshMagic(pair.Key);
+                    GameScene.Game.CharacterBox.RefreshDisciplineMagic(pair.Key);
                 }
 
             }
@@ -767,24 +798,28 @@ namespace Client.Scenes.Views
             int y = (ExperienceBar.Size.Height - image.Height) / 2;
 
             float percent = 1F;
-            switch (magic.Level)
+
+            if (magic.Level < Globals.MagicMaxLevel)
             {
-                case 0:
-                    if (magic.Info.Experience1 == 0) return;
-                    percent = (float) Math.Min(1, Math.Max(0, magic.Experience/(decimal) magic.Info.Experience1));
-                    break;
-                case 1:
-                    if (magic.Info.Experience2 == 0) return;
-                    percent = (float) Math.Min(1, Math.Max(0, magic.Experience/(decimal) magic.Info.Experience2));
-                    break;
-                case 2:
-                    if (magic.Info.Experience3 == 0) return;
-                    percent = (float) Math.Min(1, Math.Max(0, magic.Experience/(decimal) magic.Info.Experience3));
-                    break;
-                default:
-                    if (magic.Info.Experience3 == 0) return;
-                    percent = (float)Math.Min(1, Math.Max(0, magic.Experience / (decimal)((magic.Level - 2) * 500)));
-                    break;
+                switch (magic.Level)
+                {
+                    case 0:
+                        if (magic.Info.Experience1 == 0) return;
+                        percent = (float)Math.Min(1, Math.Max(0, magic.Experience / (decimal)magic.Info.Experience1));
+                        break;
+                    case 1:
+                        if (magic.Info.Experience2 == 0) return;
+                        percent = (float)Math.Min(1, Math.Max(0, magic.Experience / (decimal)magic.Info.Experience2));
+                        break;
+                    case 2:
+                        if (magic.Info.Experience3 == 0) return;
+                        percent = (float)Math.Min(1, Math.Max(0, magic.Experience / (decimal)magic.Info.Experience3));
+                        break;
+                    default:
+                        if (magic.Info.Experience3 == 0) return;
+                        percent = (float)Math.Min(1, Math.Max(0, magic.Experience / (decimal)((magic.Level - 2) * 500)));
+                        break;
+                }
             }
 
             if (percent == 0) return;
@@ -796,10 +831,17 @@ namespace Client.Scenes.Views
         {
             if (MapObject.User == null) return;
 
-            ClientUserMagic magic;
-
-            if (MapObject.User.Magics.TryGetValue(Info, out magic))
+            if (MapObject.User.Magics.TryGetValue(Info, out ClientUserMagic magic))
             {
+                float opacity = 1F;
+
+                Background.ImageOpacity = opacity;
+                Image.ImageOpacity = opacity;
+                Level4Border.ImageOpacity = opacity;
+                NameLabel.Opacity = opacity;
+                LevelLabel.Opacity = opacity;
+                ExperienceLabel.Opacity = opacity;
+
                 Image.IsEnabled = true;
                 LevelLabel.Text = $"Level: {magic.Level}";
                 LevelLabel.ForeColour = Color.FromArgb(198, 166, 99);
@@ -820,7 +862,6 @@ namespace Client.Scenes.Views
                     case 4:
                         key = magic.Set4Key;
                         break;
-
                 }
 
                 Type type = typeof(SpellKey);
@@ -830,35 +871,53 @@ namespace Client.Scenes.Views
                 DescriptionAttribute description = infos[0].GetCustomAttribute<DescriptionAttribute>();
                 KeyLabel.Text = description?.Description;
 
+                Level4Border.Visible = true;
+                Level4Border.Index = UpdateBorder(magic.Info.School);
+
                 if (Info.NeedLevel1 > MapObject.User.Level)
                 {
-
                     ExperienceLabel.Text = $"Required Level: {Info.NeedLevel1}";
                     ExperienceLabel.ForeColour = Color.Red;
                 }
                 else
                 {
-
-                    switch (magic.Level)
+                    if (magic.Level < Globals.MagicMaxLevel)
                     {
-                        case 0:
-                            ExperienceLabel.Text = $"Experience: {magic.Experience}/{magic.Info.Experience1}";
-                            break;
-                        case 1:
-                            ExperienceLabel.Text = $"Experience: {magic.Experience}/{magic.Info.Experience2}";
-                            break;
-                        case 2:
-                            ExperienceLabel.Text = $"Experience: {magic.Experience}/{magic.Info.Experience3}";
-                            break;
-                        default:
-                            ExperienceLabel.Text = $"Experience: {magic.Experience}/{(magic.Level - 2) * 500}";
-                            break;
+                        switch (magic.Level)
+                        {
+                            case 0:
+                                ExperienceLabel.Text = $"Experience: {magic.Experience}/{magic.Info.Experience1}";
+                                break;
+                            case 1:
+                                ExperienceLabel.Text = $"Experience: {magic.Experience}/{magic.Info.Experience2}";
+                                break;
+                            case 2:
+                                ExperienceLabel.Text = $"Experience: {magic.Experience}/{magic.Info.Experience3}";
+                                break;
+                            default:
+                                ExperienceLabel.Text = $"Experience: {magic.Experience}/{(magic.Level - 2) * 500}";
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        ExperienceLabel.Text = $"Experience: Max Level";
                     }
                     ExperienceLabel.ForeColour = Color.FromArgb(198, 166, 99);
                 }
             }
             else
             {
+                float opacity = MapObject.User.Level >= Info.NeedLevel1 ? 1F : 0.3F;
+
+                Background.ImageOpacity = opacity;
+                Image.ImageOpacity = opacity;
+                Level4Border.ImageOpacity = opacity;
+                NameLabel.Opacity = opacity;
+                LevelLabel.Opacity = opacity;
+                ExperienceLabel.Opacity = opacity;
+
+                Level4Border.Visible = false;
                 Image.IsEnabled = false;
                 LevelLabel.Text = "Not\r\nLearned";
                 LevelLabel.ForeColour = Color.Red;
@@ -873,8 +932,57 @@ namespace Client.Scenes.Views
                 GameScene.Game.MouseMagic = null;
                 GameScene.Game.MouseMagic = Info;
             }
-
         }
+
+        public int UpdateBorder(MagicSchool school)
+        {
+            int index = 0;
+
+            switch (school)
+            {
+                case MagicSchool.Passive:
+                    index = 860;
+                    break;
+                case MagicSchool.WeaponSkills:
+                    index = 890;
+                    break;
+                case MagicSchool.Neutral:
+                    index = 883;
+                    break;
+                case MagicSchool.Fire:
+                    index = 870;
+                    break;
+                case MagicSchool.Ice:
+                    index = 871;
+                    break;
+                case MagicSchool.Lightning:
+                    index = 872;
+                    break;
+                case MagicSchool.Wind:
+                    index = 873;
+                    break;
+                case MagicSchool.Holy:
+                    index = 880;
+                    break;
+                case MagicSchool.Dark:
+                    index = 881;
+                    break;
+                case MagicSchool.Phantom:
+                    index = 874;
+                    break;
+                case MagicSchool.Combat:
+                    index = 891;
+                    break;
+                case MagicSchool.Assassination:
+                    index = 892;
+                    break;
+                case MagicSchool.None:
+                    break;
+            }
+
+            return index;
+        }
+
         #endregion
 
         #region IDisposable

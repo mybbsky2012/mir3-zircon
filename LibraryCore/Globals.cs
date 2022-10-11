@@ -32,6 +32,7 @@ namespace Library
         public static DBCollection<CompanionInfo> CompanionInfoList;
         public static DBCollection<CompanionLevelInfo> CompanionLevelInfoList;
         public static DBCollection<CurrencyInfo> CurrencyInfoList;
+        public static DBCollection<DisciplineInfo> DisciplineInfoList;
 
         public static Random Random = new Random();
 
@@ -77,10 +78,13 @@ namespace Library
             MaxAutoPotionCount = 8,
 
             MagicRange = 10,
+            MagicMaxLevel = 5,
 
             DuraLossRate = 15,
 
             GroupLimit = 15,
+
+            MaxGrowthLevel = 3,
 
             CloakRange = 3,
             MarketPlaceFee = 0,
@@ -122,13 +126,6 @@ namespace Library
             "English",
             "Chinese",
         };
-
-
-
-
-
-
-
 
         public static List<decimal> ExperienceList = new List<decimal>
         {
@@ -456,11 +453,14 @@ namespace Library
 
         public int CurrentHP { get; set; }
         public int CurrentMP { get; set; }
+        public int CurrentFP { get; set; }
 
         public AttackMode AttackMode { get; set; }
         public PetMode PetMode { get; set; }
 
         public OnlineState OnlineState { get; set; }
+
+        public ClientUserDiscipline Discipline { get; set; }
 
         public int HermitPoints { get; set; }
 
@@ -1204,6 +1204,15 @@ namespace Library
         public int CurrencyIndex { get; set; }
         public CurrencyInfo Info;
         public long Amount { get; set; }
+    }
+
+    public class ClientUserDiscipline
+    {
+        public int InfoIndex { get; set; }
+        public DisciplineInfo DisciplineInfo;
+        public int Level { get; set; }
+        public long Experience { get; set; }
+        public List<ClientUserMagic> Magics { get; set; }
     }
 }
 

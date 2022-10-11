@@ -567,9 +567,6 @@ namespace Server.DBModels
         }
         private int _Rebirth;
 
-        
-
-
         public DateTime NextDeathDropChange
         {
             get { return _NextDeathDropChange; }
@@ -600,7 +597,23 @@ namespace Server.DBModels
             }
         }
         private UserCompanion _Companion;
-        
+
+        [Association("Discipline")]
+        public UserDiscipline Discipline
+        {
+            get { return _Discipline; }
+            set
+            {
+                if (_Discipline == value) return;
+
+                var oldValue = _Discipline;
+                _Discipline = value;
+
+                OnChanged(oldValue, value, "Discipline");
+            }
+        }
+        private UserDiscipline _Discipline;
+
         [Association("Items", true)]
         public DBBindingList<UserItem> Items { get; set; }
 
@@ -704,11 +717,8 @@ namespace Server.DBModels
         }
         private string _FiltersItemType;
 
-        [IgnoreProperty]
-        public int LastRank { get; set; }
-
-        [IgnoreProperty]
-        public int CurrentRank { get; set; }
+        public Dictionary<RequiredClass, int> LastRank = new Dictionary<RequiredClass, int>();
+        public Dictionary<RequiredClass, int> CurrentRank = new Dictionary<RequiredClass, int>();
 
         protected override void OnDeleted()
         {

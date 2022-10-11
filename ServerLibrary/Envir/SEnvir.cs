@@ -5,7 +5,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Mail;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -78,6 +77,7 @@ namespace Server.Envir
             if (ChatLogs.Count < 1000)
                 ChatLogs.Enqueue(log);
         }
+
         #endregion
 
         #region Network
@@ -255,6 +255,7 @@ namespace Server.Envir
         public static DBCollection<BuffInfo> BuffInfoList;
         public static DBCollection<MonsterInfo> MonsterInfoList;
         public static DBCollection<FishingInfo> FishingInfoList;
+        public static DBCollection<DisciplineInfo> DisciplineInfoList;
         public static DBCollection<SetInfo> SetInfoList;
         public static DBCollection<AuctionInfo> AuctionInfoList;
         public static DBCollection<MailInfo> MailInfoList;
@@ -285,6 +286,7 @@ namespace Server.Envir
         public static DBCollection<UserConquestStats> UserConquestStatsList;
         public static DBCollection<UserFortuneInfo> UserFortuneInfoList;
         public static DBCollection<WeaponCraftStatInfo> WeaponCraftStatInfoList;
+        public static DBCollection<UserDiscipline> UserDisciplineList;
 
         public static ItemInfo GoldInfo, RefinementStoneInfo, FragmentInfo, Fragment2Info, Fragment3Info, FortuneCheckerInfo, ItemPartInfo;
 
@@ -403,6 +405,7 @@ namespace Server.Envir
             ItemInfoList = Session.GetCollection<ItemInfo>();
             MonsterInfoList = Session.GetCollection<MonsterInfo>();
             FishingInfoList = Session.GetCollection<FishingInfo>();
+            DisciplineInfoList = Session.GetCollection<DisciplineInfo>();
             RespawnInfoList = Session.GetCollection<RespawnInfo>();
             MagicInfoList = Session.GetCollection<MagicInfo>();
             CurrencyInfoList = Session.GetCollection<CurrencyInfo>();
@@ -448,6 +451,7 @@ namespace Server.Envir
             UserConquestStatsList = Session.GetCollection<UserConquestStats>();
             UserFortuneInfoList = Session.GetCollection<UserFortuneInfo>();
             WeaponCraftStatInfoList = Session.GetCollection<WeaponCraftStatInfo>();
+            UserDisciplineList = Session.GetCollection<UserDiscipline>();
 
             GoldInfo = CurrencyInfoList.Binding.First(x => x.Type == CurrencyType.Gold).DropItem;
 
@@ -499,9 +503,10 @@ namespace Server.Envir
             }
         }
 
-        //Only works on Increasing EXP, still need to do Rebirth or loss of exp ranking update.
+
         public static void RankingSort(CharacterInfo character, bool updateLead = true)
         {
+            //Only works on Increasing EXP, still need to do Rebirth or loss of exp ranking update.
             bool changed = false;
 
             LinkedListNode<CharacterInfo> node;
@@ -520,7 +525,6 @@ namespace Server.Envir
 
             UpdateLead();
         }
-
 
         public static void UpdateLead()
         {
@@ -844,6 +848,7 @@ namespace Server.Envir
             RespawnInfoList = null;
             MagicInfoList = null;
             FishingInfoList = null;
+            DisciplineInfoList = null;
 
             BeltLinkList = null;
             UserItemList = null;
@@ -852,6 +857,7 @@ namespace Server.Envir
             UserMagicList = null;
             BuffInfoList = null;
             SetInfoList = null;
+            UserDisciplineList = null;
 
             Rankings = null;
             Random = null;
@@ -3425,12 +3431,14 @@ namespace Server.Envir
 
                 rank++;
 
-                if (resetRankChange)
+                //TODO - Needs changing so it runs this periodicly - instead of just when requested
+                if (resetRankChange || !info.LastRank.TryGetValue(p.Class, out int lastRank))
                 {
-                    info.LastRank = rank;
+                    info.LastRank[p.Class] = rank;
+                    lastRank = rank;
                 }
 
-                info.CurrentRank = rank;
+                info.CurrentRank[p.Class] = rank;
 
                 if (p.OnlineOnly && info.Player == null) continue;
 
@@ -3448,7 +3456,7 @@ namespace Server.Envir
                     Online = info.Player != null,
                     Observable = info.Observable || isGM,
                     Rebirth = info.Rebirth,
-                    RankChange = info.LastRank - rank
+                    RankChange = lastRank - rank
                 });
             }
 
@@ -3575,12 +3583,11 @@ namespace Server.Envir
     public enum CommandType
     {
         None,
+
         Activation,
         PasswordReset,
         AccountDelete
-
     }
-
 
     public sealed class IPNMessage
     {
