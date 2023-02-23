@@ -72,6 +72,8 @@ namespace Client.Envir
 
         static CEnvir()
         {
+            LoadLanguage();
+
             Thread workThread = new Thread(SaveChatLoop) { IsBackground = true };
             workThread.Start();
 
@@ -85,10 +87,10 @@ namespace Client.Envir
             switch (Config.Language.ToUpper())
             {
                 case "ENGLISH":
-                    Language = (StringMessages)ConfigReader.ConfigObjects[typeof(EnglishMessages)]; //Todo Language Selections
+                    Language = (StringMessages)ConfigReader.ConfigObjects[typeof(EnglishMessages)];
                     break;
                 case "CHINESE":
-                    Language = (StringMessages)ConfigReader.ConfigObjects[typeof(ChineseMessages)]; //Todo Language Selections
+                    Language = (StringMessages)ConfigReader.ConfigObjects[typeof(ChineseMessages)];
                     break;
             }
 
@@ -948,6 +950,21 @@ namespace Client.Envir
         public static bool IsCurrencyItem(ItemInfo info)
         {
             return Globals.CurrencyInfoList.Binding.FirstOrDefault(x => x.DropItem == info) != null;
+        }
+
+        public static int CurrencyImage(ItemInfo info, long count)
+        {
+            var currency = Globals.CurrencyInfoList.Binding.FirstOrDefault(x => x.DropItem == info);
+
+            if (currency == null)
+                return 0;
+
+            var image = currency.Images.OrderByDescending(x => x.Amount).FirstOrDefault(x => x.Amount <= count);
+
+            if (image != null)
+                return image.Image;
+            else
+                return currency.DropItem.Image;
         }
     }
 }

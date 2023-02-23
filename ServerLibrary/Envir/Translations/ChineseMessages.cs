@@ -48,8 +48,8 @@ namespace Server.Envir.Translations
         public override string AlreadyFriended { get; set; } = "{0} is already on your friend list.";
         public override string FriendStateChanged { get; set; } = "{0} is {1}.";
 
-        public override string NeedLevel { get; set; } = "You need to be level {0} to proceed.";
         public override string NeedMaxLevel { get; set; } = "You need to be level {0} or lower to proceed.";
+        public override string NeedLevel { get; set; } = "You need to be level {0} to proceed.";
         public override string NeedItem { get; set; } = "You require a '{0}' to proceed.";
         public override string NeedMonster { get; set; } = "The way is blocked...";
         public override string NeedClass { get; set; } = "You need to be class {0} to proceed.";
@@ -292,6 +292,7 @@ namespace Server.Envir.Translations
         public override string InstanceUserCooldown { get; set; } = "Cannot re-enter instance until {0:ddd, dd MMM HH:mm} UTC.";
         public override string InstanceGuildCooldown { get; set; } = "Cannot re-enter instance until {0:ddd, dd MMM HH:mm} UTC.";
         public override string InstanceNoSlots { get; set; } = "No more free slots on instance.";
+        public override string InstanceMissingItem { get; set; } = "You must be carrying a {0} to join instance.";
         public override string InstanceNotGroupLeader { get; set; } = "You must be the group leader to start instance.";
         public override string InstanceNoMap { get; set; } = "Failed to move to instance.";
 

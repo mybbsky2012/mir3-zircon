@@ -78,7 +78,7 @@ namespace Server.Envir.Translations
         public override string LearnBookFailed { get; set; } = "Failed to learn skill, not enough pages";
         public override string LearnBookSuccess { get; set; } = "Congratulations, You have successfully learned {0}.";
         public override string LearnBook4Failed { get; set; } = "{0} pages required for level {1} skill.";
-        public override string LearnBook4Success { get; set; } = "Congratulations, You have successfully learned level 4 {0}.";
+        public override string LearnBook4Success { get; set; } = "Congratulations, You have successfully learned level {1} {0}.";
         public override string StorageSafeZone { get; set; } = "You cannot access storage outside of SafeZone.";
         public override string GuildStoragePermission { get; set; } = "You do no have the permissions to take from the guild storage";
         public override string GuildStorageSafeZone { get; set; } = "You cannot use guild storage unless you are in a safe zone";
@@ -292,6 +292,7 @@ namespace Server.Envir.Translations
         public override string InstanceUserCooldown { get; set; } = "Cannot re-enter instance until {0:ddd, dd MMM HH:mm} UTC.";
         public override string InstanceGuildCooldown { get; set; } = "Cannot re-enter instance until {0:ddd, dd MMM HH:mm} UTC.";
         public override string InstanceNoSlots { get; set; } = "No more free slots on instance.";
+        public override string InstanceMissingItem { get; set; } = "You must be carrying a {0} to join instance.";
         public override string InstanceNotGroupLeader { get; set; } = "You must be the group leader to start instance.";
         public override string InstanceNoMap { get; set; } = "Failed to move to instance.";
 

@@ -8,9 +8,12 @@ using System.Windows.Forms;
 using Client.Controls;
 using Client.Envir;
 using Client.Models;
+using Client.Properties;
+using Client.Scenes.Views.Character;
 using Client.UserModels;
 using Library;
 using Library.SystemModels;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 using C = Library.Network.ClientPackets;
 using S = Library.Network.ServerPackets;
 
@@ -23,7 +26,7 @@ namespace Client.Scenes.Views
         private DXTabControl TabControl;
         private DXTab CharacterTab, HermitTab, DisciplineTab;
         public DXLabel CharacterNameLabel, GuildNameLabel, GuildRankLabel;
-        
+
         private DXTabControl StatsTabControl;
         private DXTab StatsAttackTab, StatsDefenseTab, StatsWeightTab, StatsOtherTab, StatsElementAttackTab, StatsElementAdvantageTab, StatsElementDisadvantageTab;
 
@@ -116,6 +119,16 @@ namespace Client.Scenes.Views
             }
         }
 
+        private bool HasFishingRobe
+        {
+            get { return Grid != null && Grid[(int)EquipmentSlot.Armour]?.Item?.Info.ItemEffect == ItemEffect.FishingRobe; }
+        }
+
+        private bool HasFishingRod
+        {
+            get { return Grid != null && Grid[(int)EquipmentSlot.Weapon]?.Item?.Info.ItemEffect == ItemEffect.FishingRod; }
+        }
+
         #region Inspect
 
         private ClientUserItem[] _inspectEquipment = new ClientUserItem[Globals.EquipmentSize];
@@ -137,6 +150,11 @@ namespace Client.Scenes.Views
 
             if (Settings != null)
                 Settings.Visible = nValue;
+
+            if (!Inspect)
+            {
+                GameScene.Game.FishingBox.Visible = HasFishingRod && IsVisible;
+            }
 
             base.OnIsVisibleChanged(oValue, nValue);
         }
@@ -230,16 +248,16 @@ namespace Client.Scenes.Views
             TabControl = new DXTabControl
             {
                 Parent = this,
-                Location = new Point(0, 21),
+                Location = new Point(0, 19),
                 Size = new Size(DisplayArea.Width, DisplayArea.Height),
                 MarginLeft = 18
             };
             CharacterTab = new DXTab
             {
                 Parent = TabControl,
-                TabButton = { Label = { Text = "Character" } },
+                TabButton = { Label = { Text = CEnvir.Language.CharacterCharacterTabLabel } },
                 BackColour = Color.Empty,
-                Location = new Point(0, 25)
+                Location = new Point(0, 27)
             };
             CharacterTab.BeforeChildrenDraw += CharacterTab_BeforeChildrenDraw;
             CharacterTab.TabButton.MouseClick += (o, e) =>
@@ -250,9 +268,9 @@ namespace Client.Scenes.Views
             HermitTab = new DXTab
             {
                 Parent = TabControl,
-                TabButton = { Label = { Text = "Hermit" } },
+                TabButton = { Label = { Text = CEnvir.Language.CharacterHermitTabLabel } },
                 BackColour = Color.Empty,
-                Location = new Point(0, 25),
+                Location = new Point(0, 27),
             };
 
             HermitTab.TabButton.Visible = !Inspect;
@@ -264,9 +282,9 @@ namespace Client.Scenes.Views
             DisciplineTab = new DXTab
             {
                 Parent = TabControl,
-                TabButton = { Label = { Text = "Discipline" } },
+                TabButton = { Label = { Text = CEnvir.Language.CharacterDisciplineTabLabel } },
                 BackColour = Color.Empty,
-                Location = new Point(0, 25),
+                Location = new Point(0, 27),
             };
 
             DisciplineTab.TabButton.Visible = !Inspect && Globals.DisciplineInfoList.Binding.Count > 0;
@@ -278,13 +296,13 @@ namespace Client.Scenes.Views
             DXControl namePanel = new DXControl
             {
                 Parent = this,
-                Size = new Size(130, 68),
+                Size = new Size(137, 68),
                 Location = new Point((CharacterTab.Size.Width - 135) / 2, 51)
             };
             CharacterNameLabel = new DXLabel
             {
                 AutoSize = false,
-                Size = new Size(130, 20),
+                Size = new Size(137, 20),
                 ForeColour = Color.FromArgb(222, 255, 222),
                 Outline = false,
                 Parent = namePanel,
@@ -294,7 +312,7 @@ namespace Client.Scenes.Views
             GuildNameLabel = new DXLabel
             {
                 AutoSize = false,
-                Size = new Size(130, 15),
+                Size = new Size(137, 15),
                 ForeColour = Color.FromArgb(255, 255, 181),
                 Outline = false,
                 Parent = namePanel,
@@ -304,7 +322,7 @@ namespace Client.Scenes.Views
             GuildRankLabel = new DXLabel
             {
                 AutoSize = false,
-                Size = new Size(130, 15),
+                Size = new Size(137, 15),
                 ForeColour = Color.FromArgb(255, 206, 148),
                 Outline = false,
                 Parent = namePanel,
@@ -340,6 +358,10 @@ namespace Client.Scenes.Views
             };
             cell.MouseEnter += Cell_MouseEnter;
             cell.MouseLeave += Cell_MouseLeave;
+            cell.ItemChanged += (o, e) =>
+            {
+                GameScene.Game.FishingBox.Visible = Visible && ((DXItemCell)o).Item?.Info.ItemEffect == ItemEffect.FishingRod;
+            };
 
             Grid[(int)EquipmentSlot.Armour] = cell = new DXItemCell
             {
@@ -386,7 +408,7 @@ namespace Client.Scenes.Views
 
             Grid[(int)EquipmentSlot.Emblem] = cell = new DXItemCell
             {
-                Location = new Point(237, 118),
+                Location = new Point(244, 118),
                 Parent = CharacterTab,
                 Border = true,
                 ItemGrid = Equipment,
@@ -399,7 +421,7 @@ namespace Client.Scenes.Views
 
             Grid[(int)EquipmentSlot.HorseArmour] = cell = new DXItemCell
             {
-                Location = new Point(276, 118),
+                Location = new Point(283, 118),
                 Parent = CharacterTab,
                 Border = true,
                 ItemGrid = Equipment,
@@ -438,7 +460,7 @@ namespace Client.Scenes.Views
 
             Grid[(int)EquipmentSlot.BraceletL] = cell = new DXItemCell
             {
-                Location = new Point(237, 157),
+                Location = new Point(244, 157),
                 Parent = CharacterTab,
                 Border = true,
                 ItemGrid = Equipment,
@@ -451,7 +473,7 @@ namespace Client.Scenes.Views
 
             Grid[(int)EquipmentSlot.BraceletR] = cell = new DXItemCell
             {
-                Location = new Point(276, 157),
+                Location = new Point(283, 157),
                 Parent = CharacterTab,
                 Border = true,
                 ItemGrid = Equipment,
@@ -464,7 +486,7 @@ namespace Client.Scenes.Views
 
             Grid[(int)EquipmentSlot.RingL] = cell = new DXItemCell
             {
-                Location = new Point(237, 196),
+                Location = new Point(244, 196),
                 Parent = CharacterTab,
                 Border = true,
                 ItemGrid = Equipment,
@@ -477,7 +499,7 @@ namespace Client.Scenes.Views
 
             Grid[(int)EquipmentSlot.RingR] = cell = new DXItemCell
             {
-                Location = new Point(276, 196),
+                Location = new Point(283, 196),
                 Parent = CharacterTab,
                 Border = true,
                 ItemGrid = Equipment,
@@ -490,7 +512,7 @@ namespace Client.Scenes.Views
 
             Grid[(int)EquipmentSlot.Flower] = cell = new DXItemCell
             {
-                Location = new Point(237, 235),
+                Location = new Point(244, 235),
                 Parent = CharacterTab,
                 Border = true,
                 ItemGrid = Equipment,
@@ -503,7 +525,7 @@ namespace Client.Scenes.Views
 
             Grid[(int)EquipmentSlot.Poison] = cell = new DXItemCell
             {
-                Location = new Point(237, 274),
+                Location = new Point(244, 274),
                 Parent = CharacterTab,
                 Border = true,
                 ItemGrid = Equipment,
@@ -516,7 +538,7 @@ namespace Client.Scenes.Views
 
             Grid[(int)EquipmentSlot.Amulet] = cell = new DXItemCell
             {
-                Location = new Point(276, 235),
+                Location = new Point(283, 235),
                 Parent = CharacterTab,
                 Border = true,
                 ItemGrid = Equipment,
@@ -555,6 +577,9 @@ namespace Client.Scenes.Views
             cell.MouseEnter += Cell_MouseEnter;
             cell.MouseLeave += Cell_MouseLeave;
 
+            cell.MouseEnter += Cell_MouseEnter;
+            cell.MouseLeave += Cell_MouseLeave;
+
             #endregion
 
             #region Stats
@@ -566,14 +591,14 @@ namespace Client.Scenes.Views
                 Parent = CharacterTab,
                 Location = new Point(0, 319),
                 Size = new Size(DisplayArea.Width, 120),
-                MarginLeft = 18,
+                MarginLeft = 21,
                 Visible = !Inspect
             };
 
             StatsAttackTab = new DXTab
             {
                 Parent = StatsTabControl,
-                TabButton = { Label = { Text = "Att" } },
+                TabButton = { Label = { Text = CEnvir.Language.CharacterCharacterTabStatsAttackTabLabel } },
                 BackColour = Color.Empty,
                 MinimumTabWidth = 40,
             };
@@ -581,42 +606,42 @@ namespace Client.Scenes.Views
             StatsDefenseTab = new DXTab
             {
                 Parent = StatsTabControl,
-                TabButton = { Label = { Text = "Def" } },
+                TabButton = { Label = { Text = CEnvir.Language.CharacterCharacterTabStatsDefenseTabLabel } },
                 BackColour = Color.Empty,
                 MinimumTabWidth = 40,
             };
             StatsWeightTab = new DXTab
             {
                 Parent = StatsTabControl,
-                TabButton = { Label = { Text = "Wt" } },
+                TabButton = { Label = { Text = CEnvir.Language.CharacterCharacterTabStatsWeightTabLabel } },
                 BackColour = Color.Empty,
                 MinimumTabWidth = 40,
             };
             StatsOtherTab = new DXTab
             {
                 Parent = StatsTabControl,
-                TabButton = { Label = { Text = "Oth" } },
+                TabButton = { Label = { Text = CEnvir.Language.CharacterCharacterTabStatsOtherTabLabel } },
                 BackColour = Color.Empty,
                 MinimumTabWidth = 40,
             };
             StatsElementAttackTab = new DXTab
             {
                 Parent = StatsTabControl,
-                TabButton = { Label = { Text = "E.Att" } },
+                TabButton = { Label = { Text = CEnvir.Language.CommonStatusElementAttack } },
                 BackColour = Color.Empty,
                 MinimumTabWidth = 40,
             };
             StatsElementAdvantageTab = new DXTab
             {
                 Parent = StatsTabControl,
-                TabButton = { Label = { Text = "E.Adv" } },
+                TabButton = { Label = { Text = CEnvir.Language.CharacterCharacterTabStatsElementAdvantageTabLabel } },
                 BackColour = Color.Empty,
                 MinimumTabWidth = 40,
             };
             StatsElementDisadvantageTab = new DXTab
             {
                 Parent = StatsTabControl,
-                TabButton = { Label = { Text = "E.Dis" } },
+                TabButton = { Label = { Text = CEnvir.Language.CharacterCharacterTabStatsElementDisadvantageTabLabel } },
                 BackColour = Color.Empty,
                 MinimumTabWidth = 40,
             };
@@ -628,14 +653,14 @@ namespace Client.Scenes.Views
             const int yStart = 6;
             int y = yStart;
 
-            const int left = 15, right = 163, rowSpacing = 22;
+            const int left = 15, right = 168, rowSpacing = 22;
 
             Size labelValueSize = new Size(100, 16);
 
             DXLabel label = new DXLabel
             {
                 Parent = StatsAttackTab,
-                Text = "DC:"
+                Text = CEnvir.Language.CommonStatusDC + ":"
             };
             label.Location = new Point(left, y);
 
@@ -647,13 +672,14 @@ namespace Client.Scenes.Views
                 Text = "0-0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsAttackTab,
-                Text = "MC:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAttackTabMCLabel
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -666,12 +692,13 @@ namespace Client.Scenes.Views
                 Size = labelValueSize,
                 AutoSize = false,
                 DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsAttackTab,
-                Text = "SC:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAttackTabSCLabel
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -684,6 +711,26 @@ namespace Client.Scenes.Views
                 Size = labelValueSize,
                 AutoSize = false,
                 DrawFormat = TextFormatFlags.Right,
+                Tag = label
+            };
+
+            label = new DXLabel
+            {
+                Parent = StatsAttackTab,
+                Text = CEnvir.Language.CharacterCharacterTabStatsAttackTabCritDamageLabel
+            };
+            label.Location = new Point(left, y += rowSpacing);
+
+            DisplayStats[Stat.CriticalDamage] = new DXLabel
+            {
+                Parent = StatsAttackTab,
+                Location = new Point(label.Location.X + 45, y),
+                ForeColour = Color.White,
+                Text = "0",
+                Size = labelValueSize,
+                AutoSize = false,
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             y = yStart;
@@ -691,7 +738,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsAttackTab,
-                Text = "Accuracy:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAttackTabAccuracyLabel
             };
             label.Location = new Point(right, y);
 
@@ -703,13 +750,14 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsAttackTab,
-                Text = "A. Speed:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAttackTabASpeedLabel
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -721,13 +769,14 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsAttackTab,
-                Text = "Luck:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAttackTabLuckLabel
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -739,13 +788,14 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsAttackTab,
-                Text = "Crit. Chance:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAttackTabCritChanceLabel
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -757,7 +807,8 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             #endregion
@@ -769,7 +820,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsDefenseTab,
-                Text = "AC:"
+                Text = CEnvir.Language.CommonStatusAC + ":"
             };
             label.Location = new Point(left, y);
 
@@ -781,13 +832,14 @@ namespace Client.Scenes.Views
                 Text = "0-0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsDefenseTab,
-                Text = "MR:"
+                Text = CEnvir.Language.CommonStatusMR + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -799,7 +851,8 @@ namespace Client.Scenes.Views
                 Text = "0-0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             y = yStart;
@@ -807,7 +860,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsDefenseTab,
-                Text = "Agility:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsDefenseTabAgilityLabel
             };
             label.Location = new Point(right, y);
 
@@ -819,13 +872,14 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsDefenseTab,
-                Text = "Life Steal:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsDefenseTabLifeStealLabel
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -837,7 +891,8 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             #endregion
@@ -849,7 +904,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsWeightTab,
-                Text = "Body W:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsWeightTabBodyWLabel
             };
             label.Location = new Point(left, y);
 
@@ -861,13 +916,14 @@ namespace Client.Scenes.Views
                 Text = "0 / 0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsWeightTab,
-                Text = "Hand W:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsWeightTabHandWLabel
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -879,7 +935,8 @@ namespace Client.Scenes.Views
                 Text = "0 / 0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             #endregion
@@ -891,7 +948,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsOtherTab,
-                Text = "Comfort:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAdditionalTabComfortLabel
             };
             label.Location = new Point(left, y);
 
@@ -903,13 +960,14 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsOtherTab,
-                Text = "Pickup Radius:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAdditionalTabPickupRadiusLabel
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -921,7 +979,8 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             y = yStart;
@@ -929,7 +988,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsOtherTab,
-                Text = "Gold Rate:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAdditionalTabGoldRateLabel
             };
             label.Location = new Point(right, y);
 
@@ -941,13 +1000,14 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsOtherTab,
-                Text = "Drop Rate:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAdditionalTabDropRateLabel
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -959,13 +1019,14 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             label = new DXLabel
             {
                 Parent = StatsOtherTab,
-                Text = "Exp. Rate:"
+                Text = CEnvir.Language.CharacterCharacterTabStatsAdditionalTabExpRateLabel
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -977,7 +1038,8 @@ namespace Client.Scenes.Views
                 Text = "0",
                 Size = labelValueSize,
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.Right
+                DrawFormat = TextFormatFlags.Right,
+                Tag = label
             };
 
             #endregion
@@ -989,7 +1051,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAttackTab,
-                Text = "Fire:"
+                Text = CEnvir.Language.CommonStatusFire + ":"
             };
             label.Location = new Point(left, y);
 
@@ -999,7 +1061,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 600,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Fire",
+                Hint = CEnvir.Language.CommonStatusFire,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1015,7 +1077,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAttackTab,
-                Text = "Ice:"
+                Text = CEnvir.Language.CommonStatusIce + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -1025,7 +1087,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 601,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Ice",
+                Hint = CEnvir.Language.CommonStatusIce,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1041,7 +1103,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAttackTab,
-                Text = "Lightning:"
+                Text = CEnvir.Language.CommonStatusLightning + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -1051,7 +1113,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 602,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Lightning",
+                Hint = CEnvir.Language.CommonStatusLightning,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1067,7 +1129,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAttackTab,
-                Text = "Wind:"
+                Text = CEnvir.Language.CommonStatusWind + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -1077,7 +1139,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 603,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Wind",
+                Hint = CEnvir.Language.CommonStatusWind,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1095,7 +1157,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAttackTab,
-                Text = "Holy:"
+                Text = CEnvir.Language.CommonStatusHoly + ":"
             };
             label.Location = new Point(right, y);
 
@@ -1105,7 +1167,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 604,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Holy",
+                Hint = CEnvir.Language.CommonStatusHoly,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1121,7 +1183,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAttackTab,
-                Text = "Dark:"
+                Text = CEnvir.Language.CommonStatusDark + ":"
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -1131,7 +1193,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 605,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Dark",
+                Hint = CEnvir.Language.CommonStatusDark,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1147,7 +1209,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAttackTab,
-                Text = "Phantom:"
+                Text = CEnvir.Language.CommonStatusPhantom + ":"
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -1157,7 +1219,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 606,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Phantom",
+                Hint = CEnvir.Language.CommonStatusPhantom,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1179,7 +1241,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAdvantageTab,
-                Text = "Fire:"
+                Text = CEnvir.Language.CommonStatusFire + ":"
             };
             label.Location = new Point(left, y);
 
@@ -1189,7 +1251,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 600,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Fire",
+                Hint = CEnvir.Language.CommonStatusFire,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1205,7 +1267,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAdvantageTab,
-                Text = "Ice:"
+                Text = CEnvir.Language.CommonStatusIce + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -1215,7 +1277,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 601,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Ice",
+                Hint = CEnvir.Language.CommonStatusIce,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1231,7 +1293,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAdvantageTab,
-                Text = "Lightning:"
+                Text = CEnvir.Language.CommonStatusLightning + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -1241,7 +1303,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 602,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Lightning",
+                Hint = CEnvir.Language.CommonStatusLightning,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1257,7 +1319,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAdvantageTab,
-                Text = "Wind:"
+                Text = CEnvir.Language.CommonStatusWind + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -1267,7 +1329,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 603,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Wind",
+                Hint = CEnvir.Language.CommonStatusWind,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1285,7 +1347,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAdvantageTab,
-                Text = "Holy:"
+                Text = CEnvir.Language.CommonStatusHoly + ":"
             };
             label.Location = new Point(right, y);
 
@@ -1295,7 +1357,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 604,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Holy",
+                Hint = CEnvir.Language.CommonStatusHoly,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1311,7 +1373,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAdvantageTab,
-                Text = "Dark:"
+                Text = CEnvir.Language.CommonStatusDark + ":"
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -1321,7 +1383,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 605,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Dark",
+                Hint = CEnvir.Language.CommonStatusDark,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1337,7 +1399,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAdvantageTab,
-                Text = "Phantom:"
+                Text = CEnvir.Language.CommonStatusPhantom + ":"
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -1347,7 +1409,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 606,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Phantom",
+                Hint = CEnvir.Language.CommonStatusPhantom,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1363,7 +1425,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementAdvantageTab,
-                Text = "Physical:"
+                Text = CEnvir.Language.CommonStatusPhysical + ":"
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -1373,7 +1435,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.GameInter,
                 Index = 1517,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Physical",
+                Hint = CEnvir.Language.CommonStatusPhysical,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1395,7 +1457,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementDisadvantageTab,
-                Text = "Fire:"
+                Text = CEnvir.Language.CommonStatusFire + ":"
             };
             label.Location = new Point(left, y);
 
@@ -1405,7 +1467,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 600,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Fire",
+                Hint = CEnvir.Language.CommonStatusFire
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1421,7 +1483,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementDisadvantageTab,
-                Text = "Ice:"
+                Text = CEnvir.Language.CommonStatusIce + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -1431,7 +1493,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 601,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Ice",
+                Hint = CEnvir.Language.CommonStatusIce,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1447,7 +1509,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementDisadvantageTab,
-                Text = "Lightning:"
+                Text = CEnvir.Language.CommonStatusLightning + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -1457,7 +1519,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 602,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Lightning",
+                Hint = CEnvir.Language.CommonStatusLightning,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1473,7 +1535,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementDisadvantageTab,
-                Text = "Wind:"
+                Text = CEnvir.Language.CommonStatusWind + ":"
             };
             label.Location = new Point(left, y += rowSpacing);
 
@@ -1483,7 +1545,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 603,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Wind",
+                Hint = CEnvir.Language.CommonStatusWind,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1501,7 +1563,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementDisadvantageTab,
-                Text = "Holy:"
+                Text = CEnvir.Language.CommonStatusHoly + ":"
             };
             label.Location = new Point(right, y);
 
@@ -1511,7 +1573,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 604,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Holy",
+                Hint = CEnvir.Language.CommonStatusHoly,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1527,7 +1589,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementDisadvantageTab,
-                Text = "Dark:"
+                Text = CEnvir.Language.CommonStatusDark + ":"
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -1537,7 +1599,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 605,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Dark",
+                Hint = CEnvir.Language.CommonStatusDark,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1553,7 +1615,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementDisadvantageTab,
-                Text = "Phantom:"
+                Text = CEnvir.Language.CommonStatusPhantom + ":"
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -1563,7 +1625,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 606,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Phantom",
+                Hint = CEnvir.Language.CommonStatusPhantom,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1579,7 +1641,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = StatsElementDisadvantageTab,
-                Text = "Physical:"
+                Text = CEnvir.Language.CommonStatusPhysical + ":"
             };
             label.Location = new Point(right, y += rowSpacing);
 
@@ -1589,7 +1651,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.GameInter,
                 Index = 1517,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Physical",
+                Hint = CEnvir.Language.CommonStatusPhysical,
             };
             icon.Location = new Point(label.Location.X + 75, y - 3);
 
@@ -1611,7 +1673,7 @@ namespace Client.Scenes.Views
             HermitShowConfirmation = new DXCheckBox
             {
                 Parent = HermitTab,
-                Label = { Text = "Show Confirmation" },
+                Label = { Text = CEnvir.Language.CharacterHermitTabShowConfirmationLabel },
                 Checked = true,
             };
             HermitShowConfirmation.Location = new Point(175, 77);
@@ -1619,9 +1681,9 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = HermitTab,
-                Text = "Unspent Points:"
+                Text = CEnvir.Language.CharacterHermitTabUnspentPointsLabel
             };
-            label.Location = new Point(HermitTab.Size.Width / 4 * 2 - label.Size.Width + 25, 150);
+            label.Location = new Point(HermitTab.Size.Width / 4 * 2 - label.Size.Width + 28, 150);
 
             HermitRemainingLabel = new DXLabel
             {
@@ -1631,7 +1693,7 @@ namespace Client.Scenes.Views
                 Text = "0"
             };
 
-            int x = 23;
+            int x = 26;
 
             #region Hermit Buttons
 
@@ -1639,7 +1701,7 @@ namespace Client.Scenes.Views
             {
                 Parent = HermitTab,
                 Location = new Point(x, 97),
-                Label = { Text = "AC" },
+                Label = { Text = CEnvir.Language.CommonStatusAC },
                 ButtonType = ButtonType.SmallButton,
                 Size = new Size(65, SmallButtonHeight)
             };
@@ -1649,7 +1711,7 @@ namespace Client.Scenes.Views
 
                 if (HermitShowConfirmation.Checked)
                 {
-                    DXMessageBox box = new DXMessageBox("Are you sure you want to increase your AC?", "Hermit Confirmation", DXMessageBoxButtons.YesNo);
+                    DXMessageBox box = new DXMessageBox(string.Format(CEnvir.Language.CharacterHermitTabButtonsConfirmationMessage, CEnvir.Language.CommonStatusAC), CEnvir.Language.CharacterHermitTabButtonsConfirmationCaption, DXMessageBoxButtons.YesNo);
 
                     box.YesButton.MouseClick += (o1, e1) =>
                     {
@@ -1666,7 +1728,7 @@ namespace Client.Scenes.Views
             {
                 Parent = HermitTab,
                 Location = new Point(x, 122),
-                Label = { Text = "MR" },
+                Label = { Text = CEnvir.Language.CommonStatusMR },
                 ButtonType = ButtonType.SmallButton,
                 Size = new Size(65, SmallButtonHeight),
             };
@@ -1676,7 +1738,7 @@ namespace Client.Scenes.Views
 
                 if (HermitShowConfirmation.Checked)
                 {
-                    DXMessageBox box = new DXMessageBox("Are you sure you want to increase your MR?", "Hermit Confirmation", DXMessageBoxButtons.YesNo);
+                    DXMessageBox box = new DXMessageBox(string.Format(CEnvir.Language.CharacterHermitTabButtonsConfirmationMessage, CEnvir.Language.CommonStatusMR), CEnvir.Language.CharacterHermitTabButtonsConfirmationCaption, DXMessageBoxButtons.YesNo);
 
                     box.YesButton.MouseClick += (o1, e1) =>
                     {
@@ -1695,7 +1757,7 @@ namespace Client.Scenes.Views
             {
                 Parent = HermitTab,
                 Location = new Point(x, 97),
-                Label = { Text = "Health" },
+                Label = { Text = CEnvir.Language.CommonStatusHealth },
                 ButtonType = ButtonType.SmallButton,
                 Size = new Size(65, SmallButtonHeight)
             };
@@ -1705,7 +1767,7 @@ namespace Client.Scenes.Views
 
                 if (HermitShowConfirmation.Checked)
                 {
-                    DXMessageBox box = new DXMessageBox("Are you sure you want to increase your Health?", "Hermit Confirmation", DXMessageBoxButtons.YesNo);
+                    DXMessageBox box = new DXMessageBox(string.Format(CEnvir.Language.CharacterHermitTabButtonsConfirmationMessage, CEnvir.Language.CommonStatusHealth), CEnvir.Language.CharacterHermitTabButtonsConfirmationCaption, DXMessageBoxButtons.YesNo);
 
                     box.YesButton.MouseClick += (o1, e1) =>
                     {
@@ -1722,7 +1784,7 @@ namespace Client.Scenes.Views
             {
                 Parent = HermitTab,
                 Location = new Point(x, 122),
-                Label = { Text = "Mana" },
+                Label = { Text = CEnvir.Language.CommonStatusMana },
                 ButtonType = ButtonType.SmallButton,
                 Size = new Size(65, SmallButtonHeight)
             };
@@ -1732,7 +1794,7 @@ namespace Client.Scenes.Views
 
                 if (HermitShowConfirmation.Checked)
                 {
-                    DXMessageBox box = new DXMessageBox("Are you sure you want to increase your Mana?", "Hermit Confirmation", DXMessageBoxButtons.YesNo);
+                    DXMessageBox box = new DXMessageBox(string.Format(CEnvir.Language.CharacterHermitTabButtonsConfirmationMessage, CEnvir.Language.CommonStatusMana), CEnvir.Language.CharacterHermitTabButtonsConfirmationCaption, DXMessageBoxButtons.YesNo);
 
                     box.YesButton.MouseClick += (o1, e1) =>
                     {
@@ -1751,7 +1813,7 @@ namespace Client.Scenes.Views
             {
                 Parent = HermitTab,
                 Location = new Point(x, 97),
-                Label = { Text = "DC" },
+                Label = { Text = CEnvir.Language.CommonStatusDC },
                 ButtonType = ButtonType.SmallButton,
                 Size = new Size(65, SmallButtonHeight)
             };
@@ -1761,7 +1823,7 @@ namespace Client.Scenes.Views
 
                 if (HermitShowConfirmation.Checked)
                 {
-                    DXMessageBox box = new DXMessageBox("Are you sure you want to increase your DC?", "Hermit Confirmation", DXMessageBoxButtons.YesNo);
+                    DXMessageBox box = new DXMessageBox(string.Format(CEnvir.Language.CharacterHermitTabButtonsConfirmationMessage, CEnvir.Language.CommonStatusDC), CEnvir.Language.CharacterHermitTabButtonsConfirmationCaption, DXMessageBoxButtons.YesNo);
 
                     box.YesButton.MouseClick += (o1, e1) =>
                     {
@@ -1778,7 +1840,7 @@ namespace Client.Scenes.Views
             {
                 Parent = HermitTab,
                 Location = new Point(x, 122),
-                Label = { Text = "MC" },
+                Label = { Text = CEnvir.Language.CharacterHermitTabButtonsMCLabel },
                 ButtonType = ButtonType.SmallButton,
                 Size = new Size(65, SmallButtonHeight)
             };
@@ -1788,7 +1850,7 @@ namespace Client.Scenes.Views
 
                 if (HermitShowConfirmation.Checked)
                 {
-                    DXMessageBox box = new DXMessageBox("Are you sure you want to increase your MC?", "Hermit Confirmation", DXMessageBoxButtons.YesNo);
+                    DXMessageBox box = new DXMessageBox(CEnvir.Language.CharacterHermitTabButtonsConfirmationMCMessage, CEnvir.Language.CharacterHermitTabButtonsConfirmationCaption, DXMessageBoxButtons.YesNo);
 
                     box.YesButton.MouseClick += (o1, e1) =>
                     {
@@ -1807,7 +1869,7 @@ namespace Client.Scenes.Views
             {
                 Parent = HermitTab,
                 Location = new Point(x, 97),
-                Label = { Text = "SC" },
+                Label = { Text = CEnvir.Language.CharacterHermitTabButtonsSCLabel },
                 ButtonType = ButtonType.SmallButton,
                 Size = new Size(65, SmallButtonHeight)
             };
@@ -1817,7 +1879,7 @@ namespace Client.Scenes.Views
 
                 if (HermitShowConfirmation.Checked)
                 {
-                    DXMessageBox box = new DXMessageBox("Are you sure you want to increase your SC?", "Hermit Confirmation", DXMessageBoxButtons.YesNo);
+                    DXMessageBox box = new DXMessageBox(CEnvir.Language.CharacterHermitTabButtonsConfirmationSCMessage, CEnvir.Language.CharacterHermitTabButtonsConfirmationCaption, DXMessageBoxButtons.YesNo);
 
                     box.YesButton.MouseClick += (o1, e1) =>
                     {
@@ -1834,7 +1896,7 @@ namespace Client.Scenes.Views
             {
                 Parent = HermitTab,
                 Location = new Point(x, 122),
-                Label = { Text = "Element" },
+                Label = { Text = CEnvir.Language.CharacterHermitTabButtonsElementLabel },
                 ButtonType = ButtonType.SmallButton,
                 Size = new Size(65, SmallButtonHeight)
             };
@@ -1844,7 +1906,7 @@ namespace Client.Scenes.Views
 
                 if (HermitShowConfirmation.Checked)
                 {
-                    DXMessageBox box = new DXMessageBox("Are you sure you want to increase your Element Attack?", "Hermit Confirmation", DXMessageBoxButtons.YesNo);
+                    DXMessageBox box = new DXMessageBox(CEnvir.Language.CharacterHermitTabButtonsConfirmationElementMessage, CEnvir.Language.CharacterHermitTabButtonsConfirmationCaption, DXMessageBoxButtons.YesNo);
 
                     box.YesButton.MouseClick += (o1, e1) =>
                     {
@@ -1860,13 +1922,14 @@ namespace Client.Scenes.Views
             #endregion
 
             #region Hermit Stats
+            int xOffset = 40;
 
             label = new DXLabel
             {
                 Parent = HermitTab,
-                Text = "AC:"
+                Text = CEnvir.Language.CommonStatusAC + ":"
             };
-            label.Location = new Point(HermitTab.Size.Width / 4 - label.Size.Width + 25, 175);
+            label.Location = new Point(HermitTab.Size.Width / 4 - label.Size.Width + xOffset, 175);
 
             HermitDisplayStats[Stat.MaxAC] = new DXLabel
             {
@@ -1879,9 +1942,9 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = HermitTab,
-                Text = "MR:"
+                Text = CEnvir.Language.CommonStatusMR + ":"
             };
-            label.Location = new Point(HermitTab.Size.Width / 4 * 2 - label.Size.Width + 25, 175);
+            label.Location = new Point(HermitTab.Size.Width / 4 * 2 - label.Size.Width + xOffset, 175);
 
             HermitDisplayStats[Stat.MaxMR] = new DXLabel
             {
@@ -1894,9 +1957,9 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = HermitTab,
-                Text = "DC:"
+                Text = CEnvir.Language.CommonStatusDC + ":"
             };
-            label.Location = new Point(HermitTab.Size.Width / 5 - label.Size.Width + 25, 205);
+            label.Location = new Point(HermitTab.Size.Width / 5 - label.Size.Width + xOffset, 205);
 
             HermitDisplayStats[Stat.MaxDC] = new DXLabel
             {
@@ -1909,9 +1972,9 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = HermitTab,
-                Text = "MC:"
+                Text = CEnvir.Language.CommonStatusMC + ":"
             };
-            label.Location = new Point(HermitTab.Size.Width / 5 * 2 - label.Size.Width + 25, 205);
+            label.Location = new Point(HermitTab.Size.Width / 5 * 2 - label.Size.Width + xOffset, 205);
 
             HermitDisplayStats[Stat.MaxMC] = new DXLabel
             {
@@ -1924,9 +1987,9 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = HermitTab,
-                Text = "SC:"
+                Text = CEnvir.Language.CommonStatusSC + ":"
             };
-            label.Location = new Point(HermitTab.Size.Width / 5 * 3 - label.Size.Width + 25, 205);
+            label.Location = new Point(HermitTab.Size.Width / 5 * 3 - label.Size.Width + xOffset, 205);
 
             HermitDisplayStats[Stat.MaxSC] = new DXLabel
             {
@@ -1939,9 +2002,9 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = HermitTab,
-                Text = "Health:"
+                Text = CEnvir.Language.CommonStatusHealth + ":"
             };
-            label.Location = new Point(HermitTab.Size.Width / 4 - label.Size.Width + 25, 235);
+            label.Location = new Point(HermitTab.Size.Width / 4 - label.Size.Width + xOffset, 235);
 
             HermitDisplayStats[Stat.Health] = new DXLabel
             {
@@ -1954,9 +2017,9 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = HermitTab,
-                Text = "Mana:"
+                Text = CEnvir.Language.CommonStatusMana + ":"
             };
-            label.Location = new Point(HermitTab.Size.Width / 4 * 2 - label.Size.Width + 25, 235);
+            label.Location = new Point(HermitTab.Size.Width / 4 * 2 - label.Size.Width + xOffset, 235);
 
             HermitDisplayStats[Stat.Mana] = new DXLabel
             {
@@ -1972,7 +2035,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = HermitTab,
-                Text = "E. Att:"
+                Text = CEnvir.Language.CommonStatusElementAttack + ":"
             };
             label.Location = new Point(65 - label.Size.Width, 295);
 
@@ -1982,7 +2045,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 600,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Fire",
+                Hint = CEnvir.Language.CommonStatusFire,
             };
             icon.Location = new Point(label.Location.X + label.Size.Width, label.Location.Y + (label.Size.Height - icon.Size.Height) / 2);
 
@@ -2001,7 +2064,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 601,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Ice",
+                Hint = CEnvir.Language.CommonStatusIce,
             };
             icon.Location = new Point(label.Location.X + label.Size.Width + 50, label.Location.Y + (label.Size.Height - icon.Size.Height) / 2);
 
@@ -2020,7 +2083,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 602,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Lightning",
+                Hint = CEnvir.Language.CommonStatusLightning,
             };
             icon.Location = new Point(label.Location.X + label.Size.Width + 100, label.Location.Y + (label.Size.Height - icon.Size.Height) / 2);
 
@@ -2039,7 +2102,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 603,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Wind",
+                Hint = CEnvir.Language.CommonStatusWind,
             };
             icon.Location = new Point(label.Location.X + label.Size.Width + 150, label.Location.Y + (label.Size.Height - icon.Size.Height) / 2);
 
@@ -2058,7 +2121,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 604,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Holy",
+                Hint = CEnvir.Language.CommonStatusHoly,
             };
             icon.Location = new Point(label.Location.X + label.Size.Width, label.Location.Y + (label.Size.Height - icon.Size.Height) / 2 + 30);
 
@@ -2077,7 +2140,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 605,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Dark",
+                Hint = CEnvir.Language.CommonStatusDark,
             };
             icon.Location = new Point(label.Location.X + label.Size.Width + 50, label.Location.Y + (label.Size.Height - icon.Size.Height) / 2 + 30);
 
@@ -2096,7 +2159,7 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.ProgUse,
                 Index = 606,
                 ForeColour = Color.FromArgb(60, 60, 60),
-                Hint = "Phantom",
+                Hint = CEnvir.Language.CommonStatusPhantom,
             };
             icon.Location = new Point(label.Location.X + label.Size.Width + 100, label.Location.Y + (label.Size.Height - icon.Size.Height) / 2 + 30);
 
@@ -2130,7 +2193,7 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = DisciplineTab,
-                Text = "Discipline Lv:",
+                Text = CEnvir.Language.CharacterDisciplineTabLvLabel,
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.Left,
             };
             label.Location = new Point(13, 313);
@@ -2140,7 +2203,7 @@ namespace Client.Scenes.Views
                 Parent = DisciplineTab,
                 AutoSize = false,
                 Size = new Size(46, 18),
-                Location = new Point(113, 313),
+                Location = new Point(116, 313),
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter,
                 Text = "0",
                 ForeColour = Color.White
@@ -2149,28 +2212,28 @@ namespace Client.Scenes.Views
             label = new DXLabel
             {
                 Parent = DisciplineTab,
-                Text = "Label Unused",
+                Text = CEnvir.Language.CharacterDisciplineTabUnusedLabel,
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.Left,
                 Visible = false
             };
-            label.Location = new Point(163, 313);
+            label.Location = new Point(166, 313);
 
             DisciplineUnusedLabel = new DXLabel
             {
                 Parent = DisciplineTab,
                 AutoSize = false,
-                Size = new Size(46, 18),
-                Location = new Point(263, 313),
+                Size = new Size(49, 18),
+                Location = new Point(266, 313),
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter,
                 Text = "???",
                 ForeColour = Color.White,
                 Visible = false
-            }; 
-            
+            };
+
             label = new DXLabel
             {
                 Parent = DisciplineTab,
-                Text = "Discipline Exp:",
+                Text = CEnvir.Language.CharacterDisciplineTabExpLabel,
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.Left
             };
             label.Location = new Point(13, 335);
@@ -2179,7 +2242,7 @@ namespace Client.Scenes.Views
             {
                 Parent = DisciplineTab,
                 AutoSize = false,
-                Size = new Size(296, 18),
+                Size = new Size(303, 18),
                 Location = new Point(14, 335),
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter,
                 Text = "0/0",
@@ -2189,7 +2252,7 @@ namespace Client.Scenes.Views
             DisciplineButton = new DXButton
             {
                 Parent = DisciplineTab,
-                Label = { Text = "Gain Discipline" },
+                Label = { Text = CEnvir.Language.CharacterDisciplineTabButtonGainLabel },
                 Location = new Point(182, 265),
                 Size = new Size(120, DefaultHeight),
                 Enabled = false
@@ -2200,8 +2263,7 @@ namespace Client.Scenes.Views
 
                 if (nextLevel != null)
                 {
-                    DXMessageBox box = new DXMessageBox($"Are you sure you want to discipline your character?\n" +
-                                                        $"Disciplining will cost {nextLevel.RequiredGold:n0} Gold", "Discipline Character", DXMessageBoxButtons.YesNo);
+                    DXMessageBox box = new DXMessageBox(string.Format(CEnvir.Language.CharacterDisciplineTabConfirmationMessage, nextLevel.RequiredGold), CEnvir.Language.CharacterDisciplineTabConfirmationCaption, DXMessageBoxButtons.YesNo);
 
                     box.YesButton.MouseClick += (o, e1) => CEnvir.Enqueue(new C.IncreaseDiscipline());
                 }
@@ -2260,132 +2322,23 @@ namespace Client.Scenes.Views
 
         private void CharacterTab_BeforeChildrenDraw(object sender, EventArgs e)
         {
-            MirLibrary library;
-
             int x = 130;
             int y = 270;
 
-            if (!CEnvir.LibraryList.TryGetValue(LibraryFile.Equip, out library)) return;
+            if (!CEnvir.LibraryList.TryGetValue(LibraryFile.Equip, out MirLibrary library)) return;
 
-            if (Grid[(int)EquipmentSlot.Armour]?.Item != null)
+            ClientUserItem armour = Grid[(int)EquipmentSlot.Armour]?.Item;
+            if (armour != null)
             {
-                int index = Grid[(int)EquipmentSlot.Armour].Item.Info.Image;
-
-                MirLibrary effectLibrary;
-
-                if (CEnvir.LibraryList.TryGetValue(LibraryFile.EquipEffect_UI, out effectLibrary))
+                MirImage image = ArmourEffectDecider.GetArmourEffectImageOrNull(armour, Gender);
+                if (image != null)
                 {
-                    MirImage image = null;
-                    switch (index)
-                    {
-                        //All
-                        case 962:
-                            image = effectLibrary.CreateImage(1700 + (GameScene.Game.MapControl.Animation % 10), ImageType.Image);
-                            break;
-                        case 972:
-                            image = effectLibrary.CreateImage(1720 + (GameScene.Game.MapControl.Animation % 10), ImageType.Image);
-                            break;
+                    bool oldBlend = DXManager.Blending;
+                    float oldRate = DXManager.BlendRate;
 
-                        //War
-                        case 963:
-                            image = effectLibrary.CreateImage(400 + (GameScene.Game.MapControl.Animation % 15), ImageType.Image);
-                            break;
-                        case 973:
-                            image = effectLibrary.CreateImage(420 + (GameScene.Game.MapControl.Animation % 15), ImageType.Image);
-                            break;
-
-                        //Wiz
-                        case 964:
-                            image = effectLibrary.CreateImage(300 + (GameScene.Game.MapControl.Animation % 15), ImageType.Image);
-                            break;
-                        case 974:
-                            image = effectLibrary.CreateImage(320 + (GameScene.Game.MapControl.Animation % 15), ImageType.Image);
-                            break;
-
-                        //Tao
-                        case 965:
-                            image = effectLibrary.CreateImage(200 + (GameScene.Game.MapControl.Animation % 15), ImageType.Image);
-                            break;
-                        case 975:
-                            image = effectLibrary.CreateImage(220 + (GameScene.Game.MapControl.Animation % 15), ImageType.Image);
-                            break;
-
-                        //Ass
-                        case 2007:
-                            image = effectLibrary.CreateImage(500 + (GameScene.Game.MapControl.Animation % 13), ImageType.Image);
-                            break;
-                        case 2017:
-                            image = effectLibrary.CreateImage(520 + (GameScene.Game.MapControl.Animation % 13), ImageType.Image);
-                            break;
-
-                        case 942:
-                            image = effectLibrary.CreateImage(700, ImageType.Image);
-                            break;
-                        case 961:
-                            image = effectLibrary.CreateImage(1600, ImageType.Image);
-                            break;
-                        case 982:
-                            image = effectLibrary.CreateImage(800, ImageType.Image);
-                            break;
-                        case 983:
-                            image = effectLibrary.CreateImage(1200, ImageType.Image);
-                            break;
-                        case 984:
-                            image = effectLibrary.CreateImage(1100, ImageType.Image);
-                            break;
-                        case 1022:
-                            image = effectLibrary.CreateImage(900, ImageType.Image);
-                            break;
-                        case 1023:
-                            image = effectLibrary.CreateImage(1300, ImageType.Image);
-                            break;
-                        case 1002:
-                            image = effectLibrary.CreateImage(1000, ImageType.Image);
-                            break;
-                        case 1003:
-                            image = effectLibrary.CreateImage(1400, ImageType.Image);
-                            break;
-
-                        case 952:
-                            image = effectLibrary.CreateImage(720, ImageType.Image);
-                            break;
-                        case 971:
-                            image = effectLibrary.CreateImage(1620, ImageType.Image);
-                            break;
-                        case 992:
-                            image = effectLibrary.CreateImage(820, ImageType.Image);
-                            break;
-                        case 993:
-                            image = effectLibrary.CreateImage(1220, ImageType.Image);
-                            break;
-                        case 994:
-                            image = effectLibrary.CreateImage(1120, ImageType.Image);
-                            break;
-                        case 1032:
-                            image = effectLibrary.CreateImage(920, ImageType.Image);
-                            break;
-                        case 1033:
-                            image = effectLibrary.CreateImage(1320, ImageType.Image);
-                            break;
-                        case 1012:
-                            image = effectLibrary.CreateImage(1020, ImageType.Image);
-                            break;
-                        case 1013:
-                            image = effectLibrary.CreateImage(1420, ImageType.Image);
-                            break;
-                    }
-                    if (image != null)
-                    {
-
-                        bool oldBlend = DXManager.Blending;
-                        float oldRate = DXManager.BlendRate;
-
-                        DXManager.SetBlend(true, 0.8F);
-
-                        PresentTexture(image.Image, CharacterTab, new Rectangle(DisplayArea.X + x + image.OffSetX, DisplayArea.Y + y + image.OffSetY, image.Width, image.Height), ForeColour, this);
-
-                        DXManager.SetBlend(oldBlend, oldRate);
-                    }
+                    DXManager.SetBlend(true, 0.8F);
+                    PresentTexture(image.Image, CharacterTab, new Rectangle(DisplayArea.X + x + image.OffSetX, DisplayArea.Y + y + image.OffSetY, image.Width, image.Height), ForeColour, this);
+                    DXManager.SetBlend(oldBlend, oldRate);
                 }
             }
 
@@ -2404,53 +2357,31 @@ namespace Client.Scenes.Views
                     break;
             }
 
-
             if (CEnvir.LibraryList.TryGetValue(LibraryFile.Equip, out library))
             {
-                if (Grid[(int)EquipmentSlot.Armour]?.Item != null)
+                if (armour != null)
                 {
-                    int index = Grid[(int)EquipmentSlot.Armour].Item.Info.Image;
-
-                    MirLibrary effectLibrary;
-
-                    if (CEnvir.LibraryList.TryGetValue(LibraryFile.EquipEffect_UI, out effectLibrary))
-                    {
-                        switch (index)
-                        {
-                            case 942:
-                                effectLibrary.Draw(700, DisplayArea.X + x, DisplayArea.Y + y, Color.White, true, 1F, ImageType.Image);
-                                break;
-                            case 952:
-                                effectLibrary.Draw(720, DisplayArea.X + x, DisplayArea.Y + y, Color.White, true, 1F, ImageType.Image);
-                                break;
-                        }
-                    }
-
-
-
-                    library.Draw(index, DisplayArea.X + x, DisplayArea.Y + y, Color.White, true, 1F, ImageType.Image);
-                    library.Draw(index, DisplayArea.X + x, DisplayArea.Y + y, Grid[(int)EquipmentSlot.Armour].Item.Colour, true, 1F, ImageType.Overlay);
+                    int armourIndex = armour.Info.Image;
+                    library.Draw(armourIndex, DisplayArea.X + x, DisplayArea.Y + y, Color.White, true, 1F, ImageType.Image);
+                    library.Draw(armourIndex, DisplayArea.X + x, DisplayArea.Y + y, Grid[(int)EquipmentSlot.Armour].Item.Colour, true, 1F, ImageType.Overlay);
                 }
 
                 if (Grid[(int)EquipmentSlot.Weapon]?.Item != null)
                 {
-                    int index = Grid[(int)EquipmentSlot.Weapon].Item.Info.Image;
-
-                    library.Draw(index, DisplayArea.X + x, DisplayArea.Y + y, Color.White, true, 1F, ImageType.Image);
-                    library.Draw(index, DisplayArea.X + x, DisplayArea.Y + y, Grid[(int)EquipmentSlot.Weapon].Item.Colour, true, 1F, ImageType.Overlay);
+                    int weaponIndex = Grid[(int)EquipmentSlot.Weapon].Item.Info.Image;
+                    library.Draw(weaponIndex, DisplayArea.X + x, DisplayArea.Y + y, Color.White, true, 1F, ImageType.Image);
+                    library.Draw(weaponIndex, DisplayArea.X + x, DisplayArea.Y + y, Grid[(int)EquipmentSlot.Weapon].Item.Colour, true, 1F, ImageType.Overlay);
                 }
 
                 if (Grid[(int)EquipmentSlot.Shield]?.Item != null)
                 {
-                    int index = Grid[(int)EquipmentSlot.Shield].Item.Info.Image;
-
-                    library.Draw(index, DisplayArea.X + x, DisplayArea.Y + y, Color.White, true, 1F, ImageType.Image);
-                    library.Draw(index, DisplayArea.X + x, DisplayArea.Y + y, Grid[(int)EquipmentSlot.Shield].Item.Colour, true, 1F, ImageType.Overlay);
+                    int shieldIndex = Grid[(int)EquipmentSlot.Shield].Item.Info.Image;
+                    library.Draw(shieldIndex, DisplayArea.X + x, DisplayArea.Y + y, Color.White, true, 1F, ImageType.Image);
+                    library.Draw(shieldIndex, DisplayArea.X + x, DisplayArea.Y + y, Grid[(int)EquipmentSlot.Shield].Item.Colour, true, 1F, ImageType.Overlay);
                 }
             }
 
-            var hasFishingRobe = Grid[(int)EquipmentSlot.Armour]?.Item?.Info.Effect == ItemEffect.FishingRobe;
-            if (hasFishingRobe) return;
+            if (HasFishingRobe) return;
 
             if (Grid[(int)EquipmentSlot.Helmet]?.Item != null && library != null)
             {
@@ -2497,15 +2428,27 @@ namespace Client.Scenes.Views
 
         #region Methods
 
-        public void Draw(DXItemCell cell, int index)
+        public void Draw(DXItemCell cell, int index, bool backgroundCell = false, bool visible = true)
         {
             if (InterfaceLibrary == null) return;
 
+            Size s;
+            int x, y;
+
+            if (backgroundCell)
+            {
+                s = InterfaceLibrary.GetSize(65);
+                x = (cell.Size.Width - s.Width) / 2 + cell.DisplayArea.X;
+                y = (cell.Size.Height - s.Height) / 2 + cell.DisplayArea.Y;
+
+                InterfaceLibrary.Draw(65, x, y, Color.White, false, 1F, ImageType.Image);
+            }
+
             if (cell.Item != null) return;
 
-            Size s = InterfaceLibrary.GetSize(index);
-            int x = (cell.Size.Width - s.Width) / 2 + cell.DisplayArea.X;
-            int y = (cell.Size.Height - s.Height) / 2 + cell.DisplayArea.Y;
+            s = InterfaceLibrary.GetSize(index);
+            x = (cell.Size.Width - s.Width) / 2 + cell.DisplayArea.X;
+            y = (cell.Size.Height - s.Height) / 2 + cell.DisplayArea.Y;
 
             InterfaceLibrary.Draw(index, x, y, Color.White, false, 0.2F, ImageType.Image);
         }
@@ -2513,11 +2456,17 @@ namespace Client.Scenes.Views
         public void UpdateStats()
         {
             foreach (KeyValuePair<Stat, DXLabel> pair in DisplayStats)
+            {
                 pair.Value.Text = Stats.GetFormat(pair.Key);
+
+                if (pair.Value.Tag is DXLabel title && string.IsNullOrEmpty(title.Text))
+                {
+                    title.Text = Stats.GetTitle(pair.Key, false) + ": ";
+                }
+            }
 
             foreach (KeyValuePair<Stat, DXLabel> pair in AttackStats)
             {
-
                 if (Stats[pair.Key] > 0)
                 {
                     pair.Value.Text = $"+{Stats[pair.Key]}";
@@ -2530,6 +2479,11 @@ namespace Client.Scenes.Views
                     pair.Value.ForeColour = Color.FromArgb(60, 60, 60);
                     ((DXImageControl)pair.Value.Tag).ForeColour = Color.FromArgb(60, 60, 60);
                 }
+
+                //if (pair.Value.Tag is DXImageControl icon)
+                //{
+                //    icon.Hint = Stats.GetTitle(pair.Key)?.TrimEnd(':', ' ');
+                //}
             }
 
             foreach (KeyValuePair<Stat, DXLabel> pair in AdvantageStats)
@@ -2573,7 +2527,6 @@ namespace Client.Scenes.Views
 
             foreach (KeyValuePair<Stat, DXLabel> pair in HermitAttackStats)
             {
-
                 if (HermitStats[pair.Key] > 0)
                 {
                     pair.Value.Text = $"+{HermitStats[pair.Key]}";
@@ -2588,7 +2541,7 @@ namespace Client.Scenes.Views
                 }
             }
 
-           HermitRemainingLabel.Text = HermitPoints.ToString();
+            HermitRemainingLabel.Text = HermitPoints.ToString();
         }
 
         public void NewInformation(S.Inspect p)
@@ -2618,10 +2571,18 @@ namespace Client.Scenes.Views
             _inspectHairType = p.Hair;
 
             foreach (DXItemCell cell in Grid)
+            {
+                if (cell == null) continue;
+
                 cell.Item = null;
+            }
 
             foreach (ClientUserItem item in p.Items)
+            {
+                if (Grid[item.Slot] == null) continue;
+
                 Grid[item.Slot].Item = item;
+            }
 
             //WearWeightLabel.Text = $"{p.WearWeight}/{p.Stats[Stat.WearWeight]}";
             //HandWeightLabel.Text = $"{p.HandWeight}/{p.Stats[Stat.HandWeight]}";
@@ -2651,6 +2612,16 @@ namespace Client.Scenes.Views
                 DisciplineLevel.Index = 215;
                 DisciplineLevelLabel.Text = "0";
                 DisciplineExperienceLabel.Text = $"0/0";
+
+                List<MagicInfo> keys = new(DisciplineMagics.Keys);
+
+                foreach (var key in keys)
+                {
+                    DisciplineMagics[key].Dispose();
+                    DisciplineMagics[key] = null;
+                }
+
+                DisciplineMagics.Clear();
             }
             else
             {
@@ -2662,7 +2633,7 @@ namespace Client.Scenes.Views
                 else
                     DisciplineExperienceLabel.Text = $"{userDiscipline.Experience}/Max";
 
-                int x = 49;
+                int x = 51;
 
                 foreach (var magic in userDiscipline.Magics)
                 {
@@ -2678,7 +2649,7 @@ namespace Client.Scenes.Views
                         DisciplineMagics[magic.Info] = cell;
                     }
 
-                    x += 61;
+                    x += 62;
                 }
             }
         }
@@ -3004,6 +2975,16 @@ namespace Client.Scenes.Views
                 HermitAttackStats.Clear();
                 HermitAttackStats = null;
 
+                List<MagicInfo> keys = new(DisciplineMagics.Keys);
+
+                foreach (var key in keys)
+                {
+                    DisciplineMagics[key].Dispose();
+                    DisciplineMagics[key] = null;
+                }
+
+                DisciplineMagics.Clear();
+
                 _inspectEquipment = null;
                 _inspectStats = null;
                 _inspectHermitStats = null;
@@ -3061,7 +3042,7 @@ namespace Client.Scenes.Views
             };
             Image.MouseClick += Image_MouseClick;
             Image.KeyDown += Image_KeyDown;
-            Image.MouseEnter += (o,e) => OnMouseEnter();
+            Image.MouseEnter += (o, e) => OnMouseEnter();
             Image.MouseLeave += (o, e) => OnMouseLeave();
 
             KeyLabel = new DXLabel

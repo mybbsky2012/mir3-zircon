@@ -227,7 +227,7 @@ namespace Client.Models
                 
                 _canThrusting = value;
 
-                GameScene.Game.ReceiveChat(CanThrusting ? "Use Thrusting." : "Do not use Thrusting.", MessageType.Hint);
+                GameScene.Game.ReceiveChat(CanThrusting ? CEnvir.Language.UseThrusting : CEnvir.Language.DoNotUseThrusting, MessageType.Hint);
             }
         }
         private bool _canThrusting;
@@ -241,7 +241,7 @@ namespace Client.Models
 
                 _CanHalfMoon = value;
 
-                GameScene.Game.ReceiveChat(CanHalfMoon ? "Use Half Moon Strike." : "Do not use Half Moon Strike.", MessageType.Hint);
+                GameScene.Game.ReceiveChat(CanHalfMoon ? CEnvir.Language.UseHalfMoon : CEnvir.Language.DoNotUseHalfMoon, MessageType.Hint);
             }
         }
         private bool _CanHalfMoon;
@@ -253,7 +253,7 @@ namespace Client.Models
                 if (_CanDestructiveBlow == value) return;
                 _CanDestructiveBlow = value;
 
-                GameScene.Game.ReceiveChat(CanDestructiveBlow ? "Use Destructive Blow." : "Do not use Destructive Blow.", MessageType.Hint);
+                GameScene.Game.ReceiveChat(CanDestructiveBlow ? CEnvir.Language.UseDestructiveBlow : CEnvir.Language.DoNotUseDestructiveBlow, MessageType.Hint);
             }
         }
         private bool _CanDestructiveBlow;
@@ -268,7 +268,7 @@ namespace Client.Models
                 if (_CanFlameSplash == value) return;
                 _CanFlameSplash = value;
 
-                GameScene.Game.ReceiveChat(CanFlameSplash ? "Use Flame Splash." : "Do not use Flame Splash.", MessageType.Hint);
+                GameScene.Game.ReceiveChat(CanFlameSplash ? CEnvir.Language.UseFlameSplash : CEnvir.Language.DoNotUseFlameSplash, MessageType.Hint);
             }
         }
         private bool _CanFlameSplash;
@@ -303,11 +303,11 @@ namespace Client.Models
             HairColour = info.HairColour;
 
             ArmourShape = info.Armour;
-            ArmourImage = info.ArmourImage;
+            ArmourEffect = info.ArmourEffect;
             ArmourColour = info.ArmourColour;
             LibraryWeaponShape = info.Weapon;
-            WingsShape = info.WingsShape;
-            EmblemShape = info.EmblemShape;
+            WingsEffect = info.WingsShape;
+            EmblemEffect = info.EmblemEffect;
 
             Poison = info.Poison;
 
@@ -611,14 +611,13 @@ namespace Client.Models
                     GameScene.Game.CanRun = false;
                     break;
                 case MirAction.Fishing:
-                    attackDelay = Globals.AttackDelay - Stats[Stat.AttackSpeed] * Globals.ASpeedRate;
-                    attackDelay = Math.Max(800, attackDelay);
-                    AttackTime = CEnvir.Now + TimeSpan.FromMilliseconds(attackDelay);
+                    AttackTime = CEnvir.Now + TimeSpan.FromMilliseconds(Globals.AttackDelay);
 
-                    var cast = (bool)action.Extra[0];
+                    var state = (FishingState)action.Extra[0];
                     var floatLocation = (Point)action.Extra[1];
+                    var caughtFish = GameScene.Game.FishingCatchBox.CaughtFish;
 
-                    CEnvir.Enqueue(new C.FishingCast { Cast = cast, Direction = action.Direction, FloatLocation = floatLocation });
+                    CEnvir.Enqueue(new C.FishingCast { State = state, Direction = action.Direction, FloatLocation = floatLocation, CaughtFish = caughtFish });
                     GameScene.Game.CanRun = false;
                     break;
                 case MirAction.Mining:
@@ -636,8 +635,8 @@ namespace Client.Models
                     GameScene.Game.CanRun = false;
                     break;
             }
-            ServerTime = CEnvir.Now.AddSeconds(5);
 
+            ServerTime = CEnvir.Now.AddSeconds(5);
         }
 
         public override void Process()

@@ -68,10 +68,10 @@ namespace Client
         }
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            if (GameScene.Game != null && e.Button == MouseButtons.Right && (GameScene.Game.SelectedCell != null || GameScene.Game.GoldPickedUp))
+            if (GameScene.Game != null && e.Button == MouseButtons.Right && (GameScene.Game.SelectedCell != null || GameScene.Game.CurrencyPickedUp != null))
             {
                 GameScene.Game.SelectedCell = null;
-                GameScene.Game.GoldPickedUp = false;
+                GameScene.Game.CurrencyPickedUp = null;
                 return;
             }
 
@@ -228,7 +228,7 @@ namespace Client
             image.Dispose();
 
             if (GameScene.Game != null)
-                GameScene.Game.ReceiveChat("Screenshot Saved " + fileName, MessageType.System);
+                GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.ScreenshotSaved, fileName), MessageType.System);
         }
 
         #region ScreenCapture
