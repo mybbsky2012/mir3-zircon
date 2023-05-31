@@ -797,7 +797,6 @@ namespace Client.Envir
         {
             GameScene.Game.DayTime = p.DayTime;
         }
-
         public void Process(S.UserLocation p)
         {
             GameScene.Game.Displacement(p.Direction, p.Location);
@@ -874,14 +873,23 @@ namespace Client.Envir
                 PlayerObject player = (PlayerObject)ob;
 
                 player.LibraryWeaponShape = p.Weapon;
+
                 player.ArmourShape = p.Armour;
                 player.ArmourColour = p.ArmourColour;
+
+                player.CostumeShape = p.Costume;
+
                 player.HelmetShape = p.Helmet;
                 player.HorseShape = p.HorseArmour;
-                player.ArmourEffect = p.ArmourEffect;
+
                 player.ShieldShape = p.Shield;
+
+                player.HideHead = p.HideHead;
+
+                player.ArmourEffect = p.ArmourEffect;
                 player.EmblemEffect = p.EmblemEffect;
-                player.WingsEffect = p.WingsEffect;
+                player.WeaponEffect = p.WeaponEffect;
+                player.ShieldEffect = p.ShieldEffect;
 
                 player.Light = p.Light;
                 if (player == MapObject.User)
@@ -2056,9 +2064,9 @@ namespace Client.Envir
 
                 DXItemCell fromCell = grid[cellLinkInfo.Slot];
                 fromCell.Locked = false;
+                fromCell.Selected = false;
 
                 if (!p.Success) continue;
-
 
                 if (!fromCell.Item.Info.ShouldLinkInfo)
                 {
@@ -2077,7 +2085,6 @@ namespace Client.Envir
                     }
                 }
 
-
                 if (cellLinkInfo.Count == fromCell.Item.Count)
                     fromCell.Item = null;
                 else
@@ -2086,6 +2093,7 @@ namespace Client.Envir
                 fromCell.RefreshItem();
             }
         }
+
         public void Process(S.ItemStatsChanged p)
         {
             DXItemCell[] grid;
@@ -4032,7 +4040,7 @@ namespace Client.Envir
                 Location = p.CurrentLocation,
 
                 Name = p.Name,
-
+        
                 Health = p.Health,
                 MaxHealth = p.MaxHealth,
                 Dead = p.Dead,
@@ -4206,6 +4214,11 @@ namespace Client.Envir
             GameScene.Game.CharacterBox.UpdateDiscipline();
         }
 
+        public void Process(S.NPCRoll p)
+        {
+            GameScene.Game.NPCRollBox.Setup(p.Type, p.Result, false);
+        }
+
         public void Process(S.HelmetToggle p)
         {
             GameScene.Game.ConfigBox.DisplayHelmetCheckBox.Checked = !p.HideHelmet;
@@ -4224,6 +4237,7 @@ namespace Client.Envir
                 PlayerObject player = (PlayerObject)ob;
 
                 player.Name = p.Name;
+                player.Caption = p.Caption;
                 player.Gender = p.Gender;
                 player.HairType = p.HairType;
                 player.HairColour = p.HairColour;

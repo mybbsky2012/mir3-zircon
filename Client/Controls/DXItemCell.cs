@@ -970,10 +970,6 @@ namespace Client.Controls
                 {
                     DXItemAmountWindow window = new DXItemAmountWindow("Amount", Item);
 
-                    if (toCell.GridType == GridType.Sell)
-                        window.AmountBox.Value = Item.Count;
-
-
                     window.ConfirmButton.MouseClick += (o, e) =>
                     {
                         toCell.LinkedCount = window.Amount;
@@ -1012,11 +1008,16 @@ namespace Client.Controls
             toCell.Locked = true;
             CEnvir.Enqueue(packet);
         }
+
+        public bool SellMode
+        {
+            get { return (GameScene.Game.InventoryBox.InvMode == InventoryMode.Sell && GridType == GridType.Inventory); }
+        }
+
         public bool MoveItem(DXItemGrid toGrid, bool skipCount = false)
         {
             if (toGrid.GridType == GridType.Belt || toGrid.GridType == GridType.AutoPotion) return false;
-
-            
+          
             C.ItemMove packet = new C.ItemMove
             {
                 FromGrid = GridType,
@@ -1058,9 +1059,6 @@ namespace Client.Controls
                                 if (Item.Count > 1 && !skipCount)
                                 {
                                     DXItemAmountWindow window = new DXItemAmountWindow("Amount", Item);
-
-                                    if (cell.GridType == GridType.Sell)
-                                        window.AmountBox.Value = Item.Count;
 
                                     window.ConfirmButton.MouseClick += (o, e) =>
                                     {
@@ -1136,15 +1134,8 @@ namespace Client.Controls
         {
             if (!AllowLink || Item == null || (!Linked && Link != null) || grid == null) return false;
 
-
             switch (grid.GridType)
             {
-                case GridType.Sell:
-                    if ((Item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage) return false;
-                    if ((GridType != GridType.Inventory && GridType != GridType.CompanionInventory) || (Item.Flags & UserItemFlags.Locked) == UserItemFlags.Locked || (Item.Flags & UserItemFlags.Worthless) == UserItemFlags.Worthless || !Item.Info.CanSell)
-                        return false;
-                    break;
-
                 case GridType.Repair:
                     if ((Item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage) return false;
                     if (GameScene.Game.NPCBox.Page.Types.All(x => x.ItemType != Item.Info.ItemType) || !Item.Info.CanRepair || Item.CurrentDurability >= Item.MaxDurability || (GameScene.Game.NPCRepairBox.SpecialCheckBox.Checked && CEnvir.Now < Item.NextSpecialRepair))
@@ -1508,8 +1499,8 @@ namespace Client.Controls
                 case ItemType.Shield:
                     GameScene.Game.CharacterBox.Grid[(int)EquipmentSlot.Shield].ToEquipment(this);
                     break;
-                case ItemType.Wings:
-                    GameScene.Game.CharacterBox.Grid[(int)EquipmentSlot.Wings].ToEquipment(this);
+                case ItemType.Costume:
+                    GameScene.Game.CharacterBox.Grid[(int)EquipmentSlot.Costume].ToEquipment(this);
                     break;
                 case ItemType.HorseArmour:
                     GameScene.Game.CharacterBox.Grid[(int)EquipmentSlot.HorseArmour].ToEquipment(this);
@@ -1643,6 +1634,9 @@ namespace Client.Controls
                         case ItemEffect.FortuneChecker:
                             GameScene.Game.FortuneCheckerBox.Visible = true;
                             break;
+                        case ItemEffect.Caption:
+                            GameScene.Game.CaptionBox.Visible = true;
+                            break;
                     }
 
                     break;
@@ -1773,13 +1767,23 @@ namespace Client.Controls
                                 return;
                             }
 
-                            if (GameScene.Game.NPCSellBox.IsVisible)
+                            if (GameScene.Game.InventoryBox.IsVisible)
                             {
-                                if (!Item.Info.CanSell)
-                                    GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.UnableToSellHereCannotSold, Item.Info.ItemName), MessageType.System);
-                                else if (!MoveItem(GameScene.Game.NPCSellBox.Grid))
-                                    GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.UnableToSellHere, Item.Info.ItemName), MessageType.System);
-                                return;
+                                if (GameScene.Game.InventoryBox.InvMode == InventoryMode.Sell)
+                                {
+                                    if (!Item.Info.CanSell)
+                                        GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.UnableToSellHereCannotSold, Item.Info.ItemName), MessageType.System);
+                                    
+                                    if ((Item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage) 
+                                        return;
+
+                                    if ((GridType != GridType.Inventory/* && GridType != GridType.CompanionInventory*/) || (Item.Flags & UserItemFlags.Locked) == UserItemFlags.Locked || (Item.Flags & UserItemFlags.Worthless) == UserItemFlags.Worthless || !Item.Info.CanSell)
+                                        return;
+
+                                    Selected = !Selected;
+
+                                    return;
+                                }
                             }
 
                             if (GameScene.Game.NPCMasterRefineBox.IsVisible)
@@ -1875,7 +1879,6 @@ namespace Client.Controls
 
                             if (GameScene.Game.NPCItemFragmentBox.IsVisible)
                             {
-
                                 if (!Item.CanFragment())
                                     GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.UnableToFragment, Item.Info.ItemName), MessageType.System);
                                 else MoveItem(GameScene.Game.NPCItemFragmentBox.Grid);
@@ -2023,15 +2026,6 @@ namespace Client.Controls
                                 return;
                             }
 
-                            if (GameScene.Game.NPCSellBox.IsVisible)
-                            {
-                                if (!Item.Info.CanSell)
-                                    GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.UnableToSellHereCannotSold, Item.Info.ItemName), MessageType.System);
-                                else if (!MoveItem(GameScene.Game.NPCSellBox.Grid))
-                                    GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.UnableToSellHere, Item.Info.ItemName), MessageType.System);
-                                return;
-                            }
-
                             if (GameScene.Game.NPCRefineBox.IsVisible)
                             {
                                 switch (Item.Info.ItemType)
@@ -2156,7 +2150,6 @@ namespace Client.Controls
 
                             if (!MoveItem(GameScene.Game.InventoryBox.Grid))
                                 GameScene.Game.ReceiveChat(CEnvir.Language.NoFreeSpaceInInventory, MessageType.System);
-
 
                             break;
                         case GridType.PartsStorage:
