@@ -59,6 +59,9 @@ namespace Server.Envir.Translations
         public override string ConquestCapture { get; set; } = "{0} has Captured {1}.";
         public override string ConquestOwner { get; set; } = "{0} are the now the owners of {1}.";
         public override string ConquestLost { get; set; } = "{0} have lost {1}.";
+        public override string ConquestTakingFlag { get; set; } = "{0} is taking the flag for {1}. They must hold it for {2} seconds.";
+        public override string ConquestPreventingFlag { get; set; } = "{0} is preventing {1} from taking the flag for {2}.";
+        public override string ConquestNotTakingFlag { get; set; } = "{0} is no longer taking the flag for {1}.";
 
         public override string BossSpawn { get; set; } = "An evil lurks within {0}.";
         public override string HarvestRare { get; set; } = "Something valuable is hidden inside the {0}.";
@@ -103,13 +106,13 @@ namespace Server.Envir.Translations
         public override string MarryTeleportOffline { get; set; } = "You cannot teleport to your partner whilst they are offline.";
         public override string MarryTeleportPartnerDead { get; set; } = "You cannot teleport to your partner whilst they are dead.";
         public override string MarryTeleportMap { get; set; } = "You cannot teleport to your partner on that map.";
-        public override string MarryTeleportMapEscape { get; set; } = "You cannot use marraige teleport on this map.";
+        public override string MarryTeleportMapEscape { get; set; } = "You cannot use marriage teleport on this map.";
 
-        public override string CompanionAppearanceAlready { get; set; } = "The {0} appreanace is already available.";
+        public override string CompanionAppearanceAlready { get; set; } = "The {0} appearance is already available.";
         public override string CompanionNeedTicket { get; set; } = "You need to have a Companion ticket to unlock a new appearance.";
         public override string CompanionSkillEnabled { get; set; } = "Companion Skill level {0} Enabled.";
         public override string CompanionSkillDisabled { get; set; } = "Companion Skill level {0} Disabled.";
-        public override string CompanionAppearanceLocked { get; set; } = "The {0} appreanace is not available to you.";
+        public override string CompanionAppearanceLocked { get; set; } = "The {0} appearance is not available to you.";
         public override string CompanionNeedGold { get; set; } = "You cannot afford to adopt this companion.";
         public override string CompanionBadName { get; set; } = "The name given for your new companion is not acceptable.";
         public override string CompanionRetrieveFailed { get; set; } = "Able able to retrieve {0} because it is currently with {1}.";
@@ -121,6 +124,7 @@ namespace Server.Envir.Translations
         public override string MailHasItems { get; set; } = "Unable to delete mail that contains items.";
         public override string MailNotFound { get; set; } = "{0} does not exist.";
         public override string MailSelfMail { get; set; } = "You cannot send mail to yourself.";
+        public override string MailStorageFull { get; set; } = "Recipients mail box is too full to receive more items.";
         public override string MailMailCost { get; set; } = "You cannot afford to send this mail.";
         public override string MailSendSafeZone { get; set; } = "You cannot send items from your inventory if you are not in SafeZone";
 
@@ -158,6 +162,7 @@ namespace Server.Envir.Translations
         public override string GuildMemberKicked { get; set; } = "{0} has been kicked from the guild by {1}.";
         public override string GuildKicked { get; set; } = "You have been kicked form the guild by {0}.";
         public override string GuildManagePermission { get; set; } = "You do not have permission to Manage the guild.";
+        public override string GuildCastleRepairPermission { get; set; } = "You do not have permission to Repair Castle Defenses.";
         public override string GuildMemberLimit { get; set; } = "Guild has already reached the Maxmimum Member Limit.";
         public override string GuildMemberCost { get; set; } = "Guild does not have enough funds to increase member limit.";
         public override string GuildStorageLimit { get; set; } = "Guild has already reached the Maxmimum Storage Size.";
@@ -193,6 +198,8 @@ namespace Server.Envir.Translations
         public override string GuildLeave { get; set; } = "You have left the guild.";
         public override string GuildMemberLeave { get; set; } = "{0} has left the guild.";
         public override string GuildWarDeath { get; set; } = "{0} from {1} was killed by {2} from the guild {3}.";
+        public override string GuildRepairCastleGatesCost { get; set; } = "Unable to repair gates, Your Guild needs another {0:#,##0} Gold.";
+        public override string GuildRepairCastleGuardsCost { get; set; } = "Unable to repair guards, Your Guild needs another {0:#,##0} Gold.";
 
         public override string GroupNoGroup { get; set; } = "You are not in a group.";
         public override string GroupNotLeader { get; set; } = "You are not the leader of your group";
@@ -268,7 +275,7 @@ namespace Server.Envir.Translations
         public override string AccessoryRefineFailed { get; set; } = "The refine failed and your {0}'s have been destroyed";
 
         public override string ChargeExpire { get; set; } = "The energy for {0} has left your weapon.";
-        public override string ChargeFail { get; set; } = "Failed to gether the energy to charge {0}.";
+        public override string ChargeFail { get; set; } = "Failed to gather the energy to charge {0}.";
         public override string CloakCombat { get; set; } = "You cannot cast Cloak during Combat";
         public override string DashFailed { get; set; } = "You were not strong enough to move what is infront of you.";
         public override string WraithLevel { get; set; } = "{0} is too high of a level to be effected by your wraith grip.";
@@ -286,12 +293,14 @@ namespace Server.Envir.Translations
         public override string InstanceSafeZoneOnly { get; set; } = "You must be in a safe zone to join instance.";
         public override string InstanceNotInGroup { get; set; } = "You must be in a group to join instance.";
         public override string InstanceNotInGuild { get; set; } = "You must be in a guild to join instance.";
+        public override string InstanceNotInCastle { get; set; } = "Your guild must own a castle to join instance.";
         public override string InstanceTooFewInGroup { get; set; } = "Minimum {0} people required to join instance.";
         public override string InstanceTooManyInGroup { get; set; } = "Maximum {0} people required to join instance.";
         public override string InstanceConnectRegionNotSet { get; set; } = "Connect region has not been setup for instance.";
         public override string InstanceUserCooldown { get; set; } = "Cannot re-enter instance until {0:ddd, dd MMM HH:mm} UTC.";
         public override string InstanceGuildCooldown { get; set; } = "Cannot re-enter instance until {0:ddd, dd MMM HH:mm} UTC.";
         public override string InstanceNoSlots { get; set; } = "No more free slots on instance.";
+        public override string InstanceNoRejoin { get; set; } = "Cannot rejoin instance.";
         public override string InstanceMissingItem { get; set; } = "You must be carrying a {0} to join instance.";
         public override string InstanceNotGroupLeader { get; set; } = "You must be the group leader to start instance.";
         public override string InstanceNoMap { get; set; } = "Failed to move to instance.";
@@ -300,5 +309,7 @@ namespace Server.Envir.Translations
         public override string DisciplineRequiredLevel { get; set; } = "Required level for next discipline is {0}.";
         public override string DisciplineRequiredGold { get; set; } = "Required gold for next discipline is {0:#,##0}.";
         public override string DisciplineRequiredExp { get; set; } = "Required experience for next discipline is {0}.";
+
+        public override string FameNeedSpace { get; set; } = "Unable to promote fame, Not enough space in your inventory.";
     }
 }

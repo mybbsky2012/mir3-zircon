@@ -93,12 +93,13 @@ namespace Client.Controls
             };
             HintLabel = new DXLabel
             {
-                BackColour = Color.FromArgb(120, 0, 0, 0),
+                BackColour = Color.FromArgb(255, 255, 255, 150),//Color.FromArgb(120, 0, 0, 0)
                 Border = true,
-                BorderColour = Color.Yellow,
+                BorderColour = Color.Black,//Color.Yellow,
                 IsVisible = true,
                 Outline = false,
-                ForeColour = Color.Yellow
+                ForeColour = Color.Black,//Color.Yellow
+                PaddingBottom = 2
             };
             PingLabel = new DXLabel
             {
@@ -481,7 +482,31 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
+        #region HintPosition
+
+        public HintPosition HintPosition
+        {
+            get => _HintPosition;
+            set
+            {
+                if (_HintPosition == value) return;
+
+                HintPosition oldValue = _HintPosition;
+                _HintPosition = value;
+
+                OnHintPositionChanged(oldValue, value);
+            }
+        }
+        private HintPosition _HintPosition;
+        public event EventHandler<EventArgs> HintPositionChanged;
+        public virtual void OnHintPositionChanged(HintPosition oValue, HintPosition nValue)
+        {
+            HintPositionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        #endregion
+
         #region IsControl
 
         public bool IsControl
@@ -611,7 +636,31 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
+        #region Clip
+
+        public bool Clip
+        {
+            get => _Clip;
+            set
+            {
+                if (_Clip == value) return;
+
+                bool oldValue = _Clip;
+                _Clip = value;
+
+                OnClipChanged(oldValue, value);
+            }
+        }
+        private bool _Clip;
+        public event EventHandler<EventArgs> ClipChanged;
+        public virtual void OnClipChanged(bool oValue, bool nValue)
+        {
+            ClipChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        #endregion
+
         #region Opacity
 
         public float Opacity
@@ -1344,7 +1393,6 @@ namespace Client.Controls
                 {
                     if (Parent == null) return;
 
-
                     if (tempPoint.X + DisplayArea.Width > Parent.DisplayArea.Width) tempPoint.X = Parent.DisplayArea.Width - DisplayArea.Width;
                     if (tempPoint.Y + DisplayArea.Height > Parent.DisplayArea.Height) tempPoint.Y = Parent.DisplayArea.Height - DisplayArea.Height;
 
@@ -1352,7 +1400,28 @@ namespace Client.Controls
                     if (tempPoint.Y < 0) tempPoint.Y = 0;
                 }
 
-                //clipping here for tear off
+                if (Clip && IgnoreMoveBounds)
+                {
+                    if (Size.Width > Parent.Size.Width)
+                    {
+                        if (tempPoint.X > 0) tempPoint.X = 0;
+                        else if (tempPoint.X + DisplayArea.Width < Parent.DisplayArea.Width) tempPoint.X = Parent.DisplayArea.Width - DisplayArea.Width;
+                    }
+                    else
+                    {
+                        tempPoint.X = Location.X;
+                    }
+
+                    if (Size.Height > Parent.Size.Height)
+                    {
+                        if (tempPoint.Y > 0) tempPoint.Y = 0;
+                        else if (tempPoint.Y + DisplayArea.Height < Parent.DisplayArea.Height) tempPoint.Y = Parent.DisplayArea.Height - DisplayArea.Height;
+                    }
+                    else
+                    {
+                        tempPoint.Y = Location.Y;
+                    }
+                }
 
                 if (Tag is Size)
                 {
@@ -1487,6 +1556,11 @@ namespace Client.Controls
         {
             if (!IsEnabled) return;
 
+            HandleMouseWheel(e);
+        }
+
+        protected void HandleMouseWheel(MouseEventArgs e)
+        {
             MouseWheel?.Invoke(this, e);
         }
 

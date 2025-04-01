@@ -259,7 +259,7 @@ namespace Client.Controls
         private void UpdateLocations()
         {
             if (CloseButton != null)
-                CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 5, 5);
+                CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
 
             if (TitleLabel != null)
                 TitleLabel.Location = new Point((DisplayArea.Width - TitleLabel.Size.Width) / 2, 8);
@@ -488,13 +488,20 @@ namespace Client.Controls
                 return;
             }
 
-            Settings = CEnvir.WindowSettings.CreateNewObject();
+            UpdateSettings();
+        }
+
+        public void UpdateSettings()
+        {
+            Settings ??= CEnvir.WindowSettings.CreateNewObject();
+
             Settings.Resolution = Config.GameSize;
             Settings.Window = Type;
             Settings.Size = Size;
             Settings.Visible = Visible;
             Settings.Location = Location;
         }
+
         public virtual void ApplySettings()
         {
             if (Settings == null) return;

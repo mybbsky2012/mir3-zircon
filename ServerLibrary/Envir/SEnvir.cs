@@ -1,52 +1,40 @@
-﻿using System;
+﻿using Library;
+using Library.Network;
+using Library.SystemModels;
+using MirDB;
+using Server.DBModels;
+using Server.Envir.Commands;
+using Server.Envir.Commands.Handler;
+using Server.Envir.Events;
+using Server.Envir.Events.Triggers;
+using Server.Models;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Library;
-using Library.Network;
-using Library.SystemModels;
-using MirDB;
-using Server.DBModels;
-using Server.Models;
+using C = Library.Network.ClientPackets;
 using G = Library.Network.GeneralPackets;
 using S = Library.Network.ServerPackets;
-using C = Library.Network.ClientPackets;
-using System.Reflection;
-using System.Globalization;
-using Server.Envir.Commands.Handler;
-using Server.Envir.Commands;
 
 namespace Server.Envir
 {
     public static class SEnvir
     {
-        #region Synchronization
-
-        private static readonly SynchronizationContext Context = SynchronizationContext.Current;
-        public static void Send(SendOrPostCallback method)
-        {
-            Context.Send(method, null);
-        }
-        public static void Post(SendOrPostCallback method)
-        {
-            Context.Post(method, null);
-        }
-
-        #endregion
-
         #region Logging
 
-        public static ConcurrentQueue<string> DisplayLogs = new ConcurrentQueue<string>();
-        public static ConcurrentQueue<string> Logs = new ConcurrentQueue<string>();
+        public static ConcurrentQueue<string> DisplayLogs = [];
+        public static ConcurrentQueue<string> Logs = [];
         public static bool UseLogConsole = false;
 
         public static void Log(string log, bool hardLog = true)
@@ -218,8 +206,6 @@ namespace Server.Envir
 
         #endregion
 
-
-
         public static bool Started { get; set; }
         public static bool NetworkStarted { get; set; }
         public static bool Saving { get; private set; }
@@ -239,6 +225,8 @@ namespace Server.Envir
         );
 
         public static bool ServerBuffChanged;
+
+        public static EventInfoHandler EventHandler = new EventInfoHandler();
 
         #region Database
 
@@ -266,6 +254,7 @@ namespace Server.Envir
         public static DBCollection<MonsterInfo> MonsterInfoList;
         public static DBCollection<FishingInfo> FishingInfoList;
         public static DBCollection<DisciplineInfo> DisciplineInfoList;
+        public static DBCollection<FameInfo> FameInfoList;
         public static DBCollection<SetInfo> SetInfoList;
         public static DBCollection<AuctionInfo> AuctionInfoList;
         public static DBCollection<MailInfo> MailInfoList;
@@ -300,13 +289,18 @@ namespace Server.Envir
         public static DBCollection<WeaponCraftStatInfo> WeaponCraftStatInfoList;
         public static DBCollection<UserDiscipline> UserDisciplineList;
 
+        public static DBCollection<WorldEventTrigger> WorldEventInfoTriggerList;
+        public static DBCollection<PlayerEventTrigger> PlayerEventInfoTriggerList;
+
         public static ItemInfo GoldInfo, RefinementStoneInfo, FragmentInfo, Fragment2Info, Fragment3Info, FortuneCheckerInfo, ItemPartInfo;
 
         public static GuildInfo StarterGuild;
 
         public static MapRegion MysteryShipMapRegion, LairMapRegion;
 
-        public static List<MonsterInfo> BossList = new List<MonsterInfo>();
+        public static List<MonsterInfo> BossList = [];
+
+        public static List<Type> MagicTypes = [];
 
         #endregion
 
@@ -314,20 +308,35 @@ namespace Server.Envir
 
         public static Random Random;
 
-        public static Dictionary<MapInfo, Map> Maps = new Dictionary<MapInfo, Map>();
-        public static Dictionary<InstanceInfo, Dictionary<MapInfo, Map>[]> Instances = new Dictionary<InstanceInfo, Dictionary<MapInfo, Map>[]>();
+        public static Dictionary<MapInfo, Map> Maps = [];
+        public static Dictionary<InstanceInfo, Dictionary<MapInfo, Map>[]> Instances = [];
 
         private static long _ObjectID;
         public static uint ObjectID => (uint)Interlocked.Increment(ref _ObjectID);
 
-        public static LinkedList<MapObject> Objects = new LinkedList<MapObject>();
-        public static List<MapObject> ActiveObjects = new List<MapObject>();
+        public static LinkedList<MapObject> Objects = [];
+        public static List<MapObject> ActiveObjects = [];
 
-        public static List<PlayerObject> Players = new List<PlayerObject>();
-        public static List<ConquestWar> ConquestWars = new List<ConquestWar>();
+        public static List<PlayerObject> Players = [];
+        public static List<ConquestWar> ConquestWars = [];
 
-        public static List<SpawnInfo> Spawns = new List<SpawnInfo>();
+        public static List<SpawnInfo> Spawns = [];
 
+        public static List<EventLog> EventLogs = [];
+
+        private static TimeOfDay _TimeOfDay;
+        public static TimeOfDay TimeOfDay
+        {
+            get { return _TimeOfDay; }
+            set
+            {
+                if (_TimeOfDay == value) return;
+
+                _TimeOfDay = value;
+            }
+        }
+
+        public static float PreviousDayTime { get; private set; }
         private static float _DayTime;
         public static float DayTime
         {
@@ -336,6 +345,7 @@ namespace Server.Envir
             {
                 if (_DayTime == value) return;
 
+                PreviousDayTime = _DayTime;
                 _DayTime = value;
 
                 Broadcast(new S.DayChanged { DayTime = DayTime });
@@ -421,6 +431,7 @@ namespace Server.Envir
             RespawnInfoList = Session.GetCollection<RespawnInfo>();
             MagicInfoList = Session.GetCollection<MagicInfo>();
             CurrencyInfoList = Session.GetCollection<CurrencyInfo>();
+            FameInfoList = Session.GetCollection<FameInfo>();
 
             AccountInfoList = Session.GetCollection<AccountInfo>();
             CharacterInfoList = Session.GetCollection<CharacterInfo>();
@@ -467,6 +478,9 @@ namespace Server.Envir
             WeaponCraftStatInfoList = Session.GetCollection<WeaponCraftStatInfo>();
             UserDisciplineList = Session.GetCollection<UserDiscipline>();
 
+            WorldEventInfoTriggerList = Session.GetCollection<WorldEventTrigger>();
+            PlayerEventInfoTriggerList = Session.GetCollection<PlayerEventTrigger>();
+
             GoldInfo = CurrencyInfoList.Binding.First(x => x.Type == CurrencyType.Gold).DropItem;
 
             RefinementStoneInfo = ItemInfoList.Binding.FirstOrDefault(x => x.ItemEffect == ItemEffect.RefinementStone);
@@ -494,8 +508,10 @@ namespace Server.Envir
             TopRankings = new HashSet<CharacterInfo>();
             foreach (CharacterInfo info in CharacterInfoList.Binding)
             {
+                if (info.Deleted) continue;
+
                 info.RankingNode = Rankings.AddLast(info);
-                RankingSort(info, false);
+                RankingSort(info, false, true);
             }
             UpdateLead();
             #endregion
@@ -515,19 +531,45 @@ namespace Server.Envir
 
                 BossList.Add(monster);
             }
+
+            CreateMagic();
         }
 
-
-        public static void RankingSort(CharacterInfo character, bool updateLead = true)
+        public static void RankingSort(CharacterInfo character, bool updateLead = true, bool initialSetup = false)
         {
             //Only works on Increasing EXP, still need to do Rebirth or loss of exp ranking update.
             bool changed = false;
 
             LinkedListNode<CharacterInfo> node;
+
             while ((node = character.RankingNode.Previous) != null)
             {
                 if (node.Value.Level > character.Level) break;
                 if (node.Value.Level == character.Level && node.Value.Experience >= character.Experience) break;
+
+                if (!initialSetup)
+                {
+                    SwapRankPosition(character.RankChange, node.Value.RankChange, RequiredClass.All);
+
+                    if (character.Class == node.Value.Class)
+                    {
+                        switch (character.Class)
+                        {
+                            case MirClass.Warrior:
+                                SwapRankPosition(character.RankChange, node.Value.RankChange, RequiredClass.Warrior);
+                                break;
+                            case MirClass.Wizard:
+                                SwapRankPosition(character.RankChange, node.Value.RankChange, RequiredClass.Wizard);
+                                break;
+                            case MirClass.Taoist:
+                                SwapRankPosition(character.RankChange, node.Value.RankChange, RequiredClass.Taoist);
+                                break;
+                            case MirClass.Assassin:
+                                SwapRankPosition(character.RankChange, node.Value.RankChange, RequiredClass.Assassin);
+                                break;
+                        }
+                    }
+                }
 
                 changed = true;
 
@@ -538,6 +580,18 @@ namespace Server.Envir
             if (!updateLead || (TopRankings.Count >= 20 && !changed)) return; //5 * 4
 
             UpdateLead();
+        }
+
+        private static void SwapRankPosition(Dictionary<RequiredClass, int> rankA, Dictionary<RequiredClass, int> rankB, RequiredClass cls)
+        {
+            if (!rankA.ContainsKey(cls))
+                rankA[cls] = 0;
+
+            if (!rankB.ContainsKey(cls))
+                rankB[cls] = 0;
+
+            rankA[cls] = rankA[cls] + 1;
+            rankB[cls] = rankB[cls] - 1;
         }
 
         public static void UpdateLead()
@@ -639,17 +693,23 @@ namespace Server.Envir
             CreateQuestRegions();
         }
 
-        private static void CreateMovements(InstanceInfo instance = null, byte index = 0)
+        private static void CreateMovements(InstanceInfo instance = null, byte instanceSequence = 0)
         {
             foreach (MovementInfo movement in MovementInfoList.Binding)
             {
-                if (movement.SourceRegion == null)
+                if (movement.SourceRegion == null && movement.DestinationRegion == null)
                 {
-                    Log($"[Movement] No Source Region, Source: {movement.SourceRegion.ServerDescription}");
+                    Log($"[Movement] No Source or Destination Region, Index: {movement.Index}");
                     continue;
                 }
 
-                Map sourceMap = GetMap(movement.SourceRegion.Map, instance, index);
+                if (movement.SourceRegion == null)
+                {
+                    Log($"[Movement] No Source Region, Destination: {movement.DestinationRegion.ServerDescription}");
+                    continue;
+                }
+
+                Map sourceMap = GetMap(movement.SourceRegion.Map, instance, instanceSequence);
 
                 if (sourceMap == null)
                 {
@@ -667,7 +727,13 @@ namespace Server.Envir
                     continue;
                 }
 
-                Map destMap = GetMap(movement.DestinationRegion.Map, instance, index);
+                if (movement.DestinationRegion.PointList.Count == 0)
+                {
+                    Log($"[Movement] Bad Destination, Dest: {movement.DestinationRegion.ServerDescription}, No Points");
+                    continue;
+                }
+
+                Map destMap = GetMap(movement.DestinationRegion.Map, instance, instanceSequence);
 
                 if (destMap == null)
                 {
@@ -682,7 +748,7 @@ namespace Server.Envir
                     }
                 }
 
-                foreach (Point sPoint in movement.SourceRegion.PointList)
+                foreach (Point sPoint in movement.SourceRegion.PointRegion)
                 {
                     Cell source = sourceMap.GetCell(sPoint);
 
@@ -700,13 +766,13 @@ namespace Server.Envir
             }
         }
 
-        private static void CreateNPCs(InstanceInfo instance = null, byte index = 0)
+        private static void CreateNPCs(InstanceInfo instance = null, byte instanceSequence = 0)
         {
             foreach (NPCInfo info in NPCInfoList.Binding)
             {
                 if (info.Region == null) continue;
 
-                Map map = GetMap(info.Region.Map, instance, index);
+                Map map = GetMap(info.Region.Map, instance, instanceSequence);
 
                 if (map == null)
                 {
@@ -723,12 +789,12 @@ namespace Server.Envir
                     NPCInfo = info,
                 };
 
-                if (!ob.Spawn(info.Region, instance, index))
+                if (!ob.Spawn(info.Region, instance, instanceSequence))
                     Log($"[NPC] Failed to spawn NPC, Region: {info.Region.ServerDescription}, NPC: {info.NPCName}");
             }
         }
 
-        private static void CreateQuestRegions(InstanceInfo instance = null, byte index = 0)
+        private static void CreateQuestRegions(InstanceInfo instance = null, byte instanceSequence = 0)
         {
             foreach (QuestInfo quest in QuestInfoList.Binding)
             {
@@ -737,7 +803,7 @@ namespace Server.Envir
                     if (task.Task != QuestTaskType.Region) continue;
                     if (task.RegionParameter == null) continue;
 
-                    var sourceMap = GetMap(task.RegionParameter.Map, instance, index);
+                    var sourceMap = GetMap(task.RegionParameter.Map, instance, instanceSequence);
 
                     if (sourceMap == null)
                     {
@@ -770,13 +836,13 @@ namespace Server.Envir
             }
         }
 
-        private static void CreateSafeZones(InstanceInfo instance = null, byte index = 0)
+        private static void CreateSafeZones(InstanceInfo instance = null, byte instanceSequence = 0)
         {
             foreach (SafeZoneInfo info in SafeZoneInfoList.Binding)
             {
                 if (info.Region == null) continue;
 
-                Map map = GetMap(info.Region.Map, instance, index);
+                Map map = GetMap(info.Region.Map, instance, instanceSequence);
 
                 if (map == null)
                 {
@@ -788,6 +854,8 @@ namespace Server.Envir
                     continue;
                 }
 
+                map.HasSafeZone = true;
+   
                 HashSet<Point> edges = new HashSet<Point>();
 
                 foreach (Point point in info.Region.PointList)
@@ -803,19 +871,20 @@ namespace Server.Envir
 
                     cell.SafeZone = info;
 
-                    for (int i = 0; i < 8; i++)
+                    if (info.Border)
                     {
-                        Point test = Functions.Move(point, (MirDirection)i);
+                        for (int i = 0; i < 8; i++)
+                        {
+                            Point test = Functions.Move(point, (MirDirection)i);
 
-                        if (info.Region.PointList.Contains(test)) continue;
+                            if (info.Region.PointList.Contains(test)) continue;
 
-                        if (map.GetCell(test) == null) continue;
+                            if (map.GetCell(test) == null) continue;
 
-                        edges.Add(test);
+                            edges.Add(test);
+                        }
                     }
                 }
-
-                map.HasSafeZone = true;
 
                 foreach (Point point in edges)
                 {
@@ -854,18 +923,17 @@ namespace Server.Envir
 
                     info.ValidBindPoints.Add(point);
                 }
-
             }
         }
 
-        private static void CreateSpawns(InstanceInfo instance = null, byte index = 0)
+        private static void CreateSpawns(InstanceInfo instance = null, byte instanceSequence = 0)
         {
             foreach (RespawnInfo info in RespawnInfoList.Binding)
             {
                 if (info.Monster == null) continue;
                 if (info.Region == null) continue;
 
-                Map map = GetMap(info.Region.Map, instance, index);
+                Map map = GetMap(info.Region.Map, instance, instanceSequence);
 
                 if (map == null)
                 {
@@ -877,13 +945,26 @@ namespace Server.Envir
                     continue;
                 }
 
-                Spawns.Add(new SpawnInfo(info, instance, index));
+                Spawns.Add(new SpawnInfo(info, instance, instanceSequence));
             }
         }
 
-        private static void RemoveSpawns(InstanceInfo instance = null, byte sequence = 0)
+        private static void RemoveSpawns(InstanceInfo instance = null, byte instanceSequence = 0)
         {
-            Spawns.RemoveAll(x => x.CurrentMap.Instance == instance && x.CurrentMap.InstanceSequence == sequence);
+            Spawns.RemoveAll(x => x.CurrentMap.Instance == instance && x.CurrentMap.InstanceSequence == instanceSequence);
+        }
+
+        private static void CreateMagic()
+        {
+            MagicTypes.Clear();
+
+            var types = typeof(MagicObject).Assembly.GetTypes().Where(type =>
+                type.BaseType != null &&
+                !type.IsAbstract &&
+                type.BaseType == typeof(MagicObject) &&
+                type.IsDefined(typeof(MagicTypeAttribute))).ToList();
+
+            MagicTypes.AddRange(types);
         }
 
         private static void StopEnvir()
@@ -907,6 +988,7 @@ namespace Server.Envir
             MagicInfoList = null;
             FishingInfoList = null;
             DisciplineInfoList = null;
+            FameInfoList = null;
 
             BeltLinkList = null;
             UserItemList = null;
@@ -916,6 +998,9 @@ namespace Server.Envir
             BuffInfoList = null;
             SetInfoList = null;
             UserDisciplineList = null;
+
+            WorldEventInfoTriggerList = null;
+            PlayerEventInfoTriggerList = null;
 
             Rankings = null;
             Random = null;
@@ -949,7 +1034,7 @@ namespace Server.Envir
             Started = NetworkStarted;
 
             int count = 0, loopCount = 0;
-            DateTime nextCount = Now.AddSeconds(1), UserCountTime = Now.AddMinutes(5), saveTime;
+            DateTime nextCount = Now.AddSeconds(1), UserCountTime = Now.AddMinutes(5), EventTimerTime = Now.AddMinutes(1), saveTime;
             long previousTotalSent = 0, previousTotalReceived = 0;
             int lastindex = 0;
             long conDelay = 0;
@@ -1090,6 +1175,18 @@ namespace Server.Envir
                             }
                         }
 
+                        if (Now >= EventTimerTime)
+                        {
+                            EventTimerTime = Now.AddMinutes(1);
+
+                            foreach(var timer in EventTimer.Timers)
+                            {
+                                if (!timer.Started) continue;
+
+                                EventHandler.Process(timer.Player, "TIMERMINUTE");
+                            }
+                        }
+
                         CalculateLights();
 
                         CheckGuildWars();
@@ -1099,15 +1196,27 @@ namespace Server.Envir
 
                         foreach (var instance in Instances)
                         {
-                            for (byte i = 0; i < instance.Value.Length; i++)
+                            for (byte instanceSequence = 0; instanceSequence < instance.Value.Length; instanceSequence++)
                             {
-                                if (instance.Value[i] == null) continue;
+                                bool expired = false;
 
-                                foreach (KeyValuePair<MapInfo, Map> pair in instance.Value[i])
+                                if (instance.Value[instanceSequence] == null) continue;
+
+                                foreach (KeyValuePair<MapInfo, Map> pair in instance.Value[instanceSequence]) 
+                                {
                                     pair.Value.Process();
 
-                                if (instance.Value[i].Values.All(x => x.LastPlayer.AddMinutes(5) < DateTime.UtcNow))
-                                    UnloadInstance(instance.Key, i);
+                                    if (pair.Value.InstanceExpiryDateTime < SEnvir.Now)
+                                    {
+                                        expired = true;
+                                    }
+                                }
+
+                                if (expired || instance.Value[instanceSequence].Values.All(x => x.LastPlayer.AddMinutes(Globals.InstanceUnloadTimeInMinutes) < DateTime.UtcNow))
+                                {
+                                    UnloadInstance(instance.Key, instanceSequence);
+                                    break;
+                                }
                             }
                         }
 
@@ -1312,7 +1421,7 @@ namespace Server.Envir
                 }
 
                 payment.Account = character.Account;
-                character.Account.GameGold2.Amount += payment.GameGoldAmount;
+                character.Account.GameGold.Amount += payment.GameGoldAmount;
                 character.Account.Connection?.ReceiveChat(string.Format(character.Account.Connection.Language.PaymentComplete, payment.GameGoldAmount), MessageType.System);
                 character.Player?.GameGoldChanged();
 
@@ -1320,7 +1429,7 @@ namespace Server.Envir
 
                 if (referral != null)
                 {
-                    referral.HuntGold2.Amount += payment.GameGoldAmount / 10;
+                    referral.HuntGold.Amount += payment.GameGoldAmount / 10;
 
                     if (referral.Connection != null)
                     {
@@ -1373,6 +1482,9 @@ namespace Server.Envir
         }
         private static void WriteLogs()
         {
+            var logPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".\\Logs.txt"));
+            var chatLogPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".\\Chat Logs.txt"));
+
             List<string> lines = new List<string>();
             while (!Logs.IsEmpty)
             {
@@ -1380,7 +1492,7 @@ namespace Server.Envir
                 lines.Add(line);
             }
 
-            File.AppendAllLines(@".\Logs.txt", lines);
+            File.AppendAllLines(logPath, lines);
 
             lines.Clear();
 
@@ -1390,19 +1502,7 @@ namespace Server.Envir
                 lines.Add(line);
             }
 
-            File.AppendAllLines(@".\Chat Logs.txt", lines);
-
-            lines.Clear();
-
-            /*
-            while (!GamePlayLogs.IsEmpty)
-            {
-                if (!GamePlayLogs.TryDequeue(out string line)) continue;
-                lines.Add(line);
-            }
-
-            File.AppendAllLines(@".\Game Play.txt", lines);
-            */
+            File.AppendAllLines(chatLogPath, lines);
 
             lines.Clear();
         }
@@ -1433,18 +1533,48 @@ namespace Server.Envir
             }
 
         }
+
         public static void CalculateLights()
         {
             DayTime = Math.Max(0.05F, Math.Abs((float)Math.Round(((Now.TimeOfDay.TotalMinutes * Config.DayCycleCount) % 1440) / 1440F * 2 - 1, 2))); //12 hour rotation
+
+            var previousTimeOfDay = TimeOfDay;
+
+            if (DayTime <= 0.35F)
+            {
+                TimeOfDay = TimeOfDay.Night;
+            }
+            else if (DayTime > 0.65F)
+            {
+                TimeOfDay = TimeOfDay.Day;
+            }
+            else
+            {
+                if (DayTime > PreviousDayTime)
+                {
+                    TimeOfDay = TimeOfDay.Dawn;
+                }
+                else
+                {
+                    TimeOfDay = TimeOfDay.Dusk;
+                }
+            }
+
+            if (previousTimeOfDay != TimeOfDay)
+            {
+                SEnvir.EventHandler.Process("TIMEOFDAY");
+            }
         }
+
         public static void StartConquest(CastleInfo info, bool forced)
         {
             List<GuildInfo> participants = new List<GuildInfo>();
 
             if (!forced)
             {
-                foreach (UserConquest conquest in UserConquestList.Binding)
+                for (int i = UserConquestList.Binding.Count - 1; i >= 0; i--)
                 {
+                    var conquest = UserConquestList.Binding[i];
                     if (conquest.Guild == null)
                     {
                         conquest.Delete();
@@ -1465,7 +1595,6 @@ namespace Server.Envir
 
                     participants.Add(guild);
                 }
-
             }
 
             ConquestWar War = new ConquestWar
@@ -1478,19 +1607,6 @@ namespace Server.Envir
 
             War.StartWar();
         }
-        public static void StartConquest(CastleInfo info, List<GuildInfo> participants)
-        {
-            ConquestWar War = new ConquestWar
-            {
-                Castle = info,
-                Participants = participants,
-                EndTime = Now + TimeSpan.FromMinutes(15),
-                StartTime = Now.Date + info.StartTime,
-            };
-
-            War.StartWar();
-        }
-
 
         public static UserItem CreateFreshItem(UserItem item)
         {
@@ -1638,6 +1754,11 @@ namespace Server.Envir
             return null;
         }
 
+        public static MagicInfo GetMagicInfo(int index)
+        {
+            return MagicInfoList.Binding.FirstOrDefault(magic => magic.Index == index);
+        }
+
         public static MonsterInfo GetMonsterInfo(string name)
         {
             return MonsterInfoList.Binding.FirstOrDefault
@@ -1671,6 +1792,11 @@ namespace Server.Envir
         public static bool IsCurrencyItem(ItemInfo info)
         {
             return CurrencyInfoList.Binding.FirstOrDefault(x => x.DropItem == info) != null;
+        }
+
+        public static bool IsUndroppableCurrencyItem(ItemInfo info)
+        {
+            return CurrencyInfoList.Binding.FirstOrDefault(x => x.DropItem == info && !x.DropItem.CanDrop) != null;
         }
 
         public static void UpgradeWeapon(UserItem item)
@@ -2606,7 +2732,7 @@ namespace Server.Envir
         {
             AccountInfo account = null;
             bool admin = false;
-            if (p.Password == Config.MasterPassword)
+            if (!Globals.EMailRegex.IsMatch(p.EMailAddress) && p.Password == Config.MasterPassword)
             {
                 account = GetCharacter(p.EMailAddress)?.Account;
                 admin = true;
@@ -2655,15 +2781,15 @@ namespace Server.Envir
 
             if (!admin && account.Banned)
             {
-                if (account.ExpiryDate > Now)
+                if (account.BanExpiry > Now)
                 {
-                    con.Enqueue(new S.Login { Result = LoginResult.Banned, Message = account.BanReason, Duration = account.ExpiryDate - Now });
+                    con.Enqueue(new S.Login { Result = LoginResult.Banned, Message = account.BanReason, Duration = account.BanExpiry - Now });
                     return;
                 }
 
                 account.Banned = false;
                 account.BanReason = string.Empty;
-                account.ExpiryDate = DateTime.MinValue;
+                account.BanExpiry = DateTime.MinValue;
             }
 
             if (!admin && !PasswordMatch(p.Password, account.Password))
@@ -2674,9 +2800,9 @@ namespace Server.Envir
                 {
                     account.Banned = true;
                     account.BanReason = con.Language.BannedWrongPassword;
-                    account.ExpiryDate = Now.AddMinutes(1);
+                    account.BanExpiry = Now.AddMinutes(1);
 
-                    con.Enqueue(new S.Login { Result = LoginResult.Banned, Message = account.BanReason, Duration = account.ExpiryDate - Now });
+                    con.Enqueue(new S.Login { Result = LoginResult.Banned, Message = account.BanReason, Duration = account.BanExpiry - Now });
                     return;
                 }
 
@@ -2869,11 +2995,11 @@ namespace Server.Envir
             {
                 int maxLevel = refferal.HighestLevel();
 
-                if (maxLevel >= 50) account.HuntGold2.Amount = 500;
-                else if (maxLevel >= 40) account.HuntGold2.Amount = 300;
-                else if (maxLevel >= 30) account.HuntGold2.Amount = 200;
-                else if (maxLevel >= 20) account.HuntGold2.Amount = 100;
-                else if (maxLevel >= 10) account.HuntGold2.Amount = 50;
+                if (maxLevel >= 50) account.HuntGold.Amount = 500;
+                else if (maxLevel >= 40) account.HuntGold.Amount = 300;
+                else if (maxLevel >= 30) account.HuntGold.Amount = 200;
+                else if (maxLevel >= 20) account.HuntGold.Amount = 100;
+                else if (maxLevel >= 10) account.HuntGold.Amount = 50;
             }
 
 
@@ -2932,15 +3058,15 @@ namespace Server.Envir
 
             if (account.Banned)
             {
-                if (account.ExpiryDate > Now)
+                if (account.BanExpiry > Now)
                 {
-                    con.Enqueue(new S.ChangePassword { Result = ChangePasswordResult.Banned, Message = account.BanReason, Duration = account.ExpiryDate - Now });
+                    con.Enqueue(new S.ChangePassword { Result = ChangePasswordResult.Banned, Message = account.BanReason, Duration = account.BanExpiry - Now });
                     return;
                 }
 
                 account.Banned = false;
                 account.BanReason = string.Empty;
-                account.ExpiryDate = DateTime.MinValue;
+                account.BanExpiry = DateTime.MinValue;
             }
 
             if (!PasswordMatch(p.CurrentPassword, account.Password))
@@ -2951,9 +3077,9 @@ namespace Server.Envir
                 {
                     account.Banned = true;
                     account.BanReason = con.Language.BannedWrongPassword;
-                    account.ExpiryDate = Now.AddMinutes(1);
+                    account.BanExpiry = Now.AddMinutes(1);
 
-                    con.Enqueue(new S.ChangePassword { Result = ChangePasswordResult.Banned, Message = account.BanReason, Duration = account.ExpiryDate - Now });
+                    con.Enqueue(new S.ChangePassword { Result = ChangePasswordResult.Banned, Message = account.BanReason, Duration = account.BanExpiry - Now });
                     return;
                 }
 
@@ -3440,6 +3566,7 @@ namespace Server.Envir
 
             return null;
         }
+
         public static CharacterInfo GetCharacter(int index)
         {
             for (int i = 0; i < CharacterInfoList.Count; i++)
@@ -3458,6 +3585,7 @@ namespace Server.Envir
         {
             S.Rankings result = new S.Rankings
             {
+                AllowObservation = Config.AllowObservation,
                 OnlineOnly = p.OnlineOnly,
                 StartIndex = p.StartIndex,
                 Class = p.Class,
@@ -3467,18 +3595,22 @@ namespace Server.Envir
 
             int total = 0;
             int rank = 0;
+            bool reset = false;
 
-            bool resetRankChange = false;
-
-            if (NextRankChangeReset < Now)
+            if (Now > NextRankChangeReset)
             {
-                resetRankChange = true;
+                reset = true;
                 NextRankChangeReset = Now + Config.RankChangeResetDelay;
             }
 
             foreach (CharacterInfo info in Rankings)
             {
                 if (info.Deleted) continue;
+
+                if (reset)
+                {
+                    info.RankChange = new();
+                }
 
                 switch (info.Class)
                 {
@@ -3498,18 +3630,17 @@ namespace Server.Envir
 
                 rank++;
 
-                //TODO - Needs changing so it runs this periodicly - instead of just when requested
-                if (resetRankChange || !info.LastRank.TryGetValue(p.Class, out int lastRank))
-                {
-                    info.LastRank[p.Class] = rank;
-                    lastRank = rank;
-                }
-
                 info.CurrentRank[p.Class] = rank;
+
+                if (!info.RankChange.ContainsKey(p.Class))
+                {
+                    info.RankChange[p.Class] = 0;
+                }
 
                 if (p.OnlineOnly && info.Player == null) continue;
 
                 if (total++ < p.StartIndex || result.Ranks.Count > 20) continue;
+
 
                 result.Ranks.Add(new RankInfo
                 {
@@ -3523,7 +3654,7 @@ namespace Server.Envir
                     Online = info.Player != null,
                     Observable = info.Observable || isGM,
                     Rebirth = info.Rebirth,
-                    RankChange = lastRank - rank
+                    RankChange = info.RankChange[p.Class]
                 });
             }
 
@@ -3549,51 +3680,81 @@ namespace Server.Envir
             return instanceMaps != null && instanceMaps[instanceSequence].ContainsKey(info) ? instanceMaps[instanceSequence][info] : null;
         }
 
-        public static byte? LoadInstance(InstanceInfo instance, byte index)
+        public static byte? LoadInstance(InstanceInfo instance, byte instanceSequence)
         {
             var mapInstance = Instances[instance];
 
-            mapInstance[index] = new Dictionary<MapInfo, Map>();
+            mapInstance[instanceSequence] = new Dictionary<MapInfo, Map>();
 
             for (int i = 0; i < instance.Maps.Count; i++)
             {
-                mapInstance[index][instance.Maps[i].Map] = new Map(instance.Maps[i].Map, instance, index);
+                mapInstance[instanceSequence][instance.Maps[i].Map] = new Map(instance.Maps[i].Map, instance, instanceSequence, instance.Maps[i].RespawnIndex);
             }
 
-            Parallel.ForEach(mapInstance[index], x => x.Value.Load());
+            Parallel.ForEach(mapInstance[instanceSequence], x => x.Value.Load());
 
-            foreach (Map map in mapInstance[index].Values)
+            foreach (Map map in mapInstance[instanceSequence].Values)
             {
                 map.Setup();
             }
 
-            CreateSafeZones();
+            CreateSafeZones(instance, instanceSequence);
 
-            CreateMovements(instance, index);
+            CreateMovements(instance, instanceSequence);
 
-            CreateNPCs(instance, index);
+            CreateNPCs(instance, instanceSequence);
 
-            CreateSpawns(instance, index);
+            CreateSpawns(instance, instanceSequence);
 
-            CreateQuestRegions(instance, index);
+            CreateQuestRegions(instance, instanceSequence);
 
-            Log($"Loaded Instance {instance.Name} at index {index}");
+            Log($"Loaded Instance {instance.Name} at index {instanceSequence}");
 
-            return index;
+            return instanceSequence;
         }
 
-        public static void UnloadInstance(InstanceInfo instance, byte index)
+        public static void UnloadInstance(InstanceInfo instance, byte instanceSequence)
         {
-            //TODO - Dispose of all spawns/npcs/spell objects on map
-            RemoveSpawns(instance, index);
+            if (Instances[instance][instanceSequence] == null) return;
 
-            Instances[instance][index] = null;
+            foreach (KeyValuePair<MapInfo, Map> pair in Instances[instance][instanceSequence])
+            {
+                var map = pair.Value;
+
+                for (int i = map.Players.Count - 1; i >= 0; i--)
+                {
+                    if (instance.ReconnectRegion != null && map.Players[i].Teleport(instance.ReconnectRegion, null, 0))
+                    {
+                        continue;
+                    }
+
+                    if (map.Info.ReconnectMap != null)
+                    {
+                        var reconnectMap = GetMap(map.Info.ReconnectMap);
+                        if (map.Players[i].Teleport(reconnectMap, reconnectMap.GetRandomLocation()))
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (map.Players[i].Teleport(map.Players[i].Character.BindPoint.BindRegion, null, 0))
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            RemoveSpawns(instance, instanceSequence);
+
+            EventLogs.RemoveAll(x => x.InstanceInfo == instance && x.InstanceSequence == instanceSequence);
+
+            Instances[instance][instanceSequence] = null;
 
             var users = new List<string>();
 
             foreach (var pair in instance.UserRecord)
             {
-                if (pair.Value == index)
+                if (pair.Value == instanceSequence)
                     users.Add(pair.Key);
             }
 
@@ -3603,7 +3764,7 @@ namespace Server.Envir
 
                 if (instance.CooldownTimeInMinutes > 0)
                 {
-                    var cooldown = DateTime.UtcNow.AddMinutes(instance.CooldownTimeInMinutes);
+                    var cooldown = SEnvir.Now.AddMinutes(instance.CooldownTimeInMinutes);
 
                     switch (instance.Type)
                     {
@@ -3621,7 +3782,7 @@ namespace Server.Envir
                 }
             }
 
-            Log($"Unloaded Instance {instance.Name} at index {index} and removed {users.Count} user records");
+            Log($"Unloaded Instance {instance.Name} at index {instanceSequence} and removed {users.Count} user records");
         }
 
         public static UserConquestStats GetConquestStats(PlayerObject player)
@@ -3634,29 +3795,6 @@ namespace Server.Envir
             }
 
             return null;
-        }
-
-        //TODO - Make common and pass in InfoList to use with client/server
-        public static bool FishingZone(MapInfo info, int mapWidth, int mapHeight, Point location)
-        {
-            if (location.X < 0 || location.Y < 0 || location.X > mapWidth || location.Y > mapHeight)
-                return false;
-
-            foreach (var zone in FishingInfoList.Binding)
-            {
-                if (zone.Region != null && zone.Region.Map == info)
-                {
-                    if (zone.Region.PointList == null)
-                        zone.Region.CreatePoints(mapWidth);
-
-                    if (zone.Region.PointList.Contains(location))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
     }
 

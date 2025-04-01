@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Client.Controls;
+using Client.Envir;
+using Client.Models;
+using Client.UserModels;
+using Library;
+using Library.SystemModels;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using Library;
-using Library.SystemModels;
-using Client.Controls;
-using Client.Envir;
-using Client.Models;
-using Client.UserModels;
 using C = Library.Network.ClientPackets;
 
 namespace Client.Scenes.Views
@@ -25,6 +25,8 @@ namespace Client.Scenes.Views
         public DXButton SellButton;
 
         public List<DXItemCell> SelectedItems = new();
+
+        public List<ItemType> SellableItemTypes = new();
 
         #region PrimaryCurrency
 
@@ -183,7 +185,7 @@ namespace Client.Scenes.Views
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
             };
-            CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 5, 5);
+            CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
 
             TitleLabel = new DXLabel
@@ -307,9 +309,9 @@ namespace Client.Scenes.Views
                 Index = 364,
                 Parent = this,
                 Location = new Point(180, 384),
-                Hint = CEnvir.Language.InventoryDialogSortButtonHint,
-                Enabled = false
+                Hint = CEnvir.Language.InventoryDialogSortButtonHint
             };
+            SortButton.MouseClick += SortButton_MouseClick;
 
             TrashButton = new DXButton
             {
@@ -317,9 +319,9 @@ namespace Client.Scenes.Views
                 Index = 358,
                 Parent = this,
                 Location = new Point(218, 384),
-                Hint = CEnvir.Language.InventoryDialogTrashButtonHint,
-                Enabled = false
+                Hint = CEnvir.Language.InventoryDialogTrashButtonHint
             };
+            TrashButton.MouseClick += TrashButton_MouseClick;
 
             SellButton = new DXButton
             {
@@ -327,8 +329,8 @@ namespace Client.Scenes.Views
                 Index = 354,
                 Parent = this,
                 Location = new Point(218, 384),
-                Hint = "Sell",
-                Enabled = false,
+                Hint = "Sell All",
+                Enabled = true,
                 Visible = false
             };
             SellButton.MouseClick += SellButton_MouseClick;
@@ -337,21 +339,61 @@ namespace Client.Scenes.Views
             {
                 Parent = this,
                 Location = new Point(8, 380),
-                Hint = CEnvir.Language.InventoryDialogWalletLabelHint,
+                Hint = string.Format(CEnvir.Language.InventoryDialogWalletLabelHint, CEnvir.GetKeyBindLabel(KeyBindAction.CurrencyWindow)),
                 Size = new Size(45, 40),
                 Sound = SoundIndex.GoldPickUp
             };
             WalletLabel.MouseClick += WalletLabel_MouseClick;
         }
 
+        private void SortButton_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (GameScene.Game.Observer) return;
+
+            C.ItemSort packet = new C.ItemSort { Grid = GridType.Inventory };
+            CEnvir.Enqueue(packet);
+        }
+
+        private void TrashButton_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (GameScene.Game.Observer) return;
+
+            var cell = DXItemCell.SelectedCell;
+
+            if (cell == null || cell.Item == null) return;
+            if ((cell.Item.Flags & UserItemFlags.Locked) == UserItemFlags.Locked) return;
+            if ((cell.Item.Flags & UserItemFlags.Bound) == UserItemFlags.Bound) return;
+            if ((cell.Item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage) return;
+
+            if (cell.GridType != GridType.Inventory) return;
+
+            cell.Locked = true;
+
+            C.ItemDelete packet = new C.ItemDelete { Grid = cell.GridType, Slot = cell.Slot };
+
+            CEnvir.Enqueue(packet);
+        }
+
         private void Cell_SelectedChanged(object sender, EventArgs e)
         {
+            var cell = sender as DXItemCell;
+
             if (InvMode == InventoryMode.Sell)
             {
-                var cell = sender as DXItemCell;
-
                 if (cell.Selected)
-                    SelectedItems.Add(cell);
+                {
+                    if (cell.Item != null && (cell.Item.Flags & UserItemFlags.Locked) != UserItemFlags.Locked)
+                    {
+                        if (!SellableItemTypes.Contains(cell.Item.Info.ItemType))
+                        {
+                            GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.UnableToSellHere, cell.Item.Info.ItemName), MessageType.System);
+                            cell.Selected = false;
+                            return;
+                        }
+
+                        SelectedItems.Add(cell);
+                    }
+                }
                 else
                     SelectedItems.Remove(cell);
 
@@ -365,7 +407,8 @@ namespace Client.Scenes.Views
 
                 SecondaryCurrencyLabel.Text = sum.ToString("#,##0");
 
-                SellButton.Enabled = count > 0;
+                SellButton.Enabled = true;
+                SellButton.Hint = count == 1 ? "Sell" : "Sell All";
             }
         }
 
@@ -373,18 +416,43 @@ namespace Client.Scenes.Views
         {
             if (GameScene.Game.Observer) return;
 
-            List<CellLinkInfo> links = new ();
+            var cell = DXItemCell.SelectedCell;
 
-            foreach (DXItemCell itemCell in SelectedItems)
-                links.Add(new CellLinkInfo { Count = itemCell.Item.Count, GridType = GridType.Inventory, Slot = itemCell.Slot });
+            if (cell != null && cell.Item != null && (cell.Item.Flags & UserItemFlags.Locked) == UserItemFlags.Locked) return;
 
-            CEnvir.Enqueue(new C.NPCSell { Links = links });
+            List<CellLinkInfo> links = new();
+
+            if (SelectedItems.Count > 0)
+            {
+                foreach (DXItemCell itemCell in SelectedItems)
+                {
+                    if ((itemCell.Item.Flags & UserItemFlags.Locked) == UserItemFlags.Locked) continue;
+
+                    links.Add(new CellLinkInfo { Count = itemCell.Item.Count, GridType = GridType.Inventory, Slot = itemCell.Slot });
+                }
+            }
+            else
+            {
+                //Sell all
+                foreach(DXItemCell itemCell in Grid.Grid)
+                {
+                    if (itemCell.Item == null) continue;
+                    if ((itemCell.Item.Flags & UserItemFlags.Locked) == UserItemFlags.Locked) continue;
+                    
+                    if (SellableItemTypes.Count > 0 && !SellableItemTypes.Contains(itemCell.Item.Info.ItemType)) continue;
+
+                    links.Add(new CellLinkInfo { Count = itemCell.Item.Count, GridType = GridType.Inventory, Slot = itemCell.Slot });
+                }
+            }
+
+            if (links.Count > 0)
+            {
+                CEnvir.Enqueue(new C.NPCSell { Links = links });
+            }
         }
 
         private void PrimaryCurrencyLabel_MouseClick(object sender, MouseEventArgs e)
         {
-            DXSoundManager.Play(SoundIndex.GoldPickUp);
-
             if (GameScene.Game.SelectedCell == null)
             {
                 var userCurrency = GameScene.Game.User.GetCurrency(PrimaryCurrency);
@@ -428,7 +496,7 @@ namespace Client.Scenes.Views
             RefreshSecondaryCurrency();
         }
 
-        public void SetPrimaryCurrency(CurrencyInfo currency)
+        private void SetPrimaryCurrency(CurrencyInfo currency)
         {
             PrimaryCurrency = currency ?? Globals.CurrencyInfoList.Binding.First(x => x.Type == CurrencyType.Gold);
         }
@@ -443,7 +511,6 @@ namespace Client.Scenes.Views
             PrimaryCurrencyLabel.Text = userCurrency.Amount.ToString("#,##0");
         }
 
-        //TODO - Allow secondary currency to change its default??
         private void SetSecondaryCurrency(CurrencyInfo currency)
         {
             SecondaryCurrency = currency ?? Globals.CurrencyInfoList.Binding.First(x => x.Type == CurrencyType.GameGold);
@@ -462,9 +529,11 @@ namespace Client.Scenes.Views
             SecondaryCurrencyLabel.Text = userCurrency.Amount.ToString("#,##0");
         }
 
-        public void SellMode(CurrencyInfo currency)
+        public void SellMode(CurrencyInfo currency, List<ItemType> sellableItemTypes)
         {
             SetPrimaryCurrency(currency);
+
+            SellableItemTypes = sellableItemTypes;
 
             InvMode = InventoryMode.Sell;
         }
@@ -472,6 +541,8 @@ namespace Client.Scenes.Views
         public void NormalMode()
         {
             SetPrimaryCurrency(null);
+
+            SellableItemTypes.Clear();
 
             InvMode = InventoryMode.Normal;
         }

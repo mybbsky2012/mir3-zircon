@@ -13,7 +13,7 @@ namespace Client.Controls
     public class DXLabel : DXControl
     {
         #region Static
-        public static Size GetSize(string text, Font font, bool outline)
+        public static Size GetSize(string text, Font font, bool outline, int paddingBottom = 0)
         {
             if (string.IsNullOrEmpty(text))
                 return Size.Empty;
@@ -25,6 +25,8 @@ namespace Client.Controls
                 tempSize.Width += 2;
                 tempSize.Height += 2;
             }
+
+            tempSize.Height += paddingBottom;
 
             return tempSize;
         }
@@ -150,7 +152,34 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
+        #region DropShadow
+
+        public bool DropShadow
+        {
+            get => _DropShadow;
+            set
+            {
+                if (_DropShadow == value) return;
+
+                bool oldValue = _DropShadow;
+                _DropShadow = value;
+
+                OnDropShadowChanged(oldValue, value);
+            }
+        }
+        private bool _DropShadow;
+        public event EventHandler<EventArgs> DropShadowChanged;
+        public virtual void OnDropShadowChanged(bool oValue, bool nValue)
+        {
+            TextureValid = false;
+            CreateSize();
+
+            DropShadowChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        #endregion
+
         #region OutlineColour
 
         public Color OutlineColour
@@ -176,6 +205,35 @@ namespace Client.Controls
         }
 
         #endregion
+
+
+        #region PaddingBottom
+
+        public int PaddingBottom
+        {
+            get => _PaddingBottom;
+            set
+            {
+                if (_PaddingBottom == value) return;
+
+                int oldValue = _PaddingBottom;
+                _PaddingBottom = value;
+
+                OnPaddingBottomChanged(oldValue, value);
+            }
+        }
+        private int _PaddingBottom;
+        public event EventHandler<EventArgs> PaddingBottomChanged;
+        public virtual void OnPaddingBottomChanged(int oValue, int nValue)
+        {
+            TextureValid = false;
+            CreateSize();
+
+            PaddingBottomChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        #endregion
+
 
         public override void OnTextChanged(string oValue, string nValue)
         {
@@ -210,7 +268,7 @@ namespace Client.Controls
         {
             if (!AutoSize) return;
 
-            Size = GetSize(Text, Font, Outline);
+            Size = GetSize(Text, Font, Outline, PaddingBottom);
         }
 
         protected override void CreateTexture()
@@ -243,7 +301,14 @@ namespace Client.Controls
                     TextRenderer.DrawText(graphics, Text, Font, new Rectangle(1, 1, width, height), ForeColour, DrawFormat);
                 }
                 else
+                {
+                    if (DropShadow)
+                    {
+                        TextRenderer.DrawText(graphics, Text, Font, new Rectangle(2, 1, width, height), Color.Black, DrawFormat);
+                    }
+
                     TextRenderer.DrawText(graphics, Text, Font, new Rectangle(1, 0, width, height), ForeColour, DrawFormat);
+                }
             }
             ControlTexture.UnlockRectangle(0);
             rect.Data.Dispose();

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MirDB;
+﻿using MirDB;
+using System;
 
 namespace Library.SystemModels
 {
@@ -25,6 +21,7 @@ namespace Library.SystemModels
         }
         private string _Name;
 
+        [Association("Castles", true)]
         public MapInfo Map
         {
             get { return _Map; }
@@ -84,6 +81,21 @@ namespace Library.SystemModels
             }
         }
         private MapRegion _CastleRegion;
+
+        public MapRegion ObjectiveRegion
+        {
+            get { return _ObjectiveRegion; }
+            set
+            {
+                if (_ObjectiveRegion == value) return;
+
+                var oldValue = _ObjectiveRegion;
+                _ObjectiveRegion = value;
+
+                OnChanged(oldValue, value, "ObjectiveRegion");
+            }
+        }
+        private MapRegion _ObjectiveRegion;
 
         public MapRegion AttackSpawnRegion
         {
@@ -145,8 +157,26 @@ namespace Library.SystemModels
         }
         private decimal _Discount;
 
-        
+        [Association("Flags", true)]
+        public DBBindingList<CastleFlagInfo> Flags { get; set; }
+
+        [Association("Gates", true)]
+        public DBBindingList<CastleGateInfo> Gates { get; set; }
+
+        [Association("Guards", true)]
+        public DBBindingList<CastleGuardInfo> Guards { get; set; }
+
         public DateTime WarDate;
+
+        protected internal override void OnLoaded()
+        {
+            base.OnLoaded();
+
+            if (ObjectiveRegion == null)
+            {
+                ObjectiveRegion = CastleRegion;
+            }
+        }
     }
 }
 

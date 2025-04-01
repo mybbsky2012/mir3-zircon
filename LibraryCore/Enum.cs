@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Library
 {
@@ -149,6 +145,8 @@ namespace Library
         Fog = 4,
         Lightning = 8,
 
+        [Description("Snow, Fog")]
+        SnowFog = 6,
         [Description("Rain, Lightning")]
         RainLightning = 9,
         [Description("Fog, Lightning")]
@@ -206,12 +204,6 @@ namespace Library
         PartsStorage
     }
 
-    public enum GridSelect
-    {
-        Single,
-        Multi
-    }
-
     public enum InventoryMode
     {
         Normal,
@@ -247,16 +239,24 @@ namespace Library
 
         DeathDrops = 18,
 
+        Fame = 19,
+
         //War
         Defiance = 100,
         Might = 101,
         Endurance = 102,
         ReflectDamage = 103,
+        Invincibility = 104,
+        DefensiveBlow = 105,
 
         //Wiz
         Renounce = 200,
         MagicShield = 201,
         JudgementOfHeaven = 202,
+        ElementalHurricane = 203,
+        SuperiorMagicShield = 204,
+        FrostBite = 205,
+        Tornado = 206,
 
         //Tao
         Heal = 300,
@@ -269,6 +269,8 @@ namespace Library
         CelestialLight = 307,
         Transparency = 308,
         LifeSteal = 309,
+        Spiritualism = 310,
+        SoulResonance = 311,
 
         //Ass
         PoisonousCloud = 400,
@@ -282,7 +284,8 @@ namespace Library
         DragonRepulse = 408,
         Evasion = 409,
         RagingWind = 410,
-        FrostBite = 411,
+        LastStand = 411,
+        Concentration = 412,
 
         MagicWeakness = 500,
     }
@@ -316,6 +319,7 @@ namespace Library
     public enum LightSetting : byte
     {
         Default,
+
         Light,
         Night,
         Twilight,
@@ -323,8 +327,6 @@ namespace Library
 
     public enum TimeOfDay : byte
     {
-        None,
-
         Dawn,
         Day,
         Dusk,
@@ -340,9 +342,21 @@ namespace Library
 
     public enum InstanceType : byte
     {
-        Solo,
-        Group,
-        Guild
+        Player = 0,
+        Group = 1,
+        Guild = 2,
+        Castle = 3
+    }
+
+    public enum RegionType : byte
+    {
+        None = 0,
+
+        Area = 1,
+        Connection = 2,
+        Spawn = 3,
+        Npc = 4,
+        SpawnConnection = 5
     }
 
     public enum ObjectType : byte
@@ -358,48 +372,50 @@ namespace Library
 
     public enum ItemType : byte
     {
-        Nothing,
-        Consumable,
-        Weapon,
-        Armour,
-        Torch,
-        Helmet,
-        Necklace,
-        Bracelet,
-        Ring,
-        Shoes,
-        Poison,
-        Amulet,
-        Meat,
-        Ore,
-        Book,
-        Scroll,
+        Nothing = 0,
+
+        Consumable = 1,
+        Weapon = 2,
+        Armour = 3,
+        Torch = 4,
+        Helmet = 5,
+        Necklace = 6,
+        Bracelet = 7,
+        Ring = 8,
+        Shoes = 9,
+        Poison = 10,
+        Amulet = 11,
+        Meat = 12,
+        Ore = 13,
+        Book = 14,
+        Scroll = 15,
         [Description("Dark Stone")]
-        DarkStone,
+        DarkStone = 16,
         [Description("Refine Special")]
-        RefineSpecial,
+        RefineSpecial = 17,
         [Description("Horse Armour")]
-        HorseArmour,
-        Flower,
+        HorseArmour = 18,
+        Flower = 19,
         [Description("Companion Food")]
-        CompanionFood,
+        CompanionFood = 20,
         [Description("Companion Bag")]
-        CompanionBag,
+        CompanionBag = 21,
         [Description("Companion Head")]
-        CompanionHead,
+        CompanionHead = 22,
         [Description("Companion Back")]
-        CompanionBack,
-        System,
+        CompanionBack = 23,
+        System = 24,
         [Description("Item Part")]
-        ItemPart,
-        Emblem,
-        Shield,
-        Costume,
-        Hook,
-        Float,
-        Bait,
-        Finder,
-        Reel
+        ItemPart = 25,
+        Emblem = 26,
+        Shield = 27,
+        Costume = 28,
+        Hook = 29,
+        Float = 30,
+        Bait = 31,
+        Finder = 32,
+        Reel = 33,
+        Currency = 34
     }
 
     public enum MirAction : byte
@@ -408,10 +424,10 @@ namespace Library
         Moving,
         Pushed,
         Attack,
-        RangeAttack, //?
+        RangeAttack,
         Spell,
         Harvest,
-      //  Struck,
+        Struck,
         Die,
         Dead,
         Show,
@@ -453,15 +469,21 @@ namespace Library
         Skeleton,
         Show,
         Hide,
+
         HorseStanding,
         HorseWalking,
         HorseRunning,
         HorseStruck,
 
         StoneStanding,
+
         DragonRepulseStart,
         DragonRepulseMiddle,
         DragonRepulseEnd,
+
+        ChannellingStart,
+        ChannellingMiddle,
+        ChannellingEnd,
 
         FishingCast,
         FishingWait,
@@ -490,6 +512,7 @@ namespace Library
         Combat,
         ObserverChat,
         Guild,
+        Debug
     }
 
     public enum NPCDialogType
@@ -520,8 +543,8 @@ namespace Library
         None,
 
         Passive = 1,
-        WeaponSkills,
-        Neutral,
+        Active,
+        Toggle,
         Fire,
         Ice,
         Lightning,
@@ -529,8 +552,11 @@ namespace Library
         Holy,
         Dark,
         Phantom,
-        Combat,
+        Physical,
+        Atrocity,
+        Kill,
         Assassination,
+
         Horse,
 
         Discipline = 20
@@ -539,6 +565,7 @@ namespace Library
     public enum Element : byte
     {
         None,
+
         Fire,
         Ice,
         Lightning,
@@ -571,12 +598,20 @@ namespace Library
         Endurance = 116,
         ReflectDamage = 117,
         Fetter = 118,
-        SwirlingBlade = 119,
-        ReigningStep = 120,
-        MaelstromBlade = 121,
+        AugmentDestructiveSurge = 119,
+        AugmentDefiance = 120,
+        AugmentReflectDamage = 121,
         AdvancedPotionMastery = 122,
         MassBeckon = 123,
         SeismicSlam = 124,
+        Invincibility = 125,
+        CrushingWave = 126,
+        DefensiveMastery = 127,
+        PhysicalImmunity = 128,
+        MagicImmunity = 129,
+        DefensiveBlow = 130,
+        ElementalSwords = 131,
+        Shuriken = 132,
 
         FireBall = 201,
         LightningBall = 202,
@@ -608,17 +643,18 @@ namespace Library
         Tempest = 228,
         JudgementOfHeaven = 229,
         ThunderStrike = 230,
-        RayOfLight = 231,
-        BurstOfEnergy = 232,
-        ShieldOfPreservation = 233,
-        RetrogressionOfEnergy = 234,
-        FuryBlast = 235,
-        TempestOfUnstableEnergy = 236,
-        MirrorImage = 237,
-        AdvancedRenounce = 238,
+        FireBounce = 231,
+        ElementalHurricane = 232,
+        SuperiorMagicShield = 233,
+        Burning = 234,
+        Shocked = 235,
+        LightningStrike = 236,
+        MirrorImage = 237,//NOT CODED
+        IceRain = 238,
         FrostBite = 239,
         Asteroid = 240,
-        FireBounce = 241,
+        Storm = 241,//NOT CODED
+        Tornado = 242,//NOT CODED
 
         Heal = 300,
         SpiritSword = 301,
@@ -631,7 +667,7 @@ namespace Library
         GreaterEvilSlayer = 308,
         Resilience = 309,
         TrapOctagon = 310,
-        TaoistCombatKick = 311,
+        CombatKick = 311,
         ElementalSuperiority = 312,
         MassHeal = 313,
         BloodLust = 314,
@@ -642,16 +678,16 @@ namespace Library
         EmpoweredHealing = 319,
         LifeSteal = 320,
         ImprovedExplosiveTalisman = 321,
-        GreaterPoisonDust = 322,
-        Scarecrow = 323,
+        AugmentPoisonDust = 322,
+        CursedDoll = 323,
         ThunderKick = 324,
-        DragonBreath = 325,
-        MassTransparency = 326,
-        GreaterHolyStrike = 327,
+        SoulResonance = 325,
+        Parasite = 326,
+        Spiritualism = 327,
         AugmentExplosiveTalisman = 328,
         AugmentEvilSlayer = 329,
         AugmentPurification = 330,
-        OathOfThePerished = 331,
+        AugmentResurrection = 331,
         SummonSkeleton = 332,
         SummonShinsu = 333,
         SummonJinSkeleton = 334,
@@ -660,6 +696,13 @@ namespace Library
         DemonExplosion = 337,
         Infection = 338,
         DemonicRecovery = 339,
+        Neutralize = 340,
+        AugmentNeutralize = 341,
+        DarkSoulPrison = 342,
+        SearingLight = 343,
+        AugmentCelestialLight = 344,
+        CorpseExploder = 345,
+        SummonDead = 346,
 
         WillowDance = 401,
         VineTreeDance = 402,
@@ -698,9 +741,22 @@ namespace Library
         Stealth = 435,
         Evasion = 436,
         RagingWind = 437,
-        AdvancedBloodyFlower = 438,
+        Unused = 438,//UNUSED
         Massacre = 439,
         ArtOfShadows = 440,
+        DragonBlood = 441,
+        FatalBlow = 442,
+        LastStand = 443,
+        MagicCombustion = 444,
+        Vitality = 445,
+        Chain = 446,
+        Concentration = 447,
+        DualWeaponSkills = 448,
+        Containment = 449,
+        DragonWave = 450,
+        Hemorrhage = 451,
+        BurningFire = 452,
+        ChainOfFire = 453,
 
         MonsterScortchedEarth = 501,
         MonsterIceStorm = 502,
@@ -732,302 +788,583 @@ namespace Library
         GreenSludgeBall = 540,
     }
 
+    public enum MagicProperty
+    {
+        None = 0,
+
+        Active = 1,
+        Passive = 2,
+        Augmentation = 3,
+        Toggle = 4,
+        Charge = 5
+    }
+
+    //NF = No Frame
     public enum MonsterImage
     {
         None,
 
-        Guard,
+        //NF_StonePillar = 10,
+        //NF_BlackPumpkinMan = 11,
+        MutatedOctopus = 12,
+        //NF_StoneBuilding13 = 13,
+        StoneGolem = 14,
+        NetherWorldGate = 15,
+        LightArmedSoldier = 16,
+        AntHealer = 17,
+        ArmoredAnt = 18,
+        Stomper = 19,
 
-        Chicken,
-        Pig,
-        Deer,
-        Cow,
-        Sheep,
-        ClawCat,
-        Wolf,
-        ForestYeti,
-        ChestnutTree,
-        CarnivorousPlant,
-        Oma,
-        TigerSnake,
-        SpittingSpider,
-        Scarecrow,
-        OmaHero,
+        ChaosKnight = 20,
+        //NF_CrystalPillar = 21,
+        CorpseStalker = 22,
+        NumaMage = 23,
+        AntSoldier = 24,
+        //NF_StoneBuilding25 = 25,
+        //NF_StoneBuilding26 = 26,
+        NumaElite = 27,
+        //NF_Phantom = 28,
+        CrimsonNecromancer = 29,
 
-        CaveBat,
-        Scorpion,
-        Skeleton,
-        SkeletonAxeMan,
-        SkeletonAxeThrower,
-        SkeletonWarrior,
-        SkeletonLord,
+        Chicken = 30,
+        Deer = 31,
+        //NF_Man1 = 32,
+        Oma = 33,
+        OmaHero = 34,
+        SpittingSpider = 35,
+        Guard = 36,
+        OmaWarlord = 37,
+        Scorpion = 38,
+        CaveBat = 39,
 
-        CaveMaggot,
-        GhostSorcerer,
-        GhostMage,
-        VoraciousGhost,
-        DevouringGhost,
-        CorpseRaisingGhost,
-        GhoulChampion,
+        ForestYeti = 40,
+        CarnivorousPlant = 41,
+        Skeleton = 42,
+        SkeletonAxeThrower = 43,
+        SkeletonAxeMan = 44,
+        SkeletonWarrior = 45,
+        SkeletonLord = 46,
+        CaveMaggot = 47,
+        ClawCat = 48,
+        //NF_KoreanFlag = 49,
 
-        ArmoredAnt,
-        AntSoldier,
-        AntHealer,
-        AntNeedler,
+        Scarecrow = 50,
+        UmaInfidel = 51,
+        BloodThirstyGhoul = 52,
+        UmaFlameThrower = 53,
+        UmaAnguisher = 54,
+        UmaKing = 55,
+        SpinedDarkLizard = 56,
+        Dung = 57,
+        GhostSorcerer = 58,
+        GhostMage = 59,
 
-        ShellNipper,
-        Beetle,
-        VisceralWorm,
+        VoraciousGhost = 60,
+        DevouringGhost = 61,
+        CorpseRaisingGhost = 62,
+        GhoulChampion = 63,
+        RedSnake = 64,
+        //NF_KatanaGuard = 65,
+        WhiteBone = 66,
+        TigerSnake = 67,
+        Sheep = 68,
+        SkyStinger = 69,
 
-        MutantFlea,
-        PoisonousMutantFlea,
-        BlasterMutantFlea,
+        ShellNipper = 70,
+        VisceralWorm = 71,
+        //NF_KingScorpion = 72,
+        Beetle = 73,
+        SpikedBeetle = 74,
+        Wolf = 75,
+        Centipede = 76,
+        LordNiJae = 77,
+        MutantMaggot = 78,
+        Earwig = 79,
 
-        WasHatchling,
-        Centipede,
-        ButterflyWorm,
-        MutantMaggot,
-        Earwig,
-        IronLance,
-        LordNiJae,
+        IronLance = 80,
+        WasHatchling = 81,
+        ButterflyWorm = 82,
+        WedgeMothLarva = 83,
+        LesserWedgeMoth = 84,
+        WedgeMoth = 85,
+        RedBoar = 86,
+        BlackBoar = 87,
+        TuskLord = 88,
+        ClawSerpent = 89,
 
-        RottingGhoul,
-        DecayingGhoul,
-        BloodThirstyGhoul,
+        EvilSnake = 90,
+        ViciousRat = 91,
+        ZumaSharpShooter = 92,
+        ZumaFanatic = 93,
+        ZumaGuardian = 94,
+        ZumaKing = 95,
+        ArcherGuard = 96,
+        //NF_DemonGuardMace = 97,
+        //NF_DemonGuardSword = 98,
+        Shinsu = 99, //Small
 
-        SpinedDarkLizard,
-        UmaInfidel,
-        UmaFlameThrower,
-        UmaAnguisher,
-        UmaKing,
+        Shinsu1 = 100, //Large
+        UmaMaceInfidel = 101,
+        AquaLizard = 102,
+        CorrosivePoisonSpitter = 103,
+        SandShark = 104,
+        CursedCactus = 105,
+        AntNeedler = 106,
+        WindfurySorceress = 107,
+        //NF_NumaMounted = 108,
+        PhantomSoldier = 109,
 
-        SpiderBat,
-        ArachnidGazer,
-        Larva,
-        RedMoonGuardian,
-        RedMoonProtector,
-        VenomousArachnid,
-        DarkArachnid,
-        RedMoonTheFallen,
+        //NF_FoxWarrior = 110,
+        SpiderBat = 111,
+        //NF_FoxTaoist = 112,
+        //NF_FoxWizard = 113,
+        RedMoonTheFallen = 114,
+        Larva = 115,
+        ArachnidGazer = 116,
+        RedMoonGuardian = 117,
+        RedMoonProtector = 118,
+        //NF_RedMoonRedProtector = 119,
 
-        ZumaSharpShooter,
-        ZumaFanatic,
-        ZumaGuardian,
-        ViciousRat,
-        ZumaKing,
+        //NF_RedMoonGrayProtector = 120,
+        VenomousArachnid = 121,
+        DarkArachnid = 122,
+        ForestGuard = 123,
+        TownGuard = 124,
+        SandGuard = 125,
+        //NF_Blank126 = 126,
+        //NF_Blank127 = 127,
+        //NF_Blank128 = 128,
+        Pig = 129,
 
-        EvilFanatic,
-        Monkey,
-        EvilElephant,
-        CannibalFanatic,
+        PachonTheChaosBringer = 130,
+        Cow = 131,
+        //NF_NumaAxeman = 132,
+        //NF_Football = 133,
+        //NF_HermitFemale = 134,
+        //NF_HermitMale = 135,
+        //NF_WhiteSnake = 136,
+        ChestnutTree = 137,
+        NumaGrunt = 138,
+        NumaWarrior = 139,
 
-        SpikedBeetle,
-        NumaGrunt,
-        NumaMage,
-        NumaElite,
-        SandShark,
-        StoneGolem,
-        WindfurySorceress,
-        CursedCactus,
-        NetherWorldGate,
+        BanyaRightGuard = 140,
+        BanyaLeftGuard = 141,
+        DecayingGhoul = 142,
+        FrostMinotaur = 143,
+        ShockMinotaur = 144,
+        FuryMinotaur = 145,
+        FlameMinotaur = 146,
+        Minotaur = 147,
+        RottingGhoul = 148,
+        EmperorSaWoo = 149,
 
-        RagingLizard,
-        SawToothLizard,
-        MutantLizard,
-        VenomSpitter,
-        SonicLizard,
-        GiantLizard,
-        CrazedLizard,
-        TaintedTerror,
-        DeathLordJichon,
+        BoneCaptain = 150,
+        ArchLichTaedu = 151,
+        BoneSoldier = 152,
+        BoneBladesman = 153,
+        BoneArcher = 154,
+        MutantFlea = 155,
+        //NF_PurpleFlea = 156,
+        BlasterMutantFlea = 157,
+        //NF_BlueBlasterMutantFlea = 158,
+        PoisonousMutantFlea = 159,
 
-        Minotaur,
-        FrostMinotaur,
-        ShockMinotaur,
-        FlameMinotaur,
-        FuryMinotaur,
-        BanyaLeftGuard,
-        BanyaRightGuard,
-        EmperorSaWoo,
+        RazorTusk = 160,
+        //NF_Reindeer = 161,
+        //NF_EvilScorpion = 162,
+        //NF_ChristmasTree = 163,
+        Monkey = 164,
+        //NF_Santa = 165,
+        CannibalFanatic = 166,
+        EvilFanatic = 167,
+        EvilElephant = 168,
+        FlameGriffin = 169,
 
-        BoneArcher,
-        BoneBladesman,
-        BoneCaptain,
-        BoneSoldier,
-        ArchLichTaedu,
+        StoneGriffin = 170,
+        MutantCaptain = 171,
+        PinkGoddess = 172,
+        GreenGoddess = 173,
+        JinchonDevil = 174,
+        //NF_JungleAxeman = 175,
+        //NF_JungleClubman = 176,
+        //NF_Catapult177 = 177,
+        //NF_Blank178 = 178,
+        //NF_Catapult179 = 179,
 
-        WedgeMothLarva,
-        LesserWedgeMoth,
-        WedgeMoth,
-        RedBoar,
-        ClawSerpent,
-        BlackBoar,
-        TuskLord,
-        RazorTusk,
+        IcyGoddess = 180,
+        WildBoar = 181,
+        //NF_AngelGuardian = 182,
+        //NF_Blank183 = 183,
+        //NF_NumaElder = 184,
+        //NF_Blank185 = 185,
+        //NF_Blank186 = 186,
+        //NF_NumaPriest = 187,
+        //NF_Blank188 = 188,
+        //NF_BonePile189 = 189,
 
-        PinkGoddess,
-        GreenGoddess,
-        MutantCaptain,
-        StoneGriffin,
-        FlameGriffin,
+        NumaCavalry = 190,
+        NumaArmoredSoldier = 191,
+        //NF_NumaAxeSoldier = 192,
+        NumaStoneThrower = 193,
+        NumaHighMage = 194,
+        NumaRoyalGuard = 195,
+        //NF_NumaWarlord = 196,
+        BloodStone = 197,
+        //NF_Chest = 198,
+        //NF_BonePile199 = 199,
 
-        WhiteBone,
-        Shinsu,
-        InfernalSoldier,
-        InfernalGuardian,
-        InfernalWarrior,
+        //NF_Snowman = 200,
+        RagingLizard = 201,
+        SawToothLizard = 202,
+        MutantLizard = 203,
+        VenomSpitter = 204,
+        SonicLizard = 205,
+        GiantLizard = 206,
+        TaintedTerror = 207,
+        DeathLordJichon = 208,
+        CrazedLizard = 209,
 
-        CorpseStalker,
-        LightArmedSoldier,
-        CorrosivePoisonSpitter,
-        PhantomSoldier,
-        MutatedOctopus,
-        AquaLizard,
-        Stomper,
-        CrimsonNecromancer,
-        ChaosKnight,
-        PachonTheChaosBringer,
+        IcyRanger = 210,
+        FerociousIceTiger = 211,
+        IcySpiritWarrior = 212,
+        IcySpiritGeneral = 213,
+        GhostKnight = 214,
+        FrostLordHwa = 215,
+        IcySpiritSpearman = 216,
+        Werewolf = 217,
+        Whitefang = 218,
+        IcySpiritSolider = 219,
 
-        NumaCavalry,
-        NumaHighMage,
-        NumaStoneThrower,
-        NumaRoyalGuard,
-        NumaArmoredSoldier,
+        EscortCommander = 220,
+        QueenOfDawn = 221,
+        FieryDancer = 222,
+        EmeraldDancer = 223,
+        //NF_Blank224 = 224,
+        //NF_Blank225 = 225,
+        //NF_Blank226 = 226,
+        //NF_Blank227 = 227,
+        //NF_Blank228 = 228,
+        //NF_Blank229 = 229,
 
-        IcyRanger,
-        IcyGoddess,
-        IcySpiritWarrior,
-        IcySpiritGeneral,
-        GhostKnight,
-        IcySpiritSpearman,
-        Werewolf,
-        Whitefang,
-        IcySpiritSolider,
-        WildBoar,
-        JinamStoneGate,
-        FrostLordHwa,
+        ChiwooGeneral = 230,
+        DragonLord = 231,
+        DragonQueen = 232,
+        OYoungBeast = 233,
+        MaWarlord = 234,
+        YumgonGeneral = 235,
+        YumgonWitch = 236,
+        JinhwanSpirit = 237,
+        JinhwanGuardian = 238,
+        JinamStoneGate = 239,
 
-        Companion_Pig,
-        Companion_TuskLord,
-        Companion_SkeletonLord,
-        Companion_Griffin,
-        Companion_Dragon,
-        Companion_Donkey,
-        Companion_Sheep,
-        Companion_BanyoLordGuzak,
-        Companion_Panda,
-        Companion_Rabbit,
+        //Mon24
 
-        JinchonDevil,
-        OmaWarlord,
+        SamaFireGuardian = 250,
+        SamaIceGuardian = 251,
+        SamaLightningGuardian = 252,
+        SamaWindGuardian = 253,
+        Phoenix = 254,
+        BlackTortoise = 255,
+        BlueDragon = 256,
+        WhiteTiger = 257,
 
-        EscortCommander,
-        FieryDancer,
-        EmeraldDancer,
-        QueenOfDawn,
+        InfernalSoldier = 260,
+        //NF_Blank261 = 261,
+        //NF_Blank262 = 262,
+        //NF_Blank263 = 263,
+        //NF_Blank264 = 264,
+        //NF_Blank265 = 265,
+        //NF_Blank266 = 266,
+        //NF_Blank267 = 267,
+        //NF_Blank268 = 268,
+        //NF_Blank269 = 269,
 
-        OYoungBeast,
-        YumgonWitch,
-        MaWarlord,
-        JinhwanSpirit,
-        JinhwanGuardian,
-        YumgonGeneral,
-        ChiwooGeneral,
-        DragonQueen,
-        DragonLord,
+        SamaCursedBladesman = 270,
+        SamaCursedSlave = 271,
+        SamaCursedFlameMage = 272,
+        SamaProphet = 273,
+        SamaSorcerer = 274,
+        EnshrinementBox = 275,
+        //NF_AssassinMale = 276,
+        //NF_AssassinFemale = 277,
+        //NF_UmaMaceSoldier = 278,
+        //NF_Blank279 = 279,
 
-        FerociousIceTiger,
+        Salamander = 280,
+        SandGolem = 281,
+        //NF_NumaLoneGuard = 282,
+        //NF_SmallSpider = 283,
+        OmaInfant = 284,
+        Yob = 285,
+        RakingCat = 286,
+        UmaTridentInfidel = 287,
+        GangSpider = 288,
+        VenomSpider = 289,
 
-        SamaFireGuardian,
-        SamaIceGuardian,
-        SamaLightningGuardian,
-        SamaWindGuardian,
-        Phoenix,
-        BlackTortoise,
-        BlueDragon,
-        WhiteTiger,
-        SamaCursedBladesman,
-        SamaCursedSlave,
-        SamaCursedFlameMage,
-        SamaProphet,
-        SamaSorcerer,
-        EnshrinementBox,
-        BloodStone,
+        SDMob4 = 290,
+        SDMob5 = 291,
+        SDMob6 = 292,
+        //NF_SpiritSpider = 293,
+        //NF_DarkMage = 294,
+        //NF_Lizard = 295,
+        //NF_DarkDevil = 296,
+        //NF_NumaSoldier = 297,
+        SDMob7 = 298,
+        OmaMage = 299,
 
-        OrangeTiger,
-        RegularTiger,
-        RedTiger,
-        SnowTiger,
-        BlackTiger,
-        BigBlackTiger,
-        BigWhiteTiger,
-        OrangeBossTiger,
-        BigBossTiger,
-        WildMonkey,
-        FrostYeti,
+        WildMonkey = 300,
+        FrostYeti = 301,
+        //NF_SnakeTower = 302,
+        //NF_Duck = 303,
+        //NF_Rabbit = 304,
+        //NF_BonePile305 = 305,
+        //NF_BigFootball = 306,
+        //NF_BluePumpkinMan = 307,
+        //NF_RedPumpkinMan = 308,
+        //NF_Blank309 = 309,
 
-        EvilSnake,
-        Salamander,
-        SandGolem,
-        SDMob4,
-        SDMob5,
-        SDMob6,
-        SDMob7,
-        OmaMage,
-        SDMob9,
-        SDMob10,
-        SDMob11,
-        SDMob12,
-        SDMob13,
-        SDMob14,
-        CrystalGolem,
-        DustDevil,
-        TwinTailScorpion,
-        BloodyMole,
-        SDMob19,
-        SDMob20,
-        SDMob21,
-        SDMob22,
-        SDMob23,
-        SDMob24,
-        SDMob25,
-        GangSpider,
-        VenomSpider,
-        SDMob26,
+        //Mon31
 
-        LobsterLord,
-        LobsterSpawn,
+        SDMob8 = 320,
+        SDMob9 = 321,
+        //NF_BlueMouseWithTail = 322,
+        //NF_VampireDagger = 323,
+        //NF_VampireSpear = 324,
+        SDMob10 = 325,
+        SDMob11 = 326,
+        SDMob12 = 327,
+        SDMob13 = 328,
+        SDMob14 = 329,
 
-        NewMob1,
-        NewMob2,
-        NewMob3,
-        NewMob4,
-        NewMob5,
-        NewMob6,
-        NewMob7,
-        NewMob8,
-        NewMob9,
-        NewMob10,
+        //Mon33
 
-        MonasteryMon0,
-        MonasteryMon1,
-        MonasteryMon2,
-        MonasteryMon3,
-        MonasteryMon4,
-        MonasteryMon5,
-        MonasteryMon6,
+        Companion_Pig = 340,
+        Companion_TuskLord = 341,
+        Companion_SkeletonLord = 342,
+        Companion_Griffin = 343,
+        Companion_Dragon = 344,
+        Companion_Donkey = 345,
+        Companion_Sheep = 346,
+        Companion_BanyoLordGuzak = 347,
+        Companion_Panda = 348,
+        Companion_Rabbit = 349,
+
+        OrangeTiger = 350,
+        RegularTiger = 351,
+        RedTiger = 352,
+        SnowTiger = 353,
+        BlackTiger = 354,
+        BigBlackTiger = 355,
+        BigWhiteTiger = 356,
+        OrangeBossTiger = 357,
+        BigBossTiger = 358,
+        //NF_Blank359 = 359,
+
+        //Mon36
+
+        //NF_YurinMon0 = 370,
+        //NF_YurinMon1 = 371,
+        //NF_WhiteBeardedTiger = 372,
+        //NF_BlackBeardedTiger = 373,
+        //NF_HardenedRhino = 374,
+        //NF_Mammoth = 375,
+        //NF_CursedSlave1 = 376,
+        //NF_CursedSlave2 = 377,
+        //NF_CursedSlave3 = 378,
+        //NF_PoisonousGolem = 379,
+
+        //NF_GardenSoldier = 380,
+        //NF_GardenDefender = 381,
+        //NF_RedBlossom = 382,
+        //NF_BlueBlossom = 383,
+        //NF_FireBird = 384,
+        //NF_BlueGorilla = 385,
+        //NF_RedGorilla = 386,
+        //NF_Blossom = 387,
+        //NF_BlueBird = 388,
+        //NF_Blank389 = 389,
+
+        //NF_Nameless390 = 390,
+        //NF_Nameless391 = 391,
+        //NF_Nameless392 = 392,
+        //NF_Nameless393 = 393,
+        //NF_Nameless394 = 394,
+        //NF_Nameless395 = 395,
+        //NF_Nameless396 = 396,
+        //NF_Nameless397 = 397,
+        //NF_Nameless398 = 398,
+        //NF_Nameless399 = 399,
+
+        CrystalGolem = 400,
+        //NF_Nameless401 = 401,
+        //NF_Nameless402 = 402,
+        //NF_Nameless403 = 403,
+        //NF_Nameless404 = 404,
+        //NF_Nameless405 = 405,
+        //NF_Nameless406 = 406,
+        //NF_Nameless407 = 407,
+        //NF_Nameless408 = 408,
+        //NF_Nameless409 = 409,
+
+        //NF_Nameless410 = 410,
+        DustDevil = 411,
+        TwinTailScorpion = 412,
+        BloodyMole = 413,
+        //NF_Nameless414 = 414,
+        //NF_Nameless415 = 415,
+        //NF_Nameless416 = 416,
+        //NF_Nameless417 = 417,
+        //NF_Blank418 = 418,
+        //NF_Blank419 = 419,
+
+        //NF_HellVampire = 420,
+        //NF_HellSmelterer = 421,
+        //NF_HellPuddle = 422,
+        //NF_CrystalPillar2 = 423,
+        Terracotta1 = 424,
+        Terracotta2 = 425,
+        Terracotta3 = 426,
+        Terracotta4 = 427,
+        TerracottaSub = 428,
+        TerracottaBoss = 429,
+
+        //Mon43
+
+        //NF_Nameless440 = 440,
+        //NF_Nameless441 = 441,
+        //NF_Nameless442 = 442,
+        SDMob19 = 443,
+        SDMob20 = 444,
+        SDMob21 = 445,
+        SDMob22 = 446,
+        SDMob23 = 447,
+        SDMob24 = 448,
+        SDMob25 = 449,
+
+        SDMob26 = 450,
+        LobsterLord = 453,
+
+        //Mon46
+
+        NewMob1 = 470,
+        NewMob2 = 471,
+        NewMob3 = 472,
+        NewMob4 = 473,
+        NewMob5 = 474,
+        NewMob6 = 475,
+        NewMob7 = 476,
+        NewMob8 = 477,
+        NewMob9 = 478,
+        NewMob10 = 479,
+
+        //Mon48
+
+        MonasteryMon0 = 490,
+        MonasteryMon1 = 491,
+        MonasteryMon2 = 492,
+        MonasteryMon3 = 493,
+        MonasteryMon4 = 494,
+        MonasteryMon5 = 495,
+        MonasteryMon6 = 496,
+        //NF_Blank497 = 497,
+        //NF_Blank498 = 498,
+        //NF_Blank499 = 499,
+
+        //Mon50
+
+        //Mon51
+
+        //Mon52
+
+        //MonMagicEx25
+        SeaHorseCavalry = 530,
+        Seamancer = 531,
+        CoralStoneDuin = 532,
+        Brachiopod = 533,
+        GiantClam = 534,
+        BlueMassif = 535,
+        Mollusk = 536,
+        Kraken = 537,
+        KrakenLeg = 538,
+        GiantClam1 = 539,
+
+        //Mon54
+        SabukGateSouth = 540,
+        SabukGateNorth = 541,
+        SabukGateEast = 542,
+        SabukGateWest = 543,
+        //NF_NorthBarrier = 544,
+        //NF_SouthBarrier = 545,
+        //NF_EastBarrier = 546,
+        //NF_WestBarrier = 547,
+        //NF_TaoSungDoor = 548,
+        //NF_Blank_549 = 549,
+
+        //Mon55
+
+        //Mon56
+        Tornado = 566,
+
+        //Mon57
+
+        //Mon58
+
+        //Mon59
+
+
+        //Flag
+        CastleFlag = 1000
     }
 
-    
+   
     public enum MapIcon
     {
         None,
-        Cave,
-        Exit,
-        Down,
-        Up,
-        Province,
-        Building
+
+        Cave = 1,
+        Exit = 2,
+        Down = 3,
+        Up = 4,
+        Province = 5,
+        Building = 6,
+
+        BichonCity = 100,
+        Castle,
+        BugCaves,
+        CaveUpDown,
+        SmallManInTriangle,
+        Dunes,
+        Doorway,
+        GinkoTree,
+        Forest,
+        InsectCaveBubble,
+        AntCave,
+        JinchonTemple,
+        MiningCave,
+        Mudwall,
+        BorderTown,
+        Oasis,
+        UnknownPalace,
+        Pointer,
+        Serpent,
+        Shrine,
+        SkullCave,
+        SkullBonesCave,
+        StairDown,
+        StairUp,
+        UnknownTemple,
+        Walkway,
+        StoneTemple,
+        WoomaTemple,
+        ZumaTemple,
+        IslandShores,
+        DuneWalkway,
+        DuneWalkway2,
+        ForestWalkway,
+        ForestWalkway2,
+        ForestWalkway3,
+        Star,
+        Lock
     }
 
     public enum Effect
@@ -1041,6 +1378,8 @@ namespace Library
         SweetBrier,
         Karma,
 
+        MirrorImage,
+
         Puppet,
         PuppetFire,
         PuppetIce,
@@ -1049,28 +1388,41 @@ namespace Library
 
         SummonSkeleton,
         SummonShinsu,
+        CursedDoll,
+        UndeadSoul,
 
         ThunderBolt,
+        FrostBiteEnd,
+
         DanceOfSwallow,
         FlashOfLight,
+        ChainOfFireExplode,
 
         DemonExplosion,
-        FrostBiteEnd
+        ParasiteExplode,
+        BurningFireExplode
     }
 
     [Flags]
     public enum PoisonType
     {
         None = 0,
-        Green = 1,
-        Red = 2,
-        Slow = 4,
-        Paralysis = 8,
-        WraithGrip = 16,
-        HellFire = 32,
-        Silenced = 64,
-        Abyss = 128,
-        Infection = 256,
+
+        Green = 1 << 0,         //Tick damage, displays green
+        Red = 1 << 1,           //Increases damage received by 20%, displays red
+        Slow = 1 << 2,          //Reduces attackTime, actionTime, 100ms per value, displays blue
+        Paralysis = 1 << 3,     //Stops movement, physical and magic attacks (all races), displays grey
+        WraithGrip = 1 << 4,    //Stops shoulderdash, movement, displays effect (needs code revisiting)
+        HellFire = 1 << 5,      //Tick damage, no colour
+        Silenced = 1 << 6,      //Stops movement (all races), physical and magic attacks (monster), displays effect
+        Abyss = 1 << 7,         //Reduces monster viewrange, displays blinding effect (player)
+        Parasite = 1 << 8,      //Tick damage, explosion, ignores transparency (monster), displays effect
+        Neutralize = 1 << 9,    //Stops attackTime, slows actionTime, displays effect (needs code revisiting)
+        Fear = 1 << 10,         //Stops attack (monster), forces runaway (monster), displays effect
+        Burn = 1 << 11,         //Tick damage, displays effect
+        Containment = 1 << 12,  //Tick damage, stops movement, displays effect
+        Chain = 1 << 13,        //Tick damage, limits movement, displays effect
+        Hemorrhage = 1 << 14,   //Tick damage, stops recovery, displays effect
     }
 
     public enum SpellEffect
@@ -1080,16 +1432,54 @@ namespace Library
         SafeZone,
 
         FireWall,
-        MonsterFireWall,
         Tempest,
 
         TrapOctagon,
+        DarkSoulPrison,
 
         PoisonousCloud,
+        BurningFire,
 
         Rubble,
 
         MonsterDeathCloud,
+
+        ZombieHole
+    }
+
+
+    public enum MagicEffect
+    {
+        ReflectDamage,
+        Assault,
+        DefensiveBlow,
+
+        MagicShield,
+        MagicShieldStruck,
+        SuperiorMagicShield,
+        SuperiorMagicShieldStruck,
+        ElementalHurricane,
+        FrostBite,
+        Burn,
+
+        CelestialLight,
+        CelestialLightStruck,
+        Parasite,
+        Neutralize,
+
+        WraithGrip,
+        LifeSteal,
+        Silence,
+        Blind,
+        Fear,
+        Abyss,
+        DragonRepulse,
+        Containment,
+        Chain,
+        Hemorrhage,
+
+        Ranking,
+        Developer,
     }
 
     public enum MarketPlaceSort
@@ -1123,6 +1513,7 @@ namespace Library
     public enum RefineType : byte
     {
         None,
+
         Durability,
         DC,
         SpellPower,
@@ -1157,7 +1548,7 @@ namespace Library
 
     public enum ExteriorEffect : byte
     {
-        None,
+        None = 0,
 
         //EquipEffect_Part [1~99] 
         A_WhiteAura = 1,
@@ -1280,6 +1671,9 @@ namespace Library
         StatExtractor = 90,
         SpiritBlade = 91,
         RefineExtractor = 92,
+
+        DualWield = 100,
+        MagicRing = 101
     }
 
     public enum CurrencyType
@@ -1287,7 +1681,18 @@ namespace Library
         Gold = 0,
         GameGold = 1,
         HuntGold = 2,
-        Other = 3
+        Other = 3,
+        FP = 4,
+        CP = 5
+    }
+
+    public enum CurrencyCategory
+    {
+        Basic = 0,
+        Player = 1,
+        Event = 2,
+        Map = 3,
+        Other = 4
     }
 
     [Flags]
@@ -1460,12 +1865,19 @@ namespace Library
         JinSkeleton = 2,
         Shinsu = 3,
         InfernalSoldier = 4,
-        Scarecrow = 5,
+        CursedDoll = 5,
 
         SummonPuppet = 6,
 
         MirrorImage = 7,
+        Tornado = 8,
 
+        UndeadSoul = 9,
+
+        CastleObjective = 10,
+        CastleDefense = 11,
+
+        Blocker = 20,
 
         Larva = 100,
 
@@ -1515,7 +1927,7 @@ namespace Library
         QuartzMiniTurtle = 204,
         QuartzTurtleSub = 205,
 
-        Sacrifice = 210,
+        Sacrifice = 210
     }
 
     public enum FishingState : byte
@@ -1524,6 +1936,16 @@ namespace Library
         Cast,
         Reel,
         Cancel
+    }
+
+    public enum HintPosition : byte
+    {
+        TopLeft,
+        BottomLeft,
+
+        FixedY,
+
+        Fluid
     }
 
     #region Packet Enums
@@ -1648,6 +2070,7 @@ namespace Library
         AnotherUserPassword,
         AnotherUserAdmin,
         Banned,
+        Kicked,
         Crashed
     }
 
@@ -1658,10 +2081,12 @@ namespace Library
         SafeZoneOnly,
         NotInGroup,
         NotInGuild,
+        NotInCastle,
         TooFewInGroup,
         TooManyInGroup,
         ConnectRegionNotSet,
         NoSlots,
+        NoRejoin,
         NotGroupLeader,
         UserCooldown,
         GuildCooldown,
@@ -1680,8 +2105,8 @@ namespace Library
         LoginScene,
         SelectScene,
 
-        // ProvinceMusic,
-        B000,
+        #region Province Music
+        B000 = 3,
         B2,
         B8,
         B009D,
@@ -1719,8 +2144,12 @@ namespace Library
         TS001,
         TS002,
         TS003,
+        #endregion
 
-        ButtonA,
+        LoginScene2,
+        LoginScene3,
+
+        ButtonA = 100,
         ButtonB,
         ButtonC,
 
@@ -1785,6 +2214,9 @@ namespace Library
         MaleDie,
         FemaleDie,
 
+        QuestTake,
+        QuestComplete,
+
         #region Magics
 
         SlayingMale,
@@ -1800,14 +2232,22 @@ namespace Library
 
         BladeStorm,
 
-        DestructiveBlow,
+        DefensiveBlow,
+
+        DestructiveSurge,
 
         DefianceStart,
+
+        ReflectDamageStart,
+
+        InvincibilityStart,
 
         AssaultStart,
 
         SwiftBladeEnd,
 
+        ElementalSwordStart,
+        ElementalSwordEnd,
 
         FireBallStart,
         FireBallTravel,
@@ -1847,10 +2287,8 @@ namespace Library
         TeleportationStart,
 
         LavaStrikeStart,
-        // LavaStrikeEnd,
 
         LightningBeamEnd,
-
 
         FrozenEarthStart,
         FrozenEarthEnd,
@@ -1885,8 +2323,14 @@ namespace Library
         ChainLightningStart,
         ChainLightningEnd,
 
+        ParasiteTravel,
+        ParasiteExplode,
+
         FrostBiteStart,
 
+        ElementalHurricane,
+
+        TornadoStart,
 
         HealStart,
         HealEnd,
@@ -1918,6 +2362,8 @@ namespace Library
         SummonSkeletonStart,
         SummonSkeletonEnd,
 
+        CursedDollEnd,
+
         InvisibilityEnd,
 
         MassInvisibilityTravel,
@@ -1942,6 +2388,14 @@ namespace Library
         StrengthOfFaithStart,
         StrengthOfFaithEnd,
 
+        NeutralizeTravel,
+        NeutralizeEnd,
+
+        DarkSoulPrison,
+
+        CorpseExploderEnd,
+
+        SummonDeadEnd,
 
         PoisonousCloudStart,
 
@@ -1959,9 +2413,16 @@ namespace Library
         SweetBrierMale,
         SweetBrierFemale,
 
+        WaningMoon,
+
+        CalamityOfFullMoon,
+
+        RakeStart,
+
         Karma,
 
         TheNewBeginning,
+        Concentration,
 
         SummonPuppet,
 
@@ -1972,6 +2433,7 @@ namespace Library
         EvasionStart,
         RagingWindStart,
 
+        ChainofFireExplode,
         #endregion
 
         #region Monsters
@@ -1996,6 +2458,10 @@ namespace Library
         SheepStruck,
         SheepDie,
 
+        SkyStingerAttack,
+        SkyStingerStruck,
+        SkyStingerDie,
+
         ClawCatAttack,
         ClawCatStruck,
         ClawCatDie,
@@ -2011,6 +2477,10 @@ namespace Library
         CarnivorousPlantAttack,
         CarnivorousPlantStruck,
         CarnivorousPlantDie,
+
+        YobAttack,
+        YobStruck,
+        YobDie,
 
         OmaAttack,
         OmaStruck,
@@ -2089,7 +2559,6 @@ namespace Library
         AntNeedlerStruck,
         AntNeedlerDie,
 
-
         KeratoidAttack,
         KeratoidStruck,
         KeratoidDie,
@@ -2102,7 +2571,6 @@ namespace Library
         VisceralWormStruck,
         VisceralWormDie,
 
-
         MutantFleaAttack,
         MutantFleaStruck,
         MutantFleaDie,
@@ -2114,7 +2582,6 @@ namespace Library
         BlasterMutantFleaAttack,
         BlasterMutantFleaStruck,
         BlasterMutantFleaDie,
-
 
         WasHatchlingAttack,
         WasHatchlingStruck,
@@ -2161,6 +2628,10 @@ namespace Library
         SpinedDarkLizardStruck,
         SpinedDarkLizardDie,
 
+        DungAttack,
+        DungStruck,
+        DungDie,
+
         UmaInfidelAttack,
         UmaInfidelStruck,
         UmaInfidelDie,
@@ -2176,6 +2647,10 @@ namespace Library
         UmaKingAttack,
         UmaKingStruck,
         UmaKingDie,
+
+        UmaMaceInfidelAttack,
+        UmaMaceInfidelStruck,
+        UmaMaceInfidelDie,
 
         SpiderBatAttack,
         SpiderBatStruck,
@@ -2317,7 +2792,6 @@ namespace Library
         DeathLordJichonAttack2,
         DeathLordJichonAttack3,
 
-
         MinotaurAttack,
         MinotaurStruck,
         MinotaurDie,
@@ -2333,8 +2807,6 @@ namespace Library
         EmperorSaWooAttack,
         EmperorSaWooStruck,
         EmperorSaWooDie,
-
-
 
         BoneArcherAttack,
         BoneArcherStruck,
@@ -2380,7 +2852,6 @@ namespace Library
         RazorTuskStruck,
         RazorTuskDie,
 
-
         PinkGoddessAttack,
         PinkGoddessStruck,
         PinkGoddessDie,
@@ -2414,7 +2885,6 @@ namespace Library
 
         ShinsuShow,
 
-
         CorpseStalkerAttack,
         CorpseStalkerStruck,
         CorpseStalkerDie,
@@ -2438,7 +2908,6 @@ namespace Library
         AquaLizardAttack,
         AquaLizardStruck,
         AquaLizardDie,
-
 
         CrimsonNecromancerAttack,
         CrimsonNecromancerStruck,
@@ -2472,8 +2941,6 @@ namespace Library
         NumaArmoredSoldierAttack,
         NumaArmoredSoldierStruck,
         NumaArmoredSoldierDie,
-
-
 
         IcyRangerAttack,
         IcyRangerStruck,
@@ -2541,8 +3008,6 @@ namespace Library
         QueenOfDawnStruck,
         QueenOfDawnDie,
 
-
-
         OYoungBeastAttack,
         OYoungBeastStruck,
         OYoungBeastDie,
@@ -2583,8 +3048,6 @@ namespace Library
         FerociousIceTigerStruck,
         FerociousIceTigerDie,
 
-
-
         SamaFireGuardianAttack,
         SamaFireGuardianStruck,
         SamaFireGuardianDie,
@@ -2601,7 +3064,6 @@ namespace Library
         SamaWindGuardianStruck,
         SamaWindGuardianDie,
 
-
         PhoenixAttack,
         PhoenixStruck,
         PhoenixDie,
@@ -2614,20 +3076,39 @@ namespace Library
         BlueDragonStruck,
         BlueDragonDie,
 
-        WhiteTigerAttack,
-        WhiteTigerStruck,
-        WhiteTigerDie,
+        WhiteTigerAttack,//TODO - missing sound
+        WhiteTigerStruck,//TODO - missing sound
+        WhiteTigerDie,//TODO - missing sound
 
+        Terracotta1Attack,
+        Terracotta1Struck,
+        Terracotta1Die,
 
+        Terracotta2Attack,
+        Terracotta2Struck,
+        Terracotta2Die,
 
+        Terracotta3Attack,
+        Terracotta3Struck,
+        Terracotta3Die,
+
+        Terracotta4Attack,
+        Terracotta4Struck,
+        Terracotta4Die,
+
+        TerracottaSubAttack,
+        TerracottaSubAttack2,
+        TerracottaSubStruck,
+        TerracottaSubDie,
+
+        TerracottaBossAttack,
+        TerracottaBossAttack2,
+        TerracottaBossStruck,
+        TerracottaBossDie,
 
         #endregion
-
-        ThunderKickEnd,
-
-        ThunderKickStart,
-        RakeStart,
-
     }
+
     #endregion
+
 }

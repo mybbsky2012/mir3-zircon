@@ -10,7 +10,9 @@ using Client.Envir;
 using Client.Models;
 using Client.UserModels;
 using Library;
+using Library.Network.ClientPackets;
 using Library.SystemModels;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using C = Library.Network.ClientPackets;
 
 namespace Client.Scenes.Views
@@ -132,7 +134,7 @@ namespace Client.Scenes.Views
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
             };
-            CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 5, 5);
+            CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
 
             TitleLabel = new DXLabel
@@ -162,6 +164,8 @@ namespace Client.Scenes.Views
 
         public void CreateTabs()
         {
+            var selectedSchool = SchoolTabs.FirstOrDefault(x => x.Value.Selected).Key;
+
             foreach (KeyValuePair<MagicSchool, MagicTab> pair in SchoolTabs)
                 pair.Value.Dispose();
 
@@ -188,11 +192,18 @@ namespace Client.Scenes.Views
 
             foreach (MagicInfo magic in magics)
             {
-                if (magic.Class != MapObject.User.Class || magic.School == MagicSchool.None || magic.School == MagicSchool.Discipline) continue;
+                var hasMagic = MapObject.User.Magics.TryGetValue(magic, out ClientUserMagic userMagic);
 
-                MagicTab tab;
+                if (!hasMagic && (magic.Class != MapObject.User.Class || magic.School == MagicSchool.None || magic.School == MagicSchool.Discipline)) continue;
 
-                if (!SchoolTabs.TryGetValue(magic.School, out tab))
+                if (hasMagic && userMagic.ItemRequired)
+                {
+                    var magicItem = GameScene.Game.Equipment.FirstOrDefault(x => x != null && x.Info.ItemEffect == ItemEffect.MagicRing && x.Info.Shape == magic.Index);
+
+                    if (magicItem == null) continue;
+                }
+
+                if (!SchoolTabs.TryGetValue(magic.School, out MagicTab tab))
                 {
                     SchoolTabs[magic.School] = tab = new MagicTab(magic.School);
                     tab.MouseWheel += tab.ScrollBar.DoMouseWheel;
@@ -212,6 +223,11 @@ namespace Client.Scenes.Views
             foreach (KeyValuePair<MagicSchool, MagicTab> dxTab in SchoolTabs)
             {
                 dxTab.Value.Parent = TabControl;
+
+                if (dxTab.Key == selectedSchool)
+                {
+                    dxTab.Value.Selected = true;
+                }
             }
         }
 
@@ -345,20 +361,25 @@ namespace Client.Scenes.Views
 
             switch (school)
             {
+                case MagicSchool.Active:
+                    TabButton.Index = 166;
+                    TabButton.HoverIndex = 167;
+                    TabButton.PressedIndex = 167;
+                    break;
                 case MagicSchool.Passive:
                     TabButton.Index = 168;
                     TabButton.HoverIndex = 169;
                     TabButton.PressedIndex = 169;
                     break;
-                case MagicSchool.WeaponSkills:
-                    TabButton.Index = 190;
-                    TabButton.HoverIndex = 191;
-                    TabButton.PressedIndex = 191;
+                case MagicSchool.Toggle:
+                    TabButton.Index = 170;
+                    TabButton.HoverIndex = 171;
+                    TabButton.PressedIndex = 171;
                     break;
-                case MagicSchool.Neutral:
-                    TabButton.Index = 188;
-                    TabButton.HoverIndex = 189;
-                    TabButton.PressedIndex = 189;
+                case MagicSchool.Horse:
+                    TabButton.Index = 172;
+                    TabButton.HoverIndex = 173;
+                    TabButton.PressedIndex = 173;
                     break;
                 case MagicSchool.Fire:
                     TabButton.Index = 174;
@@ -380,6 +401,11 @@ namespace Client.Scenes.Views
                     TabButton.HoverIndex = 181;
                     TabButton.PressedIndex = 181;
                     break;
+                case MagicSchool.Phantom:
+                    TabButton.Index = 182;
+                    TabButton.HoverIndex = 183;
+                    TabButton.PressedIndex = 183;
+                    break;
                 case MagicSchool.Holy:
                     TabButton.Index = 184;
                     TabButton.HoverIndex = 185;
@@ -390,12 +416,17 @@ namespace Client.Scenes.Views
                     TabButton.HoverIndex = 187;
                     TabButton.PressedIndex = 187;
                     break;
-                case MagicSchool.Phantom:
-                    TabButton.Index = 182;
-                    TabButton.HoverIndex = 183;
-                    TabButton.PressedIndex = 183;
+                case MagicSchool.Physical:
+                    TabButton.Index = 188;
+                    TabButton.HoverIndex = 189;
+                    TabButton.PressedIndex = 189;
                     break;
-                case MagicSchool.Combat:
+                case MagicSchool.Atrocity:
+                    TabButton.Index = 190;
+                    TabButton.HoverIndex = 191;
+                    TabButton.PressedIndex = 191;
+                    break;
+                case MagicSchool.Kill:
                     TabButton.Index = 192;
                     TabButton.HoverIndex = 193;
                     TabButton.PressedIndex = 193;
@@ -943,11 +974,11 @@ namespace Client.Scenes.Views
                 case MagicSchool.Passive:
                     index = 860;
                     break;
-                case MagicSchool.WeaponSkills:
-                    index = 890;
+                case MagicSchool.Active:
+                    index = 861;
                     break;
-                case MagicSchool.Neutral:
-                    index = 883;
+                case MagicSchool.Toggle:
+                    index = 862;
                     break;
                 case MagicSchool.Fire:
                     index = 870;
@@ -961,16 +992,22 @@ namespace Client.Scenes.Views
                 case MagicSchool.Wind:
                     index = 873;
                     break;
+                case MagicSchool.Phantom:
+                    index = 874;
+                    break;
                 case MagicSchool.Holy:
                     index = 880;
                     break;
                 case MagicSchool.Dark:
                     index = 881;
                     break;
-                case MagicSchool.Phantom:
-                    index = 874;
+                case MagicSchool.Physical:
+                    index = 883;
                     break;
-                case MagicSchool.Combat:
+                case MagicSchool.Atrocity:
+                    index = 890;
+                    break;
+                case MagicSchool.Kill:
                     index = 891;
                     break;
                 case MagicSchool.Assassination:

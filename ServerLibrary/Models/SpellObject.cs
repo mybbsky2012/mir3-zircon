@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using Library;
+﻿using Library;
 using Library.Network;
 using Server.DBModels;
 using Server.Envir;
+using Server.Models.Magics;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 using S = Library.Network.ServerPackets;
 
 
@@ -133,6 +134,8 @@ namespace Server.Models
 
         public void ProcessSpell(MapObject ob)
         {
+            bool explode = false;
+
             switch (Effect)
             {
                 case SpellEffect.PoisonousCloud:
@@ -147,30 +150,94 @@ namespace Server.Models
                     ob.BuffAdd(BuffType.PoisonousCloud, remaining, new Stats { [Stat.Agility] = Power }, false, false, TimeSpan.Zero);
                     break;
                 case SpellEffect.FireWall:
-                case SpellEffect.Tempest:
-                    PlayerObject player = Owner as PlayerObject;
-                    if (player == null || !player.CanAttackTarget(ob)) return;
-
-                    int damage = player.MagicAttack(new List<UserMagic> { Magic }, ob, true);
-
-                    if (damage > 0 && ob.Race == ObjectType.Player)
                     {
-                        foreach (SpellObject spell in player.SpellList)
+                        if (Owner is MonsterObject monster)
                         {
-                            if (spell.Effect != Effect) continue;
+                            if (monster == null || !monster.CanAttackTarget(ob)) return;
 
-                            spell.TickCount--;
-                        } 
+                            monster.Attack(ob, monster.GetDC(), Element.Fire);
+                        }
+                        else if (Owner is PlayerObject player)
+                        {
+                            if (!player.CanAttackTarget(ob)) return;
+
+                            int damage = player.MagicAttack(new List<MagicType> { MagicType.FireWall }, ob, true);
+
+                            if (damage > 0 && ob.Race == ObjectType.Player)
+                            {
+                                foreach (SpellObject spell in player.SpellList)
+                                {
+                                    if (spell.Effect != Effect) continue;
+
+                                    spell.TickCount--;
+                                }
+                            }
+                        }
                     }
                     break;
-                case SpellEffect.MonsterFireWall:
-                    MonsterObject monster = Owner as MonsterObject;
-                    if (monster == null || !monster.CanAttackTarget(ob)) return;
+                case SpellEffect.Tempest:
+                    {
+                        PlayerObject player = Owner as PlayerObject;
+                        if (player == null || !player.CanAttackTarget(ob)) return;
 
-                    monster.Attack(ob, monster.GetDC(), Element.Fire);
+                        int damage = player.MagicAttack(new List<MagicType> { MagicType.Tempest }, ob, true);
+
+                        if (damage > 0 && ob.Race == ObjectType.Player)
+                        {
+                            foreach (SpellObject spell in player.SpellList)
+                            {
+                                if (spell.Effect != Effect) continue;
+
+                                spell.TickCount--;
+                            }
+                        }
+                    }
+                    break;
+                case SpellEffect.DarkSoulPrison:
+                    {
+                        if (Owner is not PlayerObject player || !player.CanAttackTarget(ob)) return;
+
+                        int damage = player.MagicAttack(new List<MagicType> { MagicType.DarkSoulPrison }, ob, true);
+
+                        if (damage > 0 && ob.Race == ObjectType.Player)
+                        {
+                            foreach (SpellObject spell in player.SpellList)
+                            {
+                                if (spell.Effect != Effect) continue;
+
+                                spell.TickCount--;
+                            }
+                        }
+                    }
+                    break;
+                case SpellEffect.BurningFire:
+                    {
+                        if (Owner is not PlayerObject player || !player.CanAttackTarget(ob)) return;
+
+                        explode = true;
+                    }
                     break;
             }
+
+            if (explode)
+            {
+                switch (Effect)
+                {
+                    case SpellEffect.BurningFire:
+                        {
+                            if ((Owner is PlayerObject owner) && owner.GetMagic(MagicType.BurningFire, out BurningFire burningFire))
+                            {
+                                burningFire.Explode(ob.CurrentMap, ob.CurrentLocation);
+                            }
+                        }
+                        break;
+                }
+
+                TickCount = 0;
+                TickTime = SEnvir.Now;
+            }
         }
+
         protected override void OnSpawned()
         {
             base.OnSpawned();
@@ -184,12 +251,6 @@ namespace Server.Models
         public override void OnDespawned()
         {
             base.OnDespawned();
-
-            Owner?.SpellList.Remove(this);
-        }
-        public override void OnSafeDespawn()
-        {
-            base.OnSafeDespawn();
 
             Owner?.SpellList.Remove(this);
         }

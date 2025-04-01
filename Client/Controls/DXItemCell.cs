@@ -1,8 +1,4 @@
-﻿using System;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using Client.Envir;
+﻿using Client.Envir;
 using Client.Models;
 using Client.Scenes;
 using Client.Scenes.Views;
@@ -10,6 +6,10 @@ using Client.UserModels;
 using Library;
 using Library.SystemModels;
 using SlimDX;
+using System;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 using C = Library.Network.ClientPackets;
 
 namespace Client.Controls
@@ -501,7 +501,10 @@ namespace Client.Controls
         #endregion
         
         public DXLabel CountLabel;
-
+        public override void OnMouseWheel(MouseEventArgs e)
+        {
+            HandleMouseWheel(e);
+        }
         public override void OnIsVisibleChanged(bool oValue, bool nValue)
         {
             base.OnIsVisibleChanged(oValue, nValue);
@@ -532,7 +535,6 @@ namespace Client.Controls
             UpdateBorder();
         }
         #endregion
-
 
         #region Hidden
 
@@ -795,6 +797,9 @@ namespace Client.Controls
 
             switch (GridType) //To Grid
             {
+                case GridType.Storage:
+                    if (SelectedCell.Item.Info.ItemEffect == ItemEffect.ItemPart) return;
+                    break;
                 case GridType.PartsStorage:
                     if (SelectedCell.Item.Info.ItemEffect != ItemEffect.ItemPart) return;
                     break;
@@ -959,6 +964,8 @@ namespace Client.Controls
             }
 
             if (GridType == GridType.PartsStorage && toCell.Item != null && toCell.Item.Info.ItemEffect != ItemEffect.ItemPart) return;
+
+            if (GridType == GridType.Storage && toCell.Item != null && toCell.Item.Info.ItemEffect == ItemEffect.ItemPart) return;
 
             if (toCell.Linked)
             {
@@ -1154,6 +1161,7 @@ namespace Client.Controls
                     if (!MapObject.User.InSafeZone) return false;
                     if (GridType != GridType.Inventory && GridType != GridType.Equipment) return false;
                     if (!Item.Info.CanStore) return false;
+                    if (Item.Info.ItemEffect == ItemEffect.ItemPart) return false;
                     break;
 
                 case GridType.RefinementStoneIronOre:
@@ -1249,6 +1257,9 @@ namespace Client.Controls
                 case GridType.WeddingRing:
                     if (GridType != GridType.Inventory) return false;
                     if (Item.Info.ItemType != ItemType.Ring) return false;
+
+                    if (!(GameScene.Game.CanWearItem(Item, EquipmentSlot.RingL) || GameScene.Game.CanWearItem(Item, EquipmentSlot.RingR))) return false;
+
                     break;
                 case GridType.AccessoryRefineUpgradeTarget:
                     if ((Item.Flags & UserItemFlags.NonRefinable) == UserItemFlags.NonRefinable) return false;
@@ -1536,11 +1547,13 @@ namespace Client.Controls
                 case ItemType.Scroll:
                 case ItemType.CompanionFood:
                 case ItemType.ItemPart:
-                    if (!GameScene.Game.CanUseItem(Item) || 
-                        GridType != GridType.Inventory && GridType != GridType.PartsStorage && GridType != GridType.CompanionEquipment && GridType != GridType.CompanionInventory) return false;
+                    if (!GameScene.Game.CanUseItem(Item)) return false;
 
-                    if ((CEnvir.Now < GameScene.Game.UseItemTime && Item.Info.ItemEffect != ItemEffect.ElixirOfPurification) || MapObject.User.Horse != HorseType.None) return false;
+                    if (GridType != GridType.Inventory && GridType != GridType.PartsStorage && GridType != GridType.CompanionEquipment && GridType != GridType.CompanionInventory) return false;
+                        
+                    if ((Item.Info.Shape == 19 || Item.Info.Shape == 20 || Item.Info.Shape == 21 || Item.Info.Shape == 22) && MapObject.User.Horse != HorseType.None) return false;
 
+                    if ((CEnvir.Now < GameScene.Game.UseItemTime && Item.Info.ItemEffect != ItemEffect.ElixirOfPurification)) return false;
 
                     GameScene.Game.UseItemTime = CEnvir.Now.AddMilliseconds(Math.Max(250, Item.Info.Durability));
                     
@@ -1698,6 +1711,11 @@ namespace Client.Controls
             GameScene.Game.MouseItem = null;
             UpdateBorder();
         }
+        public override void OnMouseUp(MouseEventArgs e)
+        {
+            //This needs to be here to stop chat box losing focus after you link an item
+        }
+
         public override void OnMouseClick(MouseEventArgs e)
         {
             if (Locked || GameScene.Game.CurrencyPickedUp != null || (!Linked && Link != null) || GameScene.Game.Observer || GridType == GridType.Inspect) return;
@@ -1744,7 +1762,14 @@ namespace Client.Controls
                     break;
                 case MouseButtons.Middle:
                     if (Item != null)
+                    {
+                        if (CEnvir.Ctrl)
+                        {
+                            GameScene.Game.ChatTextBox.LinkItem(Item);
+                            break;
+                        }
                         CEnvir.Enqueue(new C.ItemLock { GridType = GridType, SlotIndex = Slot, Locked = (Item.Flags & UserItemFlags.Locked) != UserItemFlags.Locked });
+                    }
                     break;
                 case MouseButtons.Right:
                     switch (GridType)

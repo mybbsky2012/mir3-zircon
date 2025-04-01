@@ -144,14 +144,7 @@ namespace Client.Models.Particles
 
         public void Remove()
         {
-            //TODO: Dispose?
-
             GameScene.Game.MapControl.ParticleEffects.Remove(this);
-        }
-
-        public ParticleType GetType(Type type)
-        {
-            return ParticleTypes.FirstOrDefault(x => type == x.GetType());
         }
 
         #region IDisposable

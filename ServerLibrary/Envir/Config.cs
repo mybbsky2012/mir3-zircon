@@ -20,7 +20,7 @@ namespace Server.Envir
      
         [ConfigSection("System")]
         public static bool CheckVersion { get; set; } = true;
-        public static string VersionPath { get; set; } = @".\Zircon.exe";
+        public static string VersionPath { get; set; } = @".\Zircon.dll";
 
         public static string MapPath { get; set; } = @".\Map\";
         public static byte[] ClientHash;
@@ -107,7 +107,8 @@ namespace Server.Envir
         public static int PvPCurseRate { get; set; } = 4;
         public static TimeSpan AutoReviveDelay { get; set; } = TimeSpan.FromMinutes(10);
         public static TimeSpan RankChangeResetDelay { get; set; } = TimeSpan.FromHours(24);
-
+        public static bool EnableStruck { get; set; } = false;
+        public static bool EnableHermit { get; set; } = false;
 
         [ConfigSection("Monsters")]
         public static TimeSpan DeadDuration { get; set; } = TimeSpan.FromMinutes(1);

@@ -246,7 +246,33 @@ namespace Client.Envir
             {
                 DXControl.HintLabel.Text = DXControl.MouseControl.Hint;
 
-                Point location = new Point(MouseLocation.X, MouseLocation.Y + 17);
+                var c = DXControl.MouseControl;
+
+                int x;
+                int y;
+
+                switch (DXControl.MouseControl.HintPosition)
+                {
+                    default:
+                    case HintPosition.TopLeft:
+                        x = c.DisplayArea.Left;
+                        y = c.DisplayArea.Top - DXControl.HintLabel.Size.Height;
+                        break;
+                    case HintPosition.BottomLeft:
+                        x = c.DisplayArea.Left;
+                        y = c.DisplayArea.Bottom;
+                        break;
+                    case HintPosition.FixedY:
+                        x = MouseLocation.X;
+                        y = c.DisplayArea.Top - DXControl.HintLabel.Size.Height;
+                        break;
+                    case HintPosition.Fluid:
+                        x = MouseLocation.X;
+                        y = MouseLocation.Y + 17;
+                        break;
+                }
+
+                Point location = new(x, y);
 
                 if (location.X + DXControl.HintLabel.Size.Width > DXControl.ActiveScene.Size.Width)
                     location.X = DXControl.ActiveScene.Size.Width - DXControl.HintLabel.Size.Width - 1;
@@ -346,6 +372,7 @@ namespace Client.Envir
                     Globals.CompanionInfoList = Session.GetCollection<CompanionInfo>();
                     Globals.CompanionLevelInfoList = Session.GetCollection<CompanionLevelInfo>();
                     Globals.DisciplineInfoList = Session.GetCollection<DisciplineInfo>();
+                    Globals.FameInfoList = Session.GetCollection<FameInfo>();
 
                     KeyBinds = Session.GetCollection<KeyBindInfo>();
                     WindowSettings = Session.GetCollection<WindowSetting>();
@@ -413,6 +440,45 @@ namespace Client.Envir
             }
         }
 
+        public static string GetKeyBindLabel(KeyBindAction action)
+        {
+            var bind = KeyBinds.Binding.FirstOrDefault(x => x.Action == action);
+
+            if (bind == null)
+            {
+                return Keys.None.ToString();
+            }
+
+            string text = "";
+            if (bind.Control1)
+                text += "Ctrl + ";
+
+            if (bind.Alt1)
+                text += "Alt + ";
+
+            if (bind.Shift1)
+                text += "Shift + ";
+
+            text += CEnvir.GetText(bind.Key1);
+
+            if (bind.Key2 != Keys.None)
+            {
+                text += ", ";
+                if (bind.Control2)
+                    text += "Ctrl + ";
+
+                if (bind.Alt2)
+                    text += "Alt + ";
+
+                if (bind.Shift2)
+                    text += "Shift + ";
+
+                text += CEnvir.GetText(bind.Key2);
+            }
+
+            return text;
+        }
+
         public static void FillStorage(List<ClientUserItem> items, bool observer)
         {
             Storage = new ClientUserItem[1000];
@@ -466,6 +532,10 @@ namespace Client.Envir
 
             switch (action)
             {
+                case KeyBindAction.MenuWindow:
+                    bind.Category = "Windows";
+                    bind.Key1 = Keys.N;
+                    break;
                 case KeyBindAction.ConfigWindow:
                     bind.Category = "Windows";
                     bind.Key1 = Keys.O;

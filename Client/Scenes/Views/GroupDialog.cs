@@ -1,22 +1,23 @@
-﻿using System;
+﻿using Client.Controls;
+using Client.Envir;
+using Client.UserModels;
+using Library;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using Client.Controls;
-using Client.Envir;
-using Client.UserModels;
-using Library;
 using C = Library.Network.ClientPackets;
 
-//Cleaned
 namespace Client.Scenes.Views
 {
-    public sealed  class GroupDialog : DXWindow
+    public sealed class GroupDialog : DXImageControl
     {
         #region Properties
 
-        public DXButton AllowGroupButton, AddButton, RemoveButton;
+        public DXLabel TitleLabel;
+        public DXButton CloseButton, AddButton, RemoveButton;
+        public DXCheckBox AllowGroupBox;
 
         #region AllowGroup
 
@@ -41,14 +42,15 @@ namespace Client.Scenes.Views
 
             if (AllowGroup)
             {
-                AllowGroupButton.Index = 122;
-                AllowGroupButton.Hint = CEnvir.Language.GroupDialogAllowGroupButtonAllowingHint;
+                AllowGroupBox.Label.Text = CEnvir.Language.GroupDialogAllowGroupButtonAllowingHint;
             }
             else
             {
-                AllowGroupButton.Index = 142;
-                AllowGroupButton.Hint = CEnvir.Language.GroupDialogAllowGroupButtonNotAllowingHint;
+                AllowGroupBox.Label.Text = CEnvir.Language.GroupDialogAllowGroupButtonNotAllowingHint;
             }
+
+            AllowGroupBox.SetSilentState(AllowGroup);
+            AllowGroupBox.Location = new Point(230 - AllowGroupBox.Size.Width, 40);
         }
 
         #endregion
@@ -97,29 +99,116 @@ namespace Client.Scenes.Views
 
         #endregion
 
+        public override void OnIsVisibleChanged(bool oValue, bool nValue)
+        {
+            if (IsVisible)
+                BringToFront();
 
-        public override WindowType Type => WindowType.GroupBox;
-        public override bool CustomSize => false;
-        public override bool AutomaticVisibility => true;
+            if (Settings != null)
+                Settings.Visible = nValue;
+
+            base.OnIsVisibleChanged(oValue, nValue);
+        }
+
+        public override void OnLocationChanged(Point oValue, Point nValue)
+        {
+            base.OnLocationChanged(oValue, nValue);
+
+            if (Settings != null && IsMoving)
+                Settings.Location = nValue;
+        }
+
+        public override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+
+            switch (e.KeyCode)
+            {
+                case Keys.Escape:
+                    if (CloseButton.Visible)
+                    {
+                        CloseButton.InvokeMouseClick();
+                        if (!Config.EscapeCloseAll)
+                            e.Handled = true;
+                    }
+                    break;
+            }
+        }
+
+        #endregion
+
+        #region Settings
+
+        public WindowSetting Settings;
+        public WindowType Type => WindowType.GroupBox;
+
+        public void LoadSettings()
+        {
+            if (Type == WindowType.None || !CEnvir.Loaded) return;
+
+            Settings = CEnvir.WindowSettings.Binding.FirstOrDefault(x => x.Resolution == Config.GameSize && x.Window == Type);
+
+            if (Settings != null)
+            {
+                ApplySettings();
+                return;
+            }
+
+            Settings = CEnvir.WindowSettings.CreateNewObject();
+            Settings.Resolution = Config.GameSize;
+            Settings.Window = Type;
+            Settings.Size = Size;
+            Settings.Visible = Visible;
+            Settings.Location = Location;
+        }
+
+        public void ApplySettings()
+        {
+            if (Settings == null) return;
+
+            Location = Settings.Location;
+
+            Visible = Settings.Visible;
+        }
 
         #endregion
 
         public GroupDialog()
         {
-            TitleLabel.Text = CEnvir.Language.GroupDialogTitle;
-            HasFooter = true;
+            LibraryFile = LibraryFile.Interface;
+            Index = 240;
+            Movable = true;
+            Sort = true;
 
-            SetClientSize(new Size(200, 200));
-
-            AllowGroupButton = new DXButton
+            TitleLabel = new DXLabel
             {
-                LibraryFile = LibraryFile.GameInter2,
-                Index = 142,
+                Text = CEnvir.Language.GroupDialogTitle,
                 Parent = this,
-                Hint = CEnvir.Language.GroupDialogAllowGroupButtonNotAllowingHint,
-                Location = new Point(ClientArea.X, Size.Height - 46)
+                Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
+                ForeColour = Color.FromArgb(198, 166, 99),
+                Outline = true,
+                OutlineColour = Color.Black,
+                IsControl = false,
             };
-            AllowGroupButton.MouseClick += (o, e) =>
+            TitleLabel.Location = new Point((DisplayArea.Width - TitleLabel.Size.Width) / 2, 8);
+
+            CloseButton = new DXButton
+            {
+                Parent = this,
+                Index = 15,
+                LibraryFile = LibraryFile.Interface,
+            };
+            CloseButton.Location = new Point(240 - CloseButton.Size.Width - 3, 3);
+            CloseButton.MouseClick += (o, e) => Visible = false;
+
+            AllowGroupBox = new DXCheckBox
+            {
+                Label = { Text = CEnvir.Language.GroupDialogAllowGroupButtonNotAllowingHint },
+                Parent = this,
+                Checked = Config.QuestTrackerVisible,
+            };
+            AllowGroupBox.Location = new Point(230 - AllowGroupBox.Size.Width, 40);
+            AllowGroupBox.CheckedChanged += (o, e) =>
             {
                 if (GameScene.Game.Observer) return;
 
@@ -129,8 +218,8 @@ namespace Client.Scenes.Views
             DXTabControl members = new DXTabControl
             {
                 Parent = this,
-                Size = ClientArea.Size,
-                Location = ClientArea.Location,
+                Size = new Size(218, 146),
+                Location = new Point(11, 60),
             };
 
             MemberTab = new DXTab
@@ -145,16 +234,17 @@ namespace Client.Scenes.Views
                     IsControl = false,
                 },
                 Parent = members,
-                Border = true,
+                Border = false,
+                BackColour = Color.Empty
             };
 
             AddButton = new DXButton
             {
-                Size = new Size(60, SmallButtonHeight),
-                ButtonType = ButtonType.SmallButton,
-                Label = {Text = CEnvir.Language.GroupDialogAddButtonLabel },
-                Location = new Point(ClientArea.Right - 135, Size.Height - 40),
+                Size = new Size(36, 36),
+                ButtonType = ButtonType.AddButton,
+                Location = new Point(30, 217),
                 Parent = this,
+                Hint = CEnvir.Language.GroupDialogAddButtonHint
             };
             AddButton.MouseClick += (o, e) =>
             {
@@ -189,12 +279,12 @@ namespace Client.Scenes.Views
 
             RemoveButton = new DXButton
             {
-                Size = new Size(60, SmallButtonHeight),
-                ButtonType = ButtonType.SmallButton,
-                Label = { Text = CEnvir.Language.GroupDialogRemoveButtonLabel },
-                Location = new Point(ClientArea.Right - 65, Size.Height - 40),
+                Size = new Size(36, 36),
+                ButtonType = ButtonType.RemoveButton,
+                Location = new Point(174, 217),
                 Parent = this,
                 Enabled = false,
+                Hint = CEnvir.Language.GroupDialogRemoveButtonHint
             };
             RemoveButton.MouseClick += (o, e) =>
             {
@@ -228,8 +318,9 @@ namespace Client.Scenes.Views
                 DXLabel label = new DXLabel
                 {
                     Parent = MemberTab,
-                    Location = new Point(10 + 100*(i%2), 10 + 20*(i/2)),
+                    Location = new Point(10 + 100*(i%2), 5 + 20*(i/2)),
                     Text = member.Name,
+                    ForeColour = Color.White
                 };
                 label.MouseClick += (o, e) =>
                 {
@@ -242,7 +333,14 @@ namespace Client.Scenes.Views
 
                         if (!GameScene.Game.DataDictionary.TryGetValue(member.ObjectID, out ClientObjectData data)) return;
 
-                        GameScene.Game.BigMapBox.SelectedInfo = Globals.MapInfoList.Binding.FirstOrDefault(x => x.Index == data.MapIndex);
+                        var map = Globals.MapInfoList.Binding.FirstOrDefault(x => x.Index == data.MapIndex);
+
+                        if (!GameScene.Game.BigMapBox.TryShowMap(map))
+                        {
+                            return;
+                        }
+
+                        GameScene.Game.BigMapBox.SelectedInfo = map;
                     }
                 };
 
@@ -251,7 +349,7 @@ namespace Client.Scenes.Views
 
             AddButton.Enabled = Members.Count == 0 || Members[0].ObjectID == GameScene.Game.User.ObjectID;
 
-
+            GameScene.Game.GroupHealthBox.UpdateMembers();
         }
         #endregion
 
@@ -266,12 +364,28 @@ namespace Client.Scenes.Views
                 _AllowGroup = false;
                 AllowGroupChanged = null;
 
-                if (AllowGroupButton != null)
+                if (TitleLabel != null)
                 {
-                    if (!AllowGroupButton.IsDisposed)
-                        AllowGroupButton.Dispose();
+                    if (!TitleLabel.IsDisposed)
+                        TitleLabel.Dispose();
 
-                    AllowGroupButton = null;
+                    TitleLabel = null;
+                }
+
+                if (CloseButton != null)
+                {
+                    if (!CloseButton.IsDisposed)
+                        CloseButton.Dispose();
+
+                    CloseButton = null;
+                }
+
+                if (AllowGroupBox != null)
+                {
+                    if (!AllowGroupBox.IsDisposed)
+                        AllowGroupBox.Dispose();
+
+                    AllowGroupBox = null;
                 }
                 
                 if (AddButton != null)
@@ -330,5 +444,109 @@ namespace Client.Scenes.Views
         #endregion
     }
 
+    public sealed class GroupHealthDialog : DXWindow
+    {
+        public List<DXLabel> Labels = new();
+        public List<DXControl> HealthBars = new();
 
+        public GroupHealthDialog()
+        {
+            HasTitle = false;
+            HasFooter = false;
+            HasTopBorder = false;
+            TitleLabel.Visible = false;
+            CloseButton.Visible = false;
+            Opacity = 0.0F;
+            AllowResize = false;
+            Movable = false;
+            Border = true;
+            IsControl = false;
+
+            Size = new Size(150, 500);
+        }
+
+        public override WindowType Type => WindowType.None;
+
+        public override bool CustomSize => false;
+
+        public override bool AutomaticVisibility => true;
+
+        public void UpdateMembers()
+        {
+            foreach (DXLabel label in Labels)
+                label.Dispose();
+
+            foreach (DXControl healthBar in HealthBars)
+                healthBar.Dispose();
+
+            Labels.Clear();
+
+            HealthBars.Clear();
+
+            CEnvir.LibraryList.TryGetValue(LibraryFile.GameInter, out MirLibrary barLibrary);
+
+            int index = 0;
+
+            for (int i = 0; i < GameScene.Game.GroupBox.Members.Count; i++)
+            {
+                ClientPlayerInfo member = GameScene.Game.GroupBox.Members[i];
+
+                if (member.Name == GameScene.Game.User.Name) continue;
+
+                DXLabel label = new DXLabel
+                {
+                    Parent = this,
+                    Location = new Point(15, 10 + 30 * index),
+                    Text = member.Name,
+                    ForeColour = Color.White,
+                    Tag = member.ObjectID
+                };
+
+                Labels.Add(label);
+
+                var healthBar = new DXControl
+                {
+                    Parent = this,
+                    Location = new Point(15, 30 + 30 * index),
+                    Size = barLibrary.GetSize(52),
+                    Tag = label
+                };
+                healthBar.BeforeDraw += (o, e) =>
+                {
+                    if (barLibrary == null) return;
+
+                    var nameLabel = (DXLabel)((DXControl)o).Tag;
+                    var objectID = (uint)nameLabel.Tag;
+
+                    if (!GameScene.Game.DataDictionary.TryGetValue(objectID, out ClientObjectData data)) return;
+
+                    MirImage backImage = barLibrary.CreateImage(316, ImageType.Image);
+
+                    PresentTexture(backImage.Image, this, new Rectangle(healthBar.DisplayArea.X, healthBar.DisplayArea.Y, (int)backImage.Width, backImage.Height), Color.White, healthBar);
+
+                    if (data.Health <= 0)
+                    {
+                        nameLabel.ForeColour = Color.IndianRed;
+                        return;
+                    }
+
+                    nameLabel.ForeColour = Color.White;
+
+                    float percent = Math.Min(1, Math.Max(0, data.Health / (float)data.MaxHealth));
+
+                    if (percent == 0) return;
+
+                    MirImage image = barLibrary.CreateImage(315, ImageType.Image);
+
+                    if (image == null) return;
+
+                    PresentTexture(image.Image, this, new Rectangle(healthBar.DisplayArea.X, healthBar.DisplayArea.Y, (int)(image.Width * percent), image.Height), Color.White, healthBar);
+                };
+
+                HealthBars.Add(healthBar);
+
+                index++;
+            }
+        }
+    }
 }

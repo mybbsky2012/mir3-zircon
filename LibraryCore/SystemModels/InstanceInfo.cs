@@ -5,9 +5,6 @@ using System.Text.Json.Serialization;
 
 namespace Library.SystemModels
 {
-    //TODO - 
-    //Add conquest on instances
-
     public sealed class InstanceInfo : DBObject
     {
         [IsIdentity]
@@ -85,6 +82,51 @@ namespace Library.SystemModels
             }
         }
         private bool _SafeZoneOnly;
+
+        public bool AllowRejoin
+        {
+            get { return _AllowRejoin; }
+            set
+            {
+                if (_AllowRejoin == value) return;
+
+                var oldValue = _AllowRejoin;
+                _AllowRejoin = value;
+
+                OnChanged(oldValue, value, "AllowRejoin");
+            }
+        }
+        private bool _AllowRejoin;
+
+        public bool AllowTeleport
+        {
+            get { return _AllowTeleport; }
+            set
+            {
+                if (_AllowTeleport == value) return;
+
+                var oldValue = _AllowTeleport;
+                _AllowTeleport = value;
+
+                OnChanged(oldValue, value, "AllowTeleport");
+            }
+        }
+        private bool _AllowTeleport;
+
+        public bool SavePlace
+        {
+            get { return _SavePlace; }
+            set
+            {
+                if (_SavePlace == value) return;
+
+                var oldValue = _SavePlace;
+                _SavePlace = value;
+
+                OnChanged(oldValue, value, "SavePlace");
+            }
+        }
+        private bool _SavePlace;
 
         public byte MinPlayerLevel
         {
@@ -222,6 +264,21 @@ namespace Library.SystemModels
         }
         private int _CooldownTimeInMinutes;
 
+        public int TimeLimitInMinutes
+        {
+            get { return _TimeLimitInMinutes; }
+            set
+            {
+                if (_TimeLimitInMinutes == value) return;
+
+                var oldValue = _TimeLimitInMinutes;
+                _TimeLimitInMinutes = value;
+
+                OnChanged(oldValue, value, "TimeLimitInMinutes");
+            }
+        }
+        private int _TimeLimitInMinutes;
+
         [Association("Map", true)]
         public DBBindingList<InstanceMapInfo> Maps { get; set; }
 
@@ -295,6 +352,21 @@ namespace Library.SystemModels
             }
         }
         private MapInfo _Map;
+
+        public int RespawnIndex
+        {
+            get { return _RespawnIndex; }
+            set
+            {
+                if (_RespawnIndex == value) return;
+
+                var oldValue = _RespawnIndex;
+                _RespawnIndex = value;
+
+                OnChanged(oldValue, value, "RespawnIndex");
+            }
+        }
+        private int _RespawnIndex;
     }
 
     public sealed class InstanceInfoStat : DBObject

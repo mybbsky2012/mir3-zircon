@@ -134,6 +134,8 @@ namespace Client.Scenes.Views
             Settings.Size = Size;
             Settings.Visible = Visible;
             Settings.Location = Location;
+
+            ApplySettings();
         }
 
         public void ApplySettings()
@@ -164,7 +166,7 @@ namespace Client.Scenes.Views
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
             };
-            CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 5, 5);
+            CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
 
             TitleLabel = new DXLabel
@@ -923,8 +925,9 @@ namespace Client.Scenes.Views
             foreach (ItemType itemType in itemTypes)
             {
                 string item = itemType.ToString();
-                if (item == "Nothing" || item == "Consumable" || item == "Torch" || item == "Poison" || item == "Amulet" || item == "Meat" || item == "Ore"
-                || item == "DarkStone" || item == "RefineSpecial" || item == "HorseArmour" || item == "CompanionFood" || item == "System" || item == "ItemPart" || item.Contains("Companion"))
+                if (item == "Nothing" || item == "Consumable" || item == "Torch" || item == "Poison" || item == "Amulet" || item == "Meat" || item == "Ore" || item == "Currency"
+                || item == "DarkStone" || item == "RefineSpecial" || item == "HorseArmour" || item == "CompanionFood" || item == "System" || item == "ItemPart" || item.Contains("Companion")
+                || item == "Hook" || item == "Float" || item == "Bait" || item == "Finder" || item == "Reel")
                 {
                     continue;
                 }

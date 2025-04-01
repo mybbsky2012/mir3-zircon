@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Library;
+﻿using Library;
 using Library.Network;
-using Server.DBModels;
 using Server.Envir;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using S = Library.Network.ServerPackets;
 
 namespace Server.Models.Monsters
@@ -65,12 +61,6 @@ namespace Server.Models.Monsters
 
             Player?.Pets.Remove(this);
         }
-        public override void OnSafeDespawn()
-        {
-            base.OnSafeDespawn();
-
-            Player?.Pets.Remove(this);
-        }
 
         public override void Activate()
         {
@@ -95,28 +85,41 @@ namespace Server.Models.Monsters
                 Player.ActionList.Add(new DelayedAction(
                     SEnvir.Now.AddMilliseconds(800),
                     ActionType.DelayedMagicDamage,
-                    Magics.ToList(),
+                    Magics.Select(x => x.Info.Magic).ToList(),
                     target,
                     Functions.InRange(target.CurrentLocation, CurrentLocation, 1),
                     DarkStoneStats,
                     0));
             }
 
-            Effect effect = Effect.Puppet;
+            var element = Functions.GetAffinityElement(DarkStoneStats);
 
-            if (DarkStoneStats.GetAffinityValue(Element.Fire) > 0)
-                effect = Effect.PuppetFire;
-            else if (DarkStoneStats.GetAffinityValue(Element.Ice) > 0)
-                effect = Effect.PuppetIce;
-            else if (DarkStoneStats.GetAffinityValue(Element.Lightning) > 0)
-                effect = Effect.PuppetLightning;
-            else if (DarkStoneStats.GetAffinityValue(Element.Wind) > 0)
-                effect = Effect.PuppetWind;
+            Effect effect;
+
+            switch (element)
+            {
+                default:
+                    effect = Effect.Puppet;
+                    break;
+                case Element.Fire:
+                    effect = Effect.PuppetFire;
+                    break;
+                case Element.Ice:
+                    effect = Effect.PuppetIce;
+                    break;
+                case Element.Lightning:
+                    effect = Effect.PuppetLightning;
+                    break;
+                case Element.Wind:
+                    effect = Effect.PuppetWind;
+                    break;
+            }
 
             Broadcast(new S.ObjectEffect { Effect = effect, ObjectID = ObjectID });
 
             DeadTime = SEnvir.Now.AddSeconds(2);
         }
+
         public override Packet GetInfoPacket(PlayerObject ob)
         {
             if (Player?.Node == null) return null;

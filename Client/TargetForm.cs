@@ -1,20 +1,15 @@
-﻿using System;
-using System.Drawing;
-using System.Windows.Forms;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using Client.Controls;
+﻿using Client.Controls;
 using Client.Envir;
 using Client.Models;
 using Client.Scenes;
 using Library;
-using SlimDX.Direct3D9;
 using SlimDX.Windows;
+using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using Font = System.Drawing.Font;
 
 namespace Client
@@ -22,6 +17,7 @@ namespace Client
     public sealed class TargetForm : RenderForm
     {
         public bool Resizing { get; private set; }
+
         public TargetForm() : base(Globals.ClientName)
         {
             AutoScaleMode = AutoScaleMode.None;
@@ -49,7 +45,6 @@ namespace Client
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            //TODO Move to other locations instead?
             if (Config.ClipMouse && Focused)
                 Cursor.Clip = RectangleToScreen(ClientRectangle);
             else
@@ -66,6 +61,7 @@ namespace Client
                 CEnvir.SaveException(ex);
             }
         }
+
         protected override void OnMouseDown(MouseEventArgs e)
         {
             if (GameScene.Game != null && e.Button == MouseButtons.Right && (GameScene.Game.SelectedCell != null || GameScene.Game.CurrencyPickedUp != null))
@@ -84,6 +80,7 @@ namespace Client
                 CEnvir.SaveException(ex);
             }
         }
+
         protected override void OnMouseUp(MouseEventArgs e)
         {
 
@@ -99,6 +96,7 @@ namespace Client
                 CEnvir.SaveException(ex);
             }
         }
+
         protected override void OnMouseClick(MouseEventArgs e)
         {
             try
@@ -110,6 +108,7 @@ namespace Client
                 CEnvir.SaveException(ex);
             }
         }
+
         protected override void OnMouseDoubleClick(MouseEventArgs e)
         {
             try
@@ -121,6 +120,7 @@ namespace Client
                 CEnvir.SaveException(ex);
             }
         }
+
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             try
@@ -157,13 +157,14 @@ namespace Client
                 CEnvir.SaveException(ex);
             }
         }
+
         protected override void OnKeyUp(KeyEventArgs e)
         {
             CEnvir.Shift = e.Shift;
             CEnvir.Alt = e.Alt;
             CEnvir.Ctrl = e.Control;
 
-            if (e.KeyCode == Keys.Pause)
+            if (e.KeyCode == Keys.Pause || e.KeyCode == Keys.PrintScreen)
                CreateScreenShot();
 
             try
@@ -176,6 +177,7 @@ namespace Client
                 CEnvir.SaveException(ex);
             }
         }
+
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
             try
@@ -188,12 +190,23 @@ namespace Client
                 CEnvir.SaveException(ex);
             }
         }
-        
-        public void ChaneSize(Size size)
-        {
-            if (ClientSize == size) return;
 
-            ClientSize = size;
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            try
+            {
+                if (GameScene.Game != null && !GameScene.Game.ExitBox.Exiting)
+                {
+                    GameScene.Game.ExitBox.Visible = true;
+                    e.Cancel = true;
+                }
+            }
+            catch { }
+        }
+
+        public void Center()
+        {
+            CenterToScreen();
         }
 
         public static void CreateScreenShot()
@@ -284,5 +297,4 @@ namespace Client
 
         #endregion
     }
-
 }

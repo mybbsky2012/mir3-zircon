@@ -1,14 +1,15 @@
-﻿using System;
-using System.ComponentModel;
-using System.Drawing;
-using System.Reflection;
-using System.Linq;
-using Library.SystemModels;
-using Client.Controls;
+﻿using Client.Controls;
 using Client.Envir;
 using Client.UserModels;
 using Library;
+using Library.SystemModels;
+using System;
+using System.ComponentModel;
+using System.Drawing;
+using System.Linq;
+using System.Reflection;
 using System.Windows.Forms;
+using C = Library.Network.ClientPackets;
 
 namespace Client.Scenes.Views
 {
@@ -121,7 +122,7 @@ namespace Client.Scenes.Views
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
             };
-            CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 5, 5);
+            CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
 
             TitleLabel = new DXLabel
@@ -141,16 +142,16 @@ namespace Client.Scenes.Views
                 LibraryFile = LibraryFile.GameInter,
                 Index = 364,
                 Parent = this,
-                Hint = CEnvir.Language.StorageDialogSortButtonLabel,
-                Enabled = false
+                Hint = CEnvir.Language.StorageDialogSortButtonLabel
             };
-            SortButton.Location = new Point(DisplayArea.Width - 50, 42);
+            SortButton.Location = new Point(DisplayArea.Width - 47, 41);
+            SortButton.MouseClick += SortButton_MouseClick;
 
             TabControl = new DXTabControl
             {
                 Parent = this,
-                Location = new Point(0, 63),
-                Size = new Size(404, 420),
+                Location = new Point(0, 61),
+                Size = new Size(410, 420),
                 Border = false,
                 MarginLeft = 10
             };
@@ -207,7 +208,7 @@ namespace Client.Scenes.Views
 
             Type itemType = typeof(ItemType);
 
-            for (ItemType i = ItemType.Nothing; i <= ItemType.ItemPart; i++)
+            for (ItemType i = ItemType.Nothing; i <= ItemType.Reel; i++)
             {
                 MemberInfo[] infos = itemType.GetMember(i.ToString());
 
@@ -241,10 +242,10 @@ namespace Client.Scenes.Views
             StorageTab = new DXTab
             {
                 Parent = TabControl,
-                Border = false,
                 TabButton = { Label = { Text = CEnvir.Language.StorageDialogStorageTab } },
                 Visible = true,
-                BackColour = Color.Empty
+                BackColour = Color.Empty,
+                Border = false,
             };
 
             PartsTab = new DXTab
@@ -260,7 +261,7 @@ namespace Client.Scenes.Views
             {
                 Parent = StorageTab,
                 GridSize = new Size(1, 1),
-                Location = new Point(15, 16),
+                Location = new Point(19, 11),
                 GridType = GridType.Storage,
                 ItemGrid = CEnvir.Storage,
                 VisibleHeight = 10,
@@ -275,7 +276,7 @@ namespace Client.Scenes.Views
             {
                 Parent = PartsTab,
                 GridSize = new Size(10, 100),
-                Location = new Point(15, 15),
+                Location = new Point(19, 11),
                 GridType = GridType.PartsStorage,
                 ItemGrid = CEnvir.PartsStorage,
                 VisibleHeight = 10,
@@ -312,6 +313,20 @@ namespace Client.Scenes.Views
 
             foreach (DXItemCell cell in PartGrid.Grid)
                 cell.MouseWheel += PartsScrollBar.DoMouseWheel;
+        }
+
+        private void SortButton_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (GameScene.Game.Observer) return;
+
+            DXMessageBox box = new DXMessageBox("Are you sure you want to sort your storage?", "Confirm Sort", DXMessageBoxButtons.YesNo);
+
+            box.YesButton.MouseClick += (o1, e1) =>
+            {
+                C.ItemSort packet = new C.ItemSort { Grid = StorageTab.Visible ? GridType.Storage : GridType.PartsStorage };
+
+                CEnvir.Enqueue(packet);
+            };
         }
 
         public void RefreshStorage()

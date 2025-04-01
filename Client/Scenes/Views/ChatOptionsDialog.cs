@@ -1,8 +1,8 @@
-﻿using System.Drawing;
-using Client.Controls;
+﻿using Client.Controls;
 using Client.Envir;
 using Client.UserModels;
 using Library;
+using System.Drawing;
 
 //Cleaned
 namespace Client.Scenes.Views
@@ -18,12 +18,36 @@ namespace Client.Scenes.Views
 
         #endregion
 
+        public override void OnVisibleChanged(bool oValue, bool nValue)
+        {
+            base.OnVisibleChanged(oValue, nValue);
+
+            foreach (var tab in ChatTab.Tabs)
+            {
+                DXTabControl pnl = tab.Parent as DXTabControl;
+
+                if (Visible)
+                {
+                    foreach (var button in pnl.TabButtons)
+                    {
+                        button.Visible = true;
+                    }
+                }
+                else
+                {
+                    var panel = tab.Parent as DXTabControl;
+
+                    pnl.TabButtons[0].Visible = !(panel.TabButtons.Count == 1 && tab.Panel.HideTabCheckBox.Checked);
+                }
+            }
+        }
+
         public ChatOptionsDialog()
         {
             TitleLabel.Text = CEnvir.Language.ChatOptionsDialogTitle;
             HasFooter = true;
 
-            SetClientSize(new Size(350, 200));
+            SetClientSize(new Size(350, 250));
 
             ListBox = new DXListBox
             {
@@ -157,6 +181,28 @@ namespace Client.Scenes.Views
             panel.TransparentCheckBox.CheckedChanged += (o, e1) => tab.TransparencyChanged();
             panel.AlertCheckBox.CheckedChanged += (o, e1) => tab.AlertIcon.Visible = false;
 
+            panel.HideTabCheckBox.CheckedChanged += (o, e1) =>
+            {
+                var pnl = tab.Parent as DXTabControl;
+
+                if (GameScene.Game.ChatOptionsBox.Visible)
+                {
+                    foreach (var button in pnl.TabButtons)
+                    {
+                        button.Visible = true;
+                    }
+                }
+                else
+                {
+                    pnl.TabButtons[0].Visible = !(pnl.TabButtons.Count == 1 && tab.Panel.HideTabCheckBox.Checked);
+                }
+            };
+
+            panel.ReverseListCheckBox.CheckedChanged += (o, e1) =>
+            {      
+                tab.UpdateItems();
+            };
+
             panel.Size = new Size(ClientArea.Width - panel.Location.X, ClientArea.Height);
 
             panel.TextChanged += (o1, e1) =>
@@ -208,19 +254,45 @@ namespace Client.Scenes.Views
 
         public void CreateDefaultWindows()
         {
-            GameScene.Game.ChatTextBox.Dispose();
+            GameScene.Game.ChatTextBox.SetDefaultSize();
+            GameScene.Game.ChatTextBox.SetDefaultLocation();
+            GameScene.Game.ChatTextBox.UpdateSettings();
 
-            GameScene.Game.ChatTextBox = new ChatTextBox
-            {
-                Parent = GameScene.Game,
-            };
-
-            ChatTab tab = AddNewTab(null);
+            ChatTab chatTab = AddNewTab(null);
             
-            tab.CurrentTabControl.Size = new Size(GameScene.Game.ChatTextBox.Size.Width, 150);
-            tab.CurrentTabControl.Location = new Point(GameScene.Game.ChatTextBox.Location.X, GameScene.Game.ChatTextBox.Location.Y - 150);
+            chatTab.CurrentTabControl.Size = new Size(GameScene.Game.ChatTextBox.Size.Width, 150);
+            chatTab.CurrentTabControl.Location = new Point(GameScene.Game.ChatTextBox.Location.X, GameScene.Game.ChatTextBox.Location.Y - 150);
+            
+            chatTab.Panel.SystemCheckBox.Checked = false;
+            chatTab.Panel.GainsCheckBox.Checked = false;
 
-            tab.Panel.Text = $"Chat {ListBox.Controls.Count - 1}";
+            chatTab.Panel.TransparentCheckBox.Checked = true;
+            chatTab.Panel.HideTabCheckBox.Checked = true;
+            chatTab.Panel.FadeOutCheckBox.Checked = true;
+
+            chatTab.Panel.Text = $"Chat {ListBox.Controls.Count - 1}";
+
+            ChatTab systemTab = AddNewTab(null);
+
+            systemTab.CurrentTabControl.Size = new Size(350, 104);
+            systemTab.CurrentTabControl.Location = new Point(GameScene.Game.MainPanel.Location.X + GameScene.Game.MainPanel.Size.Width - 350, GameScene.Game.MainPanel.Location.Y - 104);
+
+            systemTab.Panel.LocalCheckBox.Checked = false;
+            systemTab.Panel.WhisperCheckBox.Checked = false;
+            systemTab.Panel.GuildCheckBox.Checked = false;
+            systemTab.Panel.ShoutCheckBox.Checked = false;
+            systemTab.Panel.GlobalCheckBox.Checked = false;
+            systemTab.Panel.ObserverCheckBox.Checked = false;
+            systemTab.Panel.AlertCheckBox.Checked = false;
+            systemTab.Panel.HintCheckBox.Checked = false;
+            
+            systemTab.Panel.ReverseListCheckBox.Checked = true;
+            systemTab.Panel.CleanUpCheckBox.Checked = true;
+            systemTab.Panel.TransparentCheckBox.Checked = true;
+            systemTab.Panel.HideTabCheckBox.Checked = true;
+            systemTab.Panel.FadeOutCheckBox.Checked = true;
+
+            systemTab.Panel.Text = $"System";
         }
         #endregion
 
@@ -254,14 +326,19 @@ namespace Client.Scenes.Views
         public DXTextBox NameTextBox;
         public DXButton RemoveButton;
         
-        public DXCheckBox TransparentCheckBox, AlertCheckBox;
+        public DXCheckBox TransparentCheckBox;
+        public DXCheckBox AlertCheckBox;
+        public DXCheckBox HideTabCheckBox;
+        public DXCheckBox ReverseListCheckBox;
+        public DXCheckBox CleanUpCheckBox;
+        public DXCheckBox FadeOutCheckBox;
+
         public DXCheckBox LocalCheckBox, WhisperCheckBox;
         public DXCheckBox GroupCheckBox, GuildCheckBox;
         public DXCheckBox ShoutCheckBox, GlobalCheckBox;
         public DXCheckBox ObserverCheckBox;
         public DXCheckBox SystemCheckBox, GainsCheckBox;
         public DXCheckBox HintCheckBox;
-
 
         public override void OnTextChanged(string oValue, string nValue)
         {
@@ -307,6 +384,37 @@ namespace Client.Scenes.Views
             };
             AlertCheckBox.Location = new Point(216 - AlertCheckBox.Size.Width, 40);
 
+            HideTabCheckBox = new DXCheckBox
+            {
+                Label = { Text = CEnvir.Language.ChatOptionsPanelHideTabLabel },
+                Parent = this,
+                Checked = false,
+            };
+            HideTabCheckBox.Location = new Point(100 - HideTabCheckBox.Size.Width, 65);
+
+            ReverseListCheckBox = new DXCheckBox
+            {
+                Label = { Text = CEnvir.Language.ChatOptionsPanelReverseLabel },
+                Parent = this,
+                Checked = false,
+            };
+            ReverseListCheckBox.Location = new Point(216 - ReverseListCheckBox.Size.Width, 65);
+
+            CleanUpCheckBox = new DXCheckBox
+            {
+                Label = { Text = CEnvir.Language.ChatOptionsPanelCleanUpLabel },
+                Parent = this,
+                Checked = false,
+            };
+            CleanUpCheckBox.Location = new Point(100 - CleanUpCheckBox.Size.Width, 90);
+
+            FadeOutCheckBox = new DXCheckBox
+            {
+                Label = { Text = CEnvir.Language.ChatOptionsPanelFadeOutLabel },
+                Parent = this,
+                Checked = false,
+            };
+            FadeOutCheckBox.Location = new Point(216 - FadeOutCheckBox.Size.Width, 90);
 
             LocalCheckBox = new DXCheckBox
             {
@@ -314,7 +422,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            LocalCheckBox.Location = new Point(100 - LocalCheckBox.Size.Width, 80);
+            LocalCheckBox.Location = new Point(100 - LocalCheckBox.Size.Width, 130);
 
             WhisperCheckBox = new DXCheckBox
             {
@@ -322,7 +430,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            WhisperCheckBox.Location = new Point(216 - WhisperCheckBox.Size.Width, 80);
+            WhisperCheckBox.Location = new Point(216 - WhisperCheckBox.Size.Width, 130);
 
             GroupCheckBox = new DXCheckBox
             {
@@ -330,7 +438,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            GroupCheckBox.Location = new Point(100 - GroupCheckBox.Size.Width, 105);
+            GroupCheckBox.Location = new Point(100 - GroupCheckBox.Size.Width, 155);
 
             GuildCheckBox = new DXCheckBox
             {
@@ -338,7 +446,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            GuildCheckBox.Location = new Point(216 - GuildCheckBox.Size.Width, 105);
+            GuildCheckBox.Location = new Point(216 - GuildCheckBox.Size.Width, 155);
 
             ShoutCheckBox = new DXCheckBox
             {
@@ -346,7 +454,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            ShoutCheckBox.Location = new Point(100 - ShoutCheckBox.Size.Width, 130);
+            ShoutCheckBox.Location = new Point(100 - ShoutCheckBox.Size.Width, 180);
 
             GlobalCheckBox = new DXCheckBox
             {
@@ -354,7 +462,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            GlobalCheckBox.Location = new Point(216 - GlobalCheckBox.Size.Width, 130);
+            GlobalCheckBox.Location = new Point(216 - GlobalCheckBox.Size.Width, 180);
 
             ObserverCheckBox = new DXCheckBox
             {
@@ -362,7 +470,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            ObserverCheckBox.Location = new Point(100 - ObserverCheckBox.Size.Width, 155);
+            ObserverCheckBox.Location = new Point(100 - ObserverCheckBox.Size.Width, 205);
 
             HintCheckBox = new DXCheckBox
             {
@@ -370,7 +478,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            HintCheckBox.Location = new Point(216 - HintCheckBox.Size.Width, 155);
+            HintCheckBox.Location = new Point(216 - HintCheckBox.Size.Width, 205);
 
             SystemCheckBox = new DXCheckBox
             {
@@ -378,7 +486,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            SystemCheckBox.Location = new Point(100 - SystemCheckBox.Size.Width, 180);
+            SystemCheckBox.Location = new Point(100 - SystemCheckBox.Size.Width, 230);
 
             GainsCheckBox = new DXCheckBox
             {
@@ -386,7 +494,7 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Checked = false,
             };
-            GainsCheckBox.Location = new Point(216 - GainsCheckBox.Size.Width, 180);
+            GainsCheckBox.Location = new Point(216 - GainsCheckBox.Size.Width, 230);
 
             RemoveButton = new DXButton
             {
@@ -396,8 +504,6 @@ namespace Client.Scenes.Views
                 Size = new Size(50, SmallButtonHeight),
                 Location = new Point(NameTextBox.DisplayArea.Right + 10, 0),
             };
-
-
         }
         
         #region IDisposable
@@ -438,6 +544,38 @@ namespace Client.Scenes.Views
                         AlertCheckBox.Dispose();
 
                     AlertCheckBox = null;
+                }
+
+                if (HideTabCheckBox != null)
+                {
+                    if (!HideTabCheckBox.IsDisposed)
+                        HideTabCheckBox.Dispose();
+
+                    HideTabCheckBox = null;
+                }
+
+                if (ReverseListCheckBox != null)
+                {
+                    if (!ReverseListCheckBox.IsDisposed)
+                        ReverseListCheckBox.Dispose();
+
+                    ReverseListCheckBox = null;
+                }
+
+                if (CleanUpCheckBox != null)
+                {
+                    if (!CleanUpCheckBox.IsDisposed)
+                        CleanUpCheckBox.Dispose();
+
+                    CleanUpCheckBox = null;
+                }
+
+                if (FadeOutCheckBox != null)
+                {
+                    if (!FadeOutCheckBox.IsDisposed)
+                        FadeOutCheckBox.Dispose();
+
+                    FadeOutCheckBox = null;
                 }
 
                 if (LocalCheckBox != null)

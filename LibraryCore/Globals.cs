@@ -1,15 +1,11 @@
-﻿using System;
+﻿using Library.Network;
+using Library.SystemModels;
+using MirDB;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Security.AccessControl;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Library.Network;
-using Library.Network.ServerPackets;
-using Library.SystemModels;
-using MirDB;
 
 namespace Library
 {
@@ -33,6 +29,7 @@ namespace Library
         public static DBCollection<CompanionLevelInfo> CompanionLevelInfoList;
         public static DBCollection<CurrencyInfo> CurrencyInfoList;
         public static DBCollection<DisciplineInfo> DisciplineInfoList;
+        public static DBCollection<FameInfo> FameInfoList;
 
         public static Random Random = new Random();
 
@@ -40,6 +37,7 @@ namespace Library
         public static readonly Regex PasswordRegex = new Regex(@"^[\S]{" + MinPasswordLength + "," + MaxPasswordLength + "}$", RegexOptions.Compiled);
         public static readonly Regex CharacterReg = new Regex(@"^[A-Za-z0-9]{" + MinCharacterNameLength + "," + MaxCharacterNameLength + @"}$", RegexOptions.Compiled);
         public static readonly Regex GuildNameRegex = new Regex(@"^[A-Za-z0-9]{" + MinGuildNameLength + "," + MaxGuildNameLength + "}$", RegexOptions.Compiled);
+        public static readonly Regex GuildTaxReg = new Regex(@"^(0|[1-9][0-9]?|100)$", RegexOptions.Compiled);
         public static readonly Regex CaptionReg = new Regex(@"^[A-Za-z0-9]{" + MinCaptionLength + "," + MaxCaptionLength + @"}$", RegexOptions.Compiled);
 
         public static Color NoneColour = Color.White,
@@ -50,9 +48,10 @@ namespace Library
                             HolyColour = Color.DarkKhaki,
                             DarkColour = Color.SaddleBrown,
                             PhantomColour = Color.Purple,
-
                             BrownNameColour = Color.Brown,
-                            RedNameColour = Color.Red;
+                            RedNameColour = Color.Red,
+
+                            PlayerLightColour = Color.FromArgb(120, 255, 255, 255);
 
         public const string ClientName = "Legend of Mir 3";
 
@@ -83,13 +82,17 @@ namespace Library
             MaxAutoPotionCount = 8,
 
             MagicRange = 10,
-            MagicMaxLevel = 5,
+            MagicMaxLevel = 4,
+
+            InstanceUnloadTimeInMinutes = 5,
 
             DuraLossRate = 15,
 
             GroupLimit = 15,
 
             MaxGrowthLevel = 3,
+
+            MaxMailStorage = 50,
 
             CloakRange = 3,
             MarketPlaceFee = 0,
@@ -100,9 +103,13 @@ namespace Library
 
             CommonCraftWeaponPercentCost = 30000000,
             SuperiorCraftWeaponPercentCost = 60000000,
-            EliteCraftWeaponPercentCost = 80000000;
+            EliteCraftWeaponPercentCost = 80000000,
+
+            ShurikenLibraryWeaponShape = 33;
 
         public static decimal MarketPlaceTax = 0.07M;  //2.5x Item cost
+
+        public static Regex LinkedItemRegex = new Regex(@"\[(?<Text>.*?):(?<ID>.+?)\]", RegexOptions.Compiled);
 
         public static long
             GuildCreationCost = 7500000,
@@ -113,6 +120,10 @@ namespace Library
         public static long
             MasterRefineCost = 50000,
             MasterRefineEvaluateCost = 250000;
+
+        public static int
+            PhysicalPoisonRate = 200,
+            MagicalPoisonRate = 100;
 
         public static List<string> Languages = new List<string>
         {
@@ -214,120 +225,15 @@ namespace Library
             9000000000000,
             13000000000000,
             17000000000000,
-            1440000000000,
-            1460000000000,
-            1490000000000,
-            1620000000000,
-            1660000000000,
-            1720000000000,
-            1800000000000,
-            1880000000000,
-            2000000000000,
-        };
-
-        public static List<decimal> OldExperienceList = new List<decimal>
-        {
-            0, // Lv 0
-            100,
-            200,
-            300,
-            400,
-            600,
-            900,
-            1200,
-            1700,
-            2500,
-            6000,
-            8000,
-            10000,
-            15000,
-            30000,
-            40000,
-            50000,
-            70000,
-            100000,
-            120000,
-            140000,
-            250000,
-            300000,
-            350000,
-            400000,
-            500000,
-            700000,
-            1000000,
-            1400000,
-            1800000,
-            2000000,
-            2400000,
-            2800000,
-            3200000,
-            3600000,
-            4000000,
-            4800000,
-            5600000,
-            8200000,
-            9000000,
-            11000000,
-            14000000,
-            25000000,
-            45000000,
-            70000000,
-            90000000,
-            110000000,
-            130000000,
-            150000000,
-            170000000,
-            210000000,
-            230000000,
-            250000000,
-            270000000,
-            310000000,
-            330000000,
-            350000000,
-            370000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            400000000,
-            800000000,
-            1400000000,
-            2200000000,
-            3200000000,
-            3600000000,
-            4000000000,
-            4500000000,
-            5000000000,
-            15000000000,
-            45000000000,
-            50000000000,
-            55000000000,
-            60000000000,
-            100000000000,
-            120000000000,
-            135000000000,
-            150000000000,
-            170000000000,
-            300000000000,
-            400000000000,
-            440000000000,
-            460000000000,
-            490000000000,
-            620000000000,
-            660000000000,
-            720000000000,
-            800000000000,
-            880000000000,
-            1000000000000,
+            144000000000000,
+            146000000000000,
+            149000000000000,
+            162000000000000,
+            166000000000000,
+            172000000000000,
+            180000000000000,
+            188000000000000,
+            200000000000000,
         };
 
         public static List<decimal> WeaponExperienceList = new List<decimal>
@@ -399,6 +305,11 @@ namespace Library
             [RefineQuality.Careful] = TimeSpan.FromHours(6),
             [RefineQuality.Precise] = TimeSpan.FromDays(1),
         };
+
+        public static string PluginPath(string assemblyName)
+        {
+            return "Plugins" + "\\" + assemblyName + "\\";
+        }
     }
 
     public sealed class SelectInfo
@@ -503,6 +414,10 @@ namespace Library
         public string FiltersClass { get; set; }
         public string FiltersRarity { get; set; }
         public string FiltersItemType { get; set; }
+
+        //Server settings
+        public bool StruckEnabled { get; set; }
+        public bool HermitEnabled { get; set; }
 
         [CompleteObject]
         public void OnComplete()
@@ -868,6 +783,7 @@ namespace Library
 
         public int Level { get; set; }
         public long Experience { get; set; }
+        public bool ItemRequired { get; set; }
 
         public TimeSpan Cooldown { get; set; }
 
@@ -994,6 +910,9 @@ namespace Library
 
         public string DefaultRank { get; set; }
         public GuildPermission DefaultPermission { get; set; }
+
+        public Color Colour { get; set; }
+        public int Flag { get; set; }
 
         public List<ClientGuildMemberInfo> Members { get; set; }
 
@@ -1210,7 +1129,7 @@ namespace Library
         [IgnorePropertyPacket]
         public bool CanPickup
         {
-            get { return Info != null && Info.DropItem != null; }
+            get { return Info != null && Info.DropItem != null && Info.DropItem.CanDrop; }
         }
     }
 

@@ -1,21 +1,15 @@
-﻿using System;
+﻿using Client.Controls;
+using SlimDX;
+using SlimDX.Direct3D9;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using Client.Controls;
-using Client.Models;
-using Client.Scenes;
-using Library;
-using SlimDX;
-using SlimDX.Direct3D9;
 using Blend = SlimDX.Direct3D9.Blend;
 
 namespace Client.Envir
@@ -74,7 +68,6 @@ namespace Client.Envir
             }
         }
 
-
         public const int LightWidth = 1024;
         public const int LightHeight = 768;
 
@@ -114,89 +107,70 @@ namespace Client.Envir
 
         public static void Create()
         {
-            Parameters = new PresentParameters
+            try
             {
-                Windowed = !Config.FullScreen,
-                SwapEffect = SwapEffect.Discard,
-                BackBufferFormat = Format.X8R8G8B8,
-                PresentationInterval = Config.VSync ? PresentInterval.Default : PresentInterval.Immediate,
-                BackBufferWidth = CEnvir.Target.ClientSize.Width,
-                BackBufferHeight = CEnvir.Target.ClientSize.Height,
-                PresentFlags = PresentFlags.LockableBackBuffer,
-            };
-
-            Direct3D direct3D = new Direct3D();
-
-            Device = new Device(direct3D, direct3D.Adapters.DefaultAdapter.Adapter, DeviceType.Hardware, CEnvir.Target.Handle, CreateFlags.HardwareVertexProcessing, Parameters);
-
-            AdapterInformation adapterInfo = direct3D.Adapters.DefaultAdapter;
-            var modes = adapterInfo.GetDisplayModes(Format.X8R8G8B8);
-
-            foreach (DisplayMode mode in modes)
-            {
-                Size s = new Size(mode.Width, mode.Height);
-                if (s.Width < MinimumResolution.Width || s.Height < MinimumResolution.Height) continue;
-
-                if (!ValidResolutions.Contains(s))
-                    ValidResolutions.Add(s);
-            }
-            ValidResolutions.Sort((s1, s2) => (s1.Width * s1.Height).CompareTo(s2.Width * s2.Height));
-
-            LoadTextures();
-
-            Device.SetDialogBoxMode(true);
-
-
-            const string path = @".\Data\Pallete.png";
-
-            if (File.Exists(path))
-            {
-                using (Bitmap pallete = new Bitmap(path))
+                Parameters = new PresentParameters
                 {
-                    BitmapData data = pallete.LockBits(new Rectangle(Point.Empty, pallete.Size), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                    Windowed = !Config.FullScreen,
+                    SwapEffect = SwapEffect.Discard,
+                    BackBufferFormat = Format.X8R8G8B8,
+                    PresentationInterval = Config.VSync ? PresentInterval.Default : PresentInterval.Immediate,
+                    BackBufferWidth = CEnvir.Target.ClientSize.Width,
+                    BackBufferHeight = CEnvir.Target.ClientSize.Height,
+                    PresentFlags = PresentFlags.LockableBackBuffer,
+                };
 
-                    PalleteData = new byte[pallete.Width*pallete.Height*4];
-                    Marshal.Copy(data.Scan0, PalleteData, 0, PalleteData.Length);
+                Direct3D direct3D = new Direct3D();
 
-                    pallete.UnlockBits(data);
+                Device = new Device(direct3D, direct3D.Adapters.DefaultAdapter.Adapter, DeviceType.Hardware, CEnvir.Target.Handle, CreateFlags.HardwareVertexProcessing, Parameters);
+
+                AdapterInformation adapterInfo = direct3D.Adapters.DefaultAdapter;
+                var modes = adapterInfo.GetDisplayModes(Format.X8R8G8B8);
+
+                foreach (DisplayMode mode in modes)
+                {
+                    Size s = new Size(mode.Width, mode.Height);
+                    if (s.Width < MinimumResolution.Width || s.Height < MinimumResolution.Height) continue;
+
+                    if (!ValidResolutions.Contains(s))
+                        ValidResolutions.Add(s);
+                }
+                ValidResolutions.Sort((s1, s2) => (s1.Width * s1.Height).CompareTo(s2.Width * s2.Height));
+
+                LoadTextures();
+
+                Device.SetDialogBoxMode(true);
+
+                const string path = @".\Data\Pallete.png";
+
+                if (File.Exists(path))
+                {
+                    using (Bitmap pallete = new Bitmap(path))
+                    {
+                        BitmapData data = pallete.LockBits(new Rectangle(Point.Empty, pallete.Size), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+                        PalleteData = new byte[pallete.Width * pallete.Height * 4];
+                        Marshal.Copy(data.Scan0, PalleteData, 0, PalleteData.Length);
+
+                        pallete.UnlockBits(data);
+                    }
                 }
             }
-
-            /*
-                        Bitmap text = new Bitmap(100, 100);
-            using (Graphics g = Graphics.FromImage(text))
+            catch (Direct3DX9NotFoundException ex)
             {
-                ConfigureGraphics(g);
-                g.Clear(Color.Black);
-                string line = "?";
-                System.Drawing.Font font = new System.Drawing.Font(Config.FontName, 13F);
-
-                using (SolidBrush brush = new SolidBrush(Color.FromArgb(0, 0, 8)))
-                {
-                    g.DrawString(line, font, brush, 1, 0);
-                    g.DrawString(line, font, brush, 0, 1);
-                    g.DrawString(line, font, brush, 2, 1);
-                    g.DrawString(line, font, brush, 1, 2);
-                }
-
-                g.DrawString(line, font, Brushes.White, 1, 1);
+                CEnvir.SaveException(ex);
+                throw;
             }
-            text.Save(@"C:\Zircon Server\Data Works\Game\Q.bmp");*/
-
-            
         }
 
         private static unsafe void LoadTextures()
         {
-            // CleanUp();
-
             Sprite = new Sprite(Device);
             Line = new Line(Device) { Width = 1F };
 
             MainSurface = Device.GetBackBuffer(0, 0);
             CurrentSurface = MainSurface;
             Device.SetRenderTarget(0, MainSurface);
-
 
             PoisonTexture = new Texture(Device, 6, 6, 1, Usage.None, Format.A8R8G8B8, Pool.Managed);
 
@@ -216,7 +190,6 @@ namespace Client.Envir
         {
             Texture light = new Texture(Device, LightWidth, LightHeight, 1, Usage.None, Format.A8R8G8B8, Pool.Managed);
 
-
             DataRectangle rect = light.LockRectangle(0, LockFlags.Discard);
 
             using (Bitmap image = new Bitmap(LightWidth, LightHeight, LightWidth * 4, PixelFormat.Format32bppArgb, rect.Data.DataPointer))
@@ -233,11 +206,13 @@ namespace Client.Envir
                     graphics.Save();
                 }
             }
+
             light.UnlockRectangle(0);
             rect.Data.Dispose();
 
             _LightTexture = light;
         }
+
         private static void CleanUp()
         {
             if (Sprite != null)
@@ -296,7 +271,6 @@ namespace Client.Envir
                 PoisonTexture = null;
             }
 
-
             if (_LightTexture != null)
             {
                 if (!_LightTexture.Disposed)
@@ -305,7 +279,6 @@ namespace Client.Envir
                 _LightTexture = null;
             }
 
-
             if (_LightSurface != null)
             {
                 if (!_LightSurface.Disposed)
@@ -313,7 +286,6 @@ namespace Client.Envir
 
                 _LightSurface = null;
             }
-
 
             for (int i = ControlList.Count - 1; i >= 0; i--)
                 ControlList[i].DisposeTexture();
@@ -351,7 +323,6 @@ namespace Client.Envir
 
             if (Device != null)
             {
-
                 if (Device.Direct3D != null)
                 {
                     if (!Device.Direct3D.Disposed)
@@ -547,7 +518,6 @@ namespace Client.Envir
         {
             if (CEnvir.Target == null) return;
 
-
             Config.FullScreen = !Config.FullScreen;
             DXConfigWindow.ActiveConfig.FullScreenCheckBox.Checked = Config.FullScreen;
 
@@ -558,6 +528,7 @@ namespace Client.Envir
             ResetDevice();
             CEnvir.Target.ClientSize = DXControl.ActiveScene.Size;
         }
+
         public static void SetResolution(Size size)
         {
             if (CEnvir.Target.ClientSize == size) return;
@@ -570,6 +541,7 @@ namespace Client.Envir
 
             ResetDevice();
         }
+
         public static void ConfigureGraphics(Graphics graphics)
         {
             graphics.SmoothingMode = SmoothingMode.HighQuality;

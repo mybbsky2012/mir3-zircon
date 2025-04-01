@@ -63,6 +63,9 @@ namespace Server.Envir
         public abstract string ConquestCapture { get; set; }
         public abstract string ConquestOwner { get; set; }
         public abstract string ConquestLost { get; set; }
+        public abstract string ConquestTakingFlag { get; set; }
+        public abstract string ConquestPreventingFlag { get; set; }
+        public abstract string ConquestNotTakingFlag { get; set; }
 
         [ConfigSection("Monster")]
         public abstract string BossSpawn { get; set; }
@@ -132,6 +135,7 @@ namespace Server.Envir
         public abstract string MailHasItems { get; set; }
         public abstract string MailNotFound { get; set; }
         public abstract string MailSelfMail { get; set; }
+        public abstract string MailStorageFull { get; set; }
         public abstract string MailMailCost { get; set; }
         public abstract string MailSendSafeZone { get; set; }
 
@@ -170,6 +174,7 @@ namespace Server.Envir
         public abstract string GuildMemberKicked { get; set; }
         public abstract string GuildKicked { get; set; }
         public abstract string GuildManagePermission { get; set; }
+        public abstract string GuildCastleRepairPermission { get; set; }
         public abstract string GuildMemberLimit { get; set; }
         public abstract string GuildMemberCost { get; set; }
         public abstract string GuildStorageLimit { get; set; }
@@ -205,6 +210,8 @@ namespace Server.Envir
         public abstract string GuildLeave { get; set; }
         public abstract string GuildMemberLeave { get; set; }
         public abstract string GuildWarDeath { get; set; }
+        public abstract string GuildRepairCastleGatesCost { get; set; }
+        public abstract string GuildRepairCastleGuardsCost { get; set; }
 
         [ConfigSection("Group")]
         public abstract string GroupNoGroup { get; set; }
@@ -304,12 +311,14 @@ namespace Server.Envir
         public abstract string InstanceSafeZoneOnly { get; set; }
         public abstract string InstanceNotInGroup { get; set; }
         public abstract string InstanceNotInGuild { get; set; }
+        public abstract string InstanceNotInCastle { get; set; }
         public abstract string InstanceTooFewInGroup { get; set; }
         public abstract string InstanceTooManyInGroup { get; set; }
         public abstract string InstanceConnectRegionNotSet { get; set; }
         public abstract string InstanceUserCooldown { get; set; }
         public abstract string InstanceGuildCooldown { get; set; }
         public abstract string InstanceNoSlots { get; set; }
+        public abstract string InstanceNoRejoin { get; set; }
         public abstract string InstanceMissingItem { get; set; }
         public abstract string InstanceNotGroupLeader { get; set; }
         public abstract string InstanceNoMap { get; set; }
@@ -319,5 +328,8 @@ namespace Server.Envir
         public abstract string DisciplineRequiredLevel { get; set; }
         public abstract string DisciplineRequiredGold { get; set; }
         public abstract string DisciplineRequiredExp { get; set; }
+
+        [ConfigSection("Fame")]
+        public abstract string FameNeedSpace { get; set; }
     }
 }

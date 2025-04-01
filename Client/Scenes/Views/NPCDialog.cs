@@ -1,24 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Windows.Forms;
-using System.Reflection.Emit;
-using Font = System.Drawing.Font;
-
-using Client.Controls;
+﻿using Client.Controls;
 using Client.Envir;
 using Client.Models;
 using Client.UserModels;
 using Library;
 using Library.SystemModels;
-using S = Library.Network.ServerPackets;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
 using C = Library.Network.ClientPackets;
+using Font = System.Drawing.Font;
+using S = Library.Network.ServerPackets;
 
 namespace Client.Scenes.Views
 {
+    public class ButtonInfo
+    {
+        public Rectangle Region;
+        public int Index;
+        public int Length;
+    }
+
     public sealed partial class NPCDialog : DXControl
     {
         #region Properties
@@ -101,6 +105,9 @@ namespace Client.Scenes.Views
             if (GameScene.Game.NPCRollBox != null && !IsVisible)
                 GameScene.Game.NPCRollBox.Visible = false;
 
+            if (GameScene.Game.NPCQuestListBox != null && !IsVisible)
+                GameScene.Game.NPCQuestListBox.Visible = false;
+
             GameScene.Game.InventoryBox.NormalMode();
 
             if (Opened)
@@ -116,6 +123,8 @@ namespace Client.Scenes.Views
                     GameScene.Game.CharacterBox.Location = new Point(Size.Width, 0);
 
                 GameScene.Game.StorageBox.Location = new Point(Math.Max(0, GameScene.Game.InventoryBox.Location.X - GameScene.Game.StorageBox.Size.Width), GameScene.Game.InventoryBox.Location.Y);
+                
+                BringToFront();
             }
             else if (GameScene.Game.CharacterBox.Location.X == Size.Width)
             {
@@ -129,6 +138,7 @@ namespace Client.Scenes.Views
         public NPCDialog()
         {
             Movable = false;
+            Sort = true;
 
             HeaderImage = new DXImageControl
             {
@@ -207,7 +217,7 @@ namespace Client.Scenes.Views
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
             };
-            CloseButton.Location = new Point(380 - CloseButton.Size.Width - 5, 5);
+            CloseButton.Location = new Point(380 - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
         }
 
@@ -240,10 +250,10 @@ namespace Client.Scenes.Views
             Size = new Size(380, _HeaderHeight + _FooterHeight + additionalRowCount * _RowHeight);
 
             PageText.Size = new Size(350, pageTextHeight);
-            PageTextContainer.Size = new Size(350, Size.Height - 45 - 15);
-            ScrollBar.Size = new Size(14, Size.Height - 45 - 15);
+            PageTextContainer.Size = new Size(350, Size.Height - 45 - 14);
+            ScrollBar.Size = new Size(14, Size.Height - 45 - 14);
 
-            ScrollBar.MaxValue = PageText.Size.Height - PageTextContainer.Size.Height + 15;
+            ScrollBar.MaxValue = PageText.Size.Height - PageTextContainer.Size.Height + 14;
         }
 
         public void Response(S.NPCResponse info)
@@ -267,7 +277,7 @@ namespace Client.Scenes.Views
             text = C.Replace(text, @"${Text}");
             PageText.Text = text;
 
-            int height = DXLabel.GetHeight(PageText, Size.Width).Height;
+            int height = DXLabel.GetHeight(PageText, PageText.Size.Width).Height;
             SetSize(height);
             ProcessText(CurrentPageSay);
 
@@ -287,6 +297,7 @@ namespace Client.Scenes.Views
             GameScene.Game.NPCMasterRefineBox.Visible = false;
             GameScene.Game.NPCAccessoryResetBox.Visible = false;
             GameScene.Game.NPCWeaponCraftBox.Visible = false;
+            GameScene.Game.NPCQuestListBox.Visible = false;
 
             if (Rolling)
                 Rolling = false;
@@ -298,6 +309,9 @@ namespace Client.Scenes.Views
             switch (info.Page.DialogType)
             {
                 case NPCDialogType.None:
+                    {
+                        ShowQuestList();
+                    }
                     break;
                 case NPCDialogType.BuySell:
                     GameScene.Game.NPCGoodsBox.Location = new Point(0, Size.Height);
@@ -306,8 +320,14 @@ namespace Client.Scenes.Views
 
                     if (Page.Types.Count > 0)
                     {
-                        GameScene.Game.InventoryBox.SellMode(Page.Currency);
+                        GameScene.Game.InventoryBox.SellMode(Page.Currency, Page.Types.Select(x => x.ItemType).ToList());
                         GameScene.Game.InventoryBox.Visible = true;
+                    }
+
+                    //exclusion to show quest list for sellmode as no dialog beneath
+                    if (!GameScene.Game.NPCGoodsBox.Visible)
+                    {
+                        ShowQuestList();
                     }
                 break;
                 case NPCDialogType.Repair:
@@ -347,7 +367,7 @@ namespace Client.Scenes.Views
                     break;
                 case NPCDialogType.AccessoryRefineUpgrade:
                     GameScene.Game.NPCAccessoryUpgradeBox.Visible = true;
-                    GameScene.Game.NPCAccessoryUpgradeBox.Location = new Point(Size.Width - GameScene.Game.NPCAccessoryUpgradeBox.Size.Width, Size.Height);
+                    GameScene.Game.NPCAccessoryUpgradeBox.Location = new Point(0, Size.Height);
                     break; 
                 case NPCDialogType.AccessoryRefineLevel:
                     GameScene.Game.NPCAccessoryLevelBox.Visible = true;
@@ -373,6 +393,21 @@ namespace Client.Scenes.Views
                     Rolling = true;
                     CEnvir.Enqueue(new C.NPCRoll { Type = 1 });
                     break;
+            }
+        }
+
+        private void ShowQuestList()
+        {
+            GameScene.Game.NPCQuestListBox.NPCInfo = null;
+            GameScene.Game.NPCQuestListBox.Location = new Point(0, GameScene.Game.NPCBox.Size.Height);
+
+            foreach (MapObject ob in GameScene.Game.MapControl.Objects)
+            {
+                if (ob.Race != ObjectType.NPC || ob.ObjectID != GameScene.Game.NPCID) continue;
+
+                GameScene.Game.NPCQuestListBox.NPCInfo = ((NPCObject)ob).NPCInfo;
+
+                break;
             }
         }
         
@@ -580,6 +615,17 @@ namespace Client.Scenes.Views
             return regions;
         }
 
+        public override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+
+            switch (e.KeyCode)
+            {
+                case Keys.Escape:
+                    Visible = false;
+                    break;
+            }
+        }
         #endregion
 
         #region IDisposable
@@ -670,13 +716,6 @@ namespace Client.Scenes.Views
         }
 
         #endregion
-
-        public class ButtonInfo
-        {
-            public Rectangle Region;
-            public int Index;
-            public int Length;
-        }
 
         public class ButtonIndex
         {
@@ -1132,7 +1171,7 @@ namespace Client.Scenes.Views
         public event EventHandler<EventArgs> CurrencyChanged;
         public void OnCurrencyChanged(CurrencyInfo oValue, CurrencyInfo nValue)
         {
-            if (Currency == null || Currency.DropItem == null || Currency.Type != CurrencyType.Other)
+            if (Currency == null || Currency.DropItem == null)
             {
                 CurrencyIcon.LibraryFile = LibraryFile.Inventory;
                 CurrencyIcon.Index = 121;
@@ -2713,7 +2752,318 @@ namespace Client.Scenes.Views
         #endregion
     }
 
-    public sealed class NPCQuestDialog : DXWindow
+    public sealed class NPCQuestListDialog : DXImageControl
+    {
+        public NPCQuestRow[] Rows;
+
+        public DXLabel TitleLabel, AcceptableLabel, CountLabel;
+
+        public List<QuestInfo> Quests = new List<QuestInfo>();
+
+        public DXVScrollBar ScrollBar;
+
+        #region NPCInfo
+
+        public NPCInfo NPCInfo
+        {
+            get => _NPCInfo;
+            set
+            {
+                if (_NPCInfo == value) return;
+
+                NPCInfo oldValue = _NPCInfo;
+                _NPCInfo = value;
+
+                OnNPCInfoChanged(oldValue, value);
+            }
+        }
+        private NPCInfo _NPCInfo;
+        public event EventHandler<EventArgs> NPCInfoChanged;
+        public void OnNPCInfoChanged(NPCInfo oValue, NPCInfo nValue)
+        {
+            NPCInfoChanged?.Invoke(this, EventArgs.Empty);
+
+            if (nValue != null && oValue != null && oValue != nValue)
+            {
+                SelectedQuest = null;
+            }
+
+            UpdateQuestDisplay();
+        }
+
+        #endregion
+
+        #region SelectedQuest
+
+        public NPCQuestRow SelectedQuest
+        {
+            get => _SelectedQuest;
+            set
+            {
+                if (_SelectedQuest == value) return;
+
+                NPCQuestRow oldValue = _SelectedQuest;
+                _SelectedQuest = value;
+
+                OnSelectedQuestChanged(oldValue, value);
+            }
+        }
+        private NPCQuestRow _SelectedQuest;
+        public event EventHandler<EventArgs> SelectedQuestChanged;
+        public void OnSelectedQuestChanged(NPCQuestRow oValue, NPCQuestRow nValue)
+        {
+            if (oValue != null)
+                oValue.Selected = false;
+
+            if (SelectedQuest != null)
+            {
+                SelectedQuest.Selected = true;
+            }
+
+            SelectedQuestChanged?.Invoke(this, EventArgs.Empty);
+
+            GameScene.Game.NPCQuestBox.NPCInfo = NPCInfo;
+            GameScene.Game.NPCQuestBox.SelectedQuest = SelectedQuest;
+            GameScene.Game.NPCQuestBox.Visible = GameScene.Game.NPCQuestBox.SelectedQuest != null;
+        }
+
+        #endregion
+
+        #region IsVisible
+        public override void OnIsVisibleChanged(bool oValue, bool nValue)
+        {
+            base.OnIsVisibleChanged(oValue, nValue);
+
+            if (GameScene.Game.NPCQuestBox != null && !IsVisible)
+            {
+                GameScene.Game.NPCQuestBox.Visible = false;
+                NPCInfo = null;
+            }
+
+            if (IsVisible)
+                BringToFront();
+        }
+        #endregion
+
+        public NPCQuestListDialog()
+        {
+            LibraryFile = LibraryFile.Interface;
+            Index = 209;
+            Movable = false;
+            Sort = true;
+            Location = new Point(0, GameScene.Game.NPCBox.Size.Height);
+
+            TitleLabel = new DXLabel
+            {
+                Text = "Quest List",
+                Parent = this,
+                Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
+                ForeColour = Color.FromArgb(198, 166, 99),
+                Outline = true,
+                OutlineColour = Color.Black,
+                IsControl = false,
+            };
+            TitleLabel.Location = new Point((DisplayArea.Width - TitleLabel.Size.Width) / 2, 8);
+
+            AcceptableLabel = new DXLabel
+            {
+                AutoSize = false,
+                Size = new Size(170, 15),
+                Parent = this,
+                Outline = true,
+                IsControl = false,
+                DrawFormat = TextFormatFlags.HorizontalCenter
+            };
+            AcceptableLabel.Location = new Point(15, 185);
+
+            CountLabel = new DXLabel
+            {
+                AutoSize = false,
+                Size = new Size(50, 15),
+                Parent = this,
+                Outline = true,
+                IsControl = false,
+                DrawFormat = TextFormatFlags.HorizontalCenter
+            };
+            CountLabel.Location = new Point(205, 185);
+
+            Rows = new NPCQuestRow[6];
+
+            DXControl panel = new DXControl
+            {
+                Size = new Size(365, 2 + Rows.Length * 22),
+                Location = new Point(8, 37),
+                Parent = this,
+                DrawTexture = true
+            };
+
+            ScrollBar = new DXVScrollBar
+            {
+                BackColour = Color.Empty,
+                Border = false,
+                UpButton = { Index = 61, LibraryFile = LibraryFile.Interface },
+                DownButton = { Index = 62, LibraryFile = LibraryFile.Interface },
+                PositionBar = { Index = 60, LibraryFile = LibraryFile.Interface },
+                Parent = panel,
+                Location = new Point(panel.Size.Width - 20, 0),
+                Size = new Size(22, Rows.Length * 22 + 5),
+                VisibleSize = Rows.Length,
+                Change = 1,
+            };
+            ScrollBar.ValueChanged += (o, e) => UpdateScrollBar();
+
+            for (int i = 0; i < Rows.Length; i++)
+            {
+                Rows[i] = new NPCQuestRow
+                {
+                    Parent = panel,
+                    Location = new Point(2, 2 + i * 22),
+                    Size = new Size(340, 20)
+                };
+                int index = i;
+                Rows[index].MouseClick += (o, e) =>
+                {
+                    if (Rows[index].QuestInfo == null) return;
+
+                    SelectedQuest = Rows[index];
+                };
+                Rows[index].MouseWheel += ScrollBar.DoMouseWheel;
+            }
+        }
+
+        public void UpdateQuestDisplay()
+        {
+            if (NPCInfo == null)
+            {
+                Visible = false;
+                return;
+            }
+
+            Quests.Clear();
+
+            List<QuestInfo> availableQuests = new List<QuestInfo>(), currentQuests = new List<QuestInfo>(), completeQuests = new List<QuestInfo>();
+
+            foreach (QuestInfo quest in NPCInfo.StartQuests)
+            {
+                if (!GameScene.Game.CanAccept(quest)) continue;
+
+                availableQuests.Add(quest);
+            }
+
+            foreach (QuestInfo quest in NPCInfo.FinishQuests)
+            {
+                ClientUserQuest userQuest = GameScene.Game.QuestLog.FirstOrDefault(x => x.Quest == quest);
+
+                if (userQuest == null || userQuest.Completed) continue;
+
+                if (!userQuest.IsComplete)
+                    currentQuests.Add(quest);
+                else
+                    completeQuests.Add(quest);
+            }
+
+            completeQuests.Sort((x1, x2) => string.Compare(x1.QuestName, x2.QuestName, StringComparison.Ordinal));
+            availableQuests.Sort((x1, x2) => string.Compare(x1.QuestName, x2.QuestName, StringComparison.Ordinal));
+            currentQuests.Sort((x1, x2) => string.Compare(x1.QuestName, x2.QuestName, StringComparison.Ordinal));
+
+            Quests.AddRange(completeQuests);
+            Quests.AddRange(availableQuests);
+            Quests.AddRange(currentQuests);
+
+            Visible = Quests.Count > 0;
+
+            if (Quests.Count == 0) return;
+
+            QuestInfo previousQuest = SelectedQuest?.QuestInfo;
+
+            SelectedQuest = null;
+
+            UpdateScrollBar();
+
+            if (previousQuest != null)
+            {
+                foreach (NPCQuestRow row in Rows)
+                {
+                    if (row.QuestInfo != previousQuest) continue;
+
+                    SelectedQuest = row;
+                    break;
+                }
+            }
+
+            AcceptableLabel.Text = "Acceptable Quests";
+            CountLabel.Text = Quests.Count.ToString();
+
+            //if (SelectedQuest == null)
+            //    SelectedQuest = Rows[0];
+        }
+
+        public void UpdateScrollBar()
+        {
+            ScrollBar.MaxValue = Quests.Count;
+
+            for (int i = 0; i < Rows.Length; i++)
+            {
+                Rows[i].QuestInfo = i + ScrollBar.Value >= Quests.Count ? null : Quests[i + ScrollBar.Value];
+            }
+        }
+
+        #region IDisposable
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                _NPCInfo = null;
+                NPCInfoChanged = null;
+
+                Quests.Clear();
+                Quests = null;
+
+                _SelectedQuest = null;
+                SelectedQuestChanged = null;
+
+                if (Rows != null)
+                {
+                    for (int i = 0; i < Rows.Length; i++)
+                    {
+                        if (Rows[i] != null)
+                        {
+                            if (!Rows[i].IsDisposed)
+                                Rows[i].Dispose();
+
+                            Rows[i] = null;
+                        }
+
+                    }
+
+                    Rows = null;
+                }
+
+                if (ScrollBar != null)
+                {
+                    if (!ScrollBar.IsDisposed)
+                        ScrollBar.Dispose();
+
+                    ScrollBar = null;
+                }
+
+                if (TitleLabel != null)
+                {
+                    if (!TitleLabel.IsDisposed)
+                        TitleLabel.Dispose();
+
+                    TitleLabel = null;
+                }
+            }
+        }
+
+        #endregion
+    }
+
+    public sealed class NPCQuestDialog : DXImageControl
     {
         #region Properties
 
@@ -2737,9 +3087,6 @@ namespace Client.Scenes.Views
         public void OnNPCInfoChanged(NPCInfo oValue, NPCInfo nValue)
         {
             NPCInfoChanged?.Invoke(this, EventArgs.Empty);
-
-
-            UpdateQuestDisplay();
         }
 
         #endregion
@@ -2778,13 +3125,17 @@ namespace Client.Scenes.Views
                 cell.Tag = null;
             }
 
+            SelectedCell = null;
+
             if (SelectedQuest?.QuestInfo == null)
             {
+                QuestLabel.Text = string.Empty;
                 TasksLabel.Text = string.Empty;
                 DescriptionLabel.Text = string.Empty;
 
                 AcceptButton.Visible = false;
                 CompleteButton.Visible = false;
+                StartLabel.Text = string.Empty;
                 EndLabel.Text = string.Empty;
                 return;
             }
@@ -2850,11 +3201,17 @@ namespace Client.Scenes.Views
             if (HasChoice)
                 SelectedCell = null;
 
-
+            QuestLabel.Text = SelectedQuest.QuestInfo.QuestName;
             DescriptionLabel.Text = GameScene.Game.GetQuestText(SelectedQuest.QuestInfo, SelectedQuest.UserQuest, false);
             TasksLabel.Text = GameScene.Game.GetTaskText(SelectedQuest.QuestInfo, SelectedQuest.UserQuest);
 
+            int height = DXLabel.GetHeight(DescriptionLabel, DescriptionLabel.Size.Width).Height;
+
+            DescriptionLabel.Size = new Size(DescriptionContainer.Size.Width, height);
+            DescriptionScrollBar.MaxValue = DescriptionLabel.Size.Height - DescriptionContainer.Size.Height + 14;
+
             EndLabel.Text = SelectedQuest.QuestInfo.FinishNPC.RegionName;
+            StartLabel.Text = SelectedQuest.QuestInfo.StartNPC.RegionName;
 
             AcceptButton.Visible = SelectedQuest.UserQuest == null;
             CompleteButton.Visible = SelectedQuest.UserQuest != null && SelectedQuest.UserQuest.IsComplete;
@@ -2902,13 +3259,24 @@ namespace Client.Scenes.Views
 
         #endregion
 
-        public NPCQuestRow[] Rows;
+        #region IsVisible
+        public override void OnIsVisibleChanged(bool oValue, bool nValue)
+        {
+            base.OnIsVisibleChanged(oValue, nValue);
+
+            if (IsVisible)
+                BringToFront();
+        }
+        #endregion
 
         public List<QuestInfo> Quests = new List<QuestInfo>();
 
-        public DXVScrollBar ScrollBar;
+        public DXButton CloseButton;
+        public DXLabel TitleLabel;
 
-        public DXLabel TasksLabel, DescriptionLabel, EndLabel;
+        public DXControl DescriptionContainer;
+        public DXLabel QuestLabel, TasksLabel, DescriptionLabel, EndLabel, StartLabel;
+        public DXVScrollBar DescriptionScrollBar;
 
         public DXItemGrid RewardGrid, ChoiceGrid;
 
@@ -2918,136 +3286,129 @@ namespace Client.Scenes.Views
 
         public bool HasChoice;
 
-
-        public override WindowType Type => WindowType.None;
-        public override bool CustomSize => false;
-        public override bool AutomaticVisibility => false;
-
         #endregion
 
         public NPCQuestDialog()
         {
-            TitleLabel.Text = "Quests";
-
-            HasFooter = false;
+            LibraryFile = LibraryFile.Interface;
+            Index = 212;
             Movable = false;
-            SetClientSize(new Size(300, 487));
+            Sort = true;
             Location = new Point(GameScene.Game.NPCBox.Size.Width, 0);
 
-            DXLabel label = new DXLabel
+            TitleLabel = new DXLabel
             {
-                Text = "Log",
+                Text = "Quest",
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
                 ForeColour = Color.FromArgb(198, 166, 99),
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
-                Location = ClientArea.Location,
             };
+            TitleLabel.Location = new Point((DisplayArea.Width - TitleLabel.Size.Width) / 2, 8);
 
-            Rows = new NPCQuestRow[6];
-
-            DXControl panel = new DXControl
+            CloseButton = new DXButton
             {
-                Size = new Size(ClientArea.Width, 2+ Rows.Length * 22),
-                Location = new Point(ClientArea.X, ClientArea.Top + label.Size.Height),
                 Parent = this,
-                DrawTexture = true,
+                Index = 15,
+                LibraryFile = LibraryFile.Interface,
+            };
+            CloseButton.Location = new Point(360 - CloseButton.Size.Width - 3, 3);
+            CloseButton.MouseClick += (o, e) => Visible = false;
+
+            int width = 10;
+
+            QuestLabel = new DXLabel
+            {
+                Parent = this,
+                ForeColour = Color.White,
+                IsControl = false,
+                Location = new Point(width, 40)
             };
 
-
-            for (int i = 0; i < Rows.Length; i++)
+            var label = new DXLabel
             {
-                Rows[i] = new NPCQuestRow
-                {
-                    Parent = panel,
-                    Location = new Point(2, 2 + i*22)
-                };
-                int index = i;
-                Rows[index].MouseClick += (o, e) =>
-                {
-                    if (Rows[index].QuestInfo == null) return;
-
-                    SelectedQuest = Rows[index];
-                };
-            }
-
-            ScrollBar = new DXVScrollBar
-            {
-                Parent = panel,
-                Location = new Point(panel.Size.Width - 15, 3),
-                Size = new Size(14, Rows.Length * 22 - 4),
-                VisibleSize = Rows.Length,
-                Change = 1,
-            };
-            ScrollBar.ValueChanged += (o,e) => UpdateScrollBar();
-
-            label = new DXLabel
-            {
-                Text = "Details",
+                Text = CEnvir.Language.QuestTabDetailsLabel,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
                 //ForeColour = Color.FromArgb(198, 166, 99),
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
-                Location = new Point(ClientArea.X, panel.Location.Y + panel.Size.Height + 5),
+                Location = new Point(width, 65)
             };
 
-            
+            DescriptionContainer = new DXControl
+            {
+                Parent = this,
+                Location = new Point(width + 3, label.Location.Y + label.Size.Height + 5),
+                Size = new Size(313, 81),
+            };
+
             DescriptionLabel = new DXLabel
             {
                 AutoSize = false,
-                Size = new Size(ClientArea.Width - 4, 80),
-                Border = true,
-                BorderColour = Color.FromArgb(198, 166, 99),
+                Size = new Size(313, 81),
+                Border = false,
                 ForeColour = Color.White,
-                Location = new Point(ClientArea.X + 3, label.Location.Y + label.Size.Height + 5),
-                Parent = this,
+                Location = new Point(0, 0),
+                Parent = DescriptionContainer,
+                DrawFormat = TextFormatFlags.WordBreak
             };
+
+            DescriptionScrollBar = new DXVScrollBar
+            {
+                Parent = this,
+                Size = new Size(20, 115),
+                Location = new Point(Size.Width - 29, 62),
+                VisibleSize = 6,
+                Change = 1,
+                Border = false,
+                BackColour = Color.Empty,
+                UpButton = { Index = 61, LibraryFile = LibraryFile.Interface },
+                DownButton = { Index = 62, LibraryFile = LibraryFile.Interface },
+                PositionBar = { Index = 60, LibraryFile = LibraryFile.Interface },
+            };
+            DescriptionScrollBar.ValueChanged += DescriptionScrollBar_ValueChanged;
+            DescriptionLabel.MouseWheel += DescriptionScrollBar.DoMouseWheel;
 
             label = new DXLabel
             {
-                Text = "Tasks",
+                Text = CEnvir.Language.QuestTabTasksLabel,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                //ForeColour = Color.FromArgb(198, 166, 99),
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
-                Location = new Point(ClientArea.X, DescriptionLabel.Location.Y + DescriptionLabel.Size.Height + 5),
+                Location = new Point(width + 0, DescriptionContainer.Location.Y + DescriptionContainer.Size.Height + 9),
             };
-
 
             TasksLabel = new DXLabel
             {
                 AutoSize = false,
-                Size = new Size(ClientArea.Width - 4, 80),
-                Border = true,
-                BorderColour = Color.FromArgb(198, 166, 99),
+                Size = new Size(334, 61),
                 ForeColour = Color.White,
-                Location = new Point(ClientArea.X + 3, label.Location.Y + label.Size.Height + 5),
+                Location = new Point(width + 3, label.Location.Y + label.Size.Height + 5),
                 Parent = this,
             };
 
             label = new DXLabel
             {
-                Text = "Rewards",
+                Text = CEnvir.Language.QuestTabRewardsLabel,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                //ForeColour = Color.FromArgb(198, 166, 99),
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
-                Location = new Point(ClientArea.X, TasksLabel.Location.Y + TasksLabel.Size.Height + 5),
+                Location = new Point(width + 0, TasksLabel.Location.Y + TasksLabel.Size.Height + 24),
             };
 
             RewardArray = new ClientUserItem[5];
             RewardGrid = new DXItemGrid
             {
                 Parent = this,
-                Location = new Point(ClientArea.X + 2, label.Location.Y + label.Size.Height + 5),
+                Location = new Point(width + 2, label.Location.Y + label.Size.Height + 5),
                 GridSize = new Size(RewardArray.Length, 1),
                 ItemGrid = RewardArray,
                 ReadOnly = true,
@@ -3055,17 +3416,17 @@ namespace Client.Scenes.Views
 
             label = new DXLabel
             {
-                Text = "Choice",
+                Text = CEnvir.Language.QuestTabChoiceLabel,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
                 //ForeColour = Color.FromArgb(198, 166, 99),
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
-                Location = new Point(RewardGrid.Location.X + 13 + RewardGrid.Size.Width, TasksLabel.Location.Y + TasksLabel.Size.Height + 5),
+                Location = new Point(RewardGrid.Location.X + 13 + RewardGrid.Size.Width, TasksLabel.Location.Y + TasksLabel.Size.Height + 24),
             };
 
-            ChoiceArray = new ClientUserItem[3];
+            ChoiceArray = new ClientUserItem[4];
             ChoiceGrid = new DXItemGrid
             {
                 Parent = this,
@@ -3074,35 +3435,56 @@ namespace Client.Scenes.Views
                 ItemGrid = ChoiceArray,
                 ReadOnly = true,
             };
-
-            foreach (DXItemCell cell in ChoiceGrid.Grid)
+            for (int i = 0; i < 4; i++)
             {
-
-                cell.MouseClick += (o, e) =>
-                {
-                    if (((DXItemCell)o).Item == null) return;
-
-                    SelectedCell = (DXItemCell) o;
-                };
+                ChoiceGrid.Grid[i].MouseClick += (o, e) => SelectedCell = HasChoice ? (DXItemCell)o : null;
             }
 
             label = new DXLabel
             {
-                Text = "End:",
+                Text = CEnvir.Language.QuestTabStartLabel,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
                 //ForeColour = Color.FromArgb(198, 166, 99),
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
-                Location = new Point(ClientArea.X, ChoiceGrid.Location.Y + ChoiceGrid.Size.Height + 10),
             };
+            label.Location = new Point(width + 50 - label.Size.Width, ChoiceGrid.Location.Y + ChoiceGrid.Size.Height + 10);
+
+            StartLabel = new DXLabel
+            {
+                Parent = this,
+                ForeColour = Color.White,
+                Location = new Point(label.Location.X + label.Size.Width - 8, label.Location.Y + (label.Size.Height - 12) / 2),
+            };
+            StartLabel.MouseClick += (o, e) =>
+            {
+                if (SelectedQuest?.QuestInfo?.StartNPC?.Region?.Map == null) return;
+
+                GameScene.Game.BigMapBox.Visible = true;
+                GameScene.Game.BigMapBox.Opacity = 1F;
+                GameScene.Game.BigMapBox.SelectedInfo = SelectedQuest.QuestInfo.StartNPC.Region.Map;
+            };
+
+            label = new DXLabel
+            {
+                Text = CEnvir.Language.QuestTabEndLabel,
+                Parent = this,
+                Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
+                //ForeColour = Color.FromArgb(198, 166, 99),
+                Outline = true,
+                OutlineColour = Color.Black,
+                IsControl = false,
+                Location = new Point(width + 0, label.Location.Y + label.Size.Height),
+            };
+            label.Location = new Point(width + 50 - label.Size.Width, ChoiceGrid.Location.Y + ChoiceGrid.Size.Height + 10 + label.Size.Height);
 
             EndLabel = new DXLabel
             {
                 Parent = this,
                 ForeColour = Color.White,
-                Location = new Point(label.Location.X + label.Size.Width - 8, label.Location.Y + (label.Size.Height - 12)/2),
+                Location = new Point(label.Location.X + label.Size.Width - 8, label.Location.Y + (label.Size.Height - 12) / 2),
             };
             EndLabel.MouseClick += (o, e) =>
             {
@@ -3111,17 +3493,15 @@ namespace Client.Scenes.Views
                 GameScene.Game.BigMapBox.Visible = true;
                 GameScene.Game.BigMapBox.Opacity = 1F;
                 GameScene.Game.BigMapBox.SelectedInfo = SelectedQuest.QuestInfo.FinishNPC.Region.Map;
-
             };
-
 
             AcceptButton = new DXButton
             {
                 Label = { Text = "Accept" },
                 Parent = this,
-                Location = new Point(ClientArea.X + (ClientArea.Size.Width - 100), label.Location.Y + label.Size.Height + 5),
-                Size = new Size(100, SmallButtonHeight),
-                ButtonType = ButtonType.SmallButton,
+                Location = new Point(250, label.Location.Y + label.Size.Height + 40),
+                Size = new Size(100, DefaultHeight),
+                ButtonType = ButtonType.Default,
                 Visible = false,
             };
             AcceptButton.MouseClick += (o, e) =>
@@ -3135,9 +3515,9 @@ namespace Client.Scenes.Views
             {
                 Label = { Text = "Complete" },
                 Parent = this,
-                Location = new Point(ClientArea.X + (ClientArea.Size.Width - 100), ChoiceGrid.Location.Y + ChoiceGrid.Size.Height + 10),
-                Size = new Size(100, SmallButtonHeight),
-                ButtonType = ButtonType.SmallButton,
+                Location = new Point(250, label.Location.Y + label.Size.Height + 40),
+                Size = new Size(100, DefaultHeight),
+                ButtonType = ButtonType.Default,
                 Visible = false,
             };
             CompleteButton.MouseClick += (o, e) =>
@@ -3156,91 +3536,13 @@ namespace Client.Scenes.Views
 
         #region Methods
 
-        public void UpdateQuestDisplay()
+        private void DescriptionScrollBar_ValueChanged(object sender, EventArgs e)
         {
-            if (NPCInfo == null)
-            {
-                Visible = false;
-                return;
-            }
+            int y = -DescriptionScrollBar.Value;
 
-            Quests.Clear();
-
-            List<QuestInfo> availableQuests = new List<QuestInfo>(), currentQuests = new List<QuestInfo>(), completeQuests = new List<QuestInfo>();
-
-            foreach (QuestInfo quest in NPCInfo.StartQuests)
-            {
-                if (!GameScene.Game.CanAccept(quest)) continue;
-
-                availableQuests.Add(quest);
-            }
-            
-            foreach (QuestInfo quest in NPCInfo.FinishQuests)
-            {
-                ClientUserQuest userQuest = GameScene.Game.QuestLog.FirstOrDefault(x => x.Quest == quest);
-
-                if (userQuest == null || userQuest.Completed) continue;
-
-                if (!userQuest.IsComplete)
-                    currentQuests.Add(quest);
-                else
-                    completeQuests.Add(quest);
-            }
-
-
-            completeQuests.Sort((x1, x2) => string.Compare(x1.QuestName, x2.QuestName, StringComparison.Ordinal));
-            availableQuests.Sort((x1, x2) => string.Compare(x1.QuestName, x2.QuestName, StringComparison.Ordinal));
-            currentQuests.Sort((x1, x2) => string.Compare(x1.QuestName, x2.QuestName, StringComparison.Ordinal));
-
-            Quests.AddRange(completeQuests);
-            Quests.AddRange(availableQuests);
-            Quests.AddRange(currentQuests);
-
-            Visible = Quests.Count > 0;
-
-            if (Quests.Count == 0) return;
-
-            QuestInfo previousQuest = SelectedQuest?.QuestInfo;
-
-            SelectedQuest = null;
-
-            UpdateScrollBar();
-
-            if (previousQuest != null)
-            {
-                foreach (NPCQuestRow row in Rows)
-                {
-                    if (row.QuestInfo != previousQuest) continue;
-
-                    SelectedQuest = row;
-                    break;
-                }
-            }
-
-            if (SelectedQuest == null)
-                SelectedQuest = Rows[0];
-
-            if (SelectedQuest?.QuestInfo != null)
-            {
-                DescriptionLabel.Text = GameScene.Game.GetQuestText(SelectedQuest.QuestInfo, SelectedQuest.UserQuest, false);
-                TasksLabel.Text = GameScene.Game.GetTaskText(SelectedQuest.QuestInfo, SelectedQuest.UserQuest);
-
-                AcceptButton.Visible = SelectedQuest.UserQuest == null;
-                CompleteButton.Visible = SelectedQuest.UserQuest != null && SelectedQuest.UserQuest.IsComplete;
-            }
+            DescriptionLabel.Location = new Point(0, 0 + y);
         }
 
-        public void UpdateScrollBar()
-        {
-            ScrollBar.MaxValue = Quests.Count;
-            
-            for (int i = 0; i < Rows.Length; i++)
-            {
-                Rows[i].QuestInfo = i + ScrollBar.Value >= Quests.Count ? null : Quests[i + ScrollBar.Value];
-            }
-
-
-        }
         #endregion
 
         #region IDisposable
@@ -3264,30 +3566,13 @@ namespace Client.Scenes.Views
 
                 _SelectedCell = null;
                 SelectedCellChanged = null;
-                
-                if (Rows != null)
+
+                if (QuestLabel != null)
                 {
-                    for (int i = 0; i < Rows.Length; i++)
-                    {
-                        if (Rows[i] != null)
-                        {
-                            if (!Rows[i].IsDisposed)
-                                Rows[i].Dispose();
+                    if (!QuestLabel.IsDisposed)
+                        QuestLabel.Dispose();
 
-                            Rows[i] = null;
-                        }
-
-                    }
-
-                    Rows = null;
-                }
-
-                if (ScrollBar != null)
-                {
-                    if (!ScrollBar.IsDisposed)
-                        ScrollBar.Dispose();
-
-                    ScrollBar = null;
+                    QuestLabel = null;
                 }
 
                 if (TasksLabel != null)
@@ -3297,6 +3582,14 @@ namespace Client.Scenes.Views
 
                     TasksLabel = null;
                 }
+                
+                if (DescriptionContainer != null)
+                {
+                    if (!DescriptionContainer.IsDisposed)
+                        DescriptionContainer.Dispose();
+
+                    DescriptionContainer = null;
+                }
 
                 if (DescriptionLabel != null)
                 {
@@ -3304,6 +3597,14 @@ namespace Client.Scenes.Views
                         DescriptionLabel.Dispose();
 
                     DescriptionLabel = null;
+                }
+
+                if (DescriptionScrollBar != null)
+                {
+                    if (!DescriptionScrollBar.IsDisposed)
+                        DescriptionScrollBar.Dispose();
+
+                    DescriptionScrollBar = null;
                 }
 
                 if (EndLabel != null)
@@ -3386,7 +3687,7 @@ namespace Client.Scenes.Views
             else
             {
                 UserQuest = GameScene.Game.QuestLog.FirstOrDefault(x => x.Quest == QuestInfo);
-                QuestNameLabel.Text = QuestInfo.QuestName;
+                QuestNameLabel.Text = $"{QuestInfo.QuestName}";
                 QuestIcon.Visible = true;
             }
 
@@ -4393,7 +4694,6 @@ namespace Client.Scenes.Views
             BindButton.MouseClick += (o, e) =>
             {
                 if (RingGrid.Grid[0].Item == null || RingGrid.Grid[0].Item.Info.ItemType != ItemType.Ring) return;
-
 
                 CEnvir.Enqueue(new C.MarriageMakeRing {  Slot = RingGrid.Grid[0].Link.Slot });
 
@@ -7585,5 +7885,190 @@ namespace Client.Scenes.Views
         }
 
         #endregion
+    }
+
+    public class NPCRollDialog : DXControl
+    {
+        private readonly DXAnimatedControl _animation;
+        private readonly DXImageControl _image;
+
+        private int _currentLoop;
+        private int _type;
+        private int _result;
+
+        private bool _rolled;
+        private bool _rolling;
+
+        public NPCRollDialog()
+        {
+            Movable = false;
+            Sort = true;
+
+            _animation = new DXAnimatedControl
+            {
+                Parent = this,
+                Index = 0,
+                LibraryFile = LibraryFile.MiniGames,
+                UseOffSet = true,
+                Location = new Point(0, 0),
+                Visible = true
+            };
+            _animation.AfterAnimationLoop += (o, e) =>
+            {
+                switch (_type)
+                {
+                    case 0: //Die
+                        {
+                            if (_currentLoop < 5)
+                            {
+                                _currentLoop++;
+                                return;
+                            }
+
+                            _image.Visible = true;
+                            _animation.Visible = false;
+                            _animation.Animated = false;
+                            ReturnResult();
+                        }
+                        break;
+                    case 1: //Yut
+                        {
+                            _image.Visible = true;
+                            _animation.Visible = false;
+                            _animation.Animated = false;
+                            ReturnResult();
+                        }
+                        break;
+                }
+
+            };
+
+            _image = new DXImageControl
+            {
+                Parent = this,
+                Index = 0,
+                LibraryFile = LibraryFile.MiniGames,
+                UseOffSet = true,
+                Location = new Point(0, 0),
+                Visible = false
+            };
+            _image.MouseClick += _image_Click;
+        }
+
+        public void Setup(int type, int result, bool autoRoll)
+        {
+            _type = type;
+            _result = result;
+
+            _rolled = false;
+
+            _currentLoop = 0;
+            Visible = true;
+
+            switch (type)
+            {
+                case 0: //Die
+                    {
+                        Size = new Size(65, 65);
+                        Location = new Point((GameScene.ActiveScene.Size.Width / 2) - 38, (GameScene.ActiveScene.Size.Height / 2) - 40);
+
+                        _image.Index = 12;
+                        _image.LibraryFile = LibraryFile.MiniGames;
+                        _image.Visible = true;
+
+                        _animation.Loop = true;
+                        _animation.Visible = false;
+                        _animation.Animated = false;
+                    }
+                    break;
+                case 1: //Yut
+                    {
+                        Size = new Size(180, 210);
+                        Location = new Point((GameScene.ActiveScene.Size.Width / 2) - 90, (GameScene.ActiveScene.Size.Height / 2) - 65);
+
+                        _image.Index = 100;
+                        _image.LibraryFile = LibraryFile.MiniGames;
+                        _image.Visible = true;
+
+                        _animation.Loop = false;
+                        _animation.Visible = false;
+                        _animation.Animated = false;
+                    }
+                    break;
+            }
+        }
+
+        private void Roll()
+        {
+            Visible = true;
+
+            _rolling = true;
+
+            switch (_type)
+            {
+                case 0: //Die
+                    {
+                        _image.Index = 11 + _result;
+                        _image.LibraryFile = LibraryFile.MiniGames;
+                        _image.Visible = false;
+
+                        _animation.BaseIndex = 20;
+                        _animation.LibraryFile = LibraryFile.MiniGames;
+                        _animation.FrameCount = 4;
+                        _animation.AnimationDelay = TimeSpan.FromMilliseconds(400);
+                        _animation.AnimationStart = DateTime.MinValue;
+                        _animation.Loop = true;
+                        _animation.Visible = true;
+                        _animation.Animated = true;
+
+                        DXSoundManager.Play(SoundIndex.RollDice);
+                    }
+                    break;
+                case 1: //Yut
+                    {
+                        _image.Index = 106 + _result;
+                        _image.LibraryFile = LibraryFile.MiniGames;
+                        _image.Visible = false;
+
+                        _animation.BaseIndex = 100;
+                        _animation.LibraryFile = LibraryFile.MiniGames;
+                        _animation.FrameCount = 6;
+                        _animation.AnimationDelay = TimeSpan.FromMilliseconds(600);
+                        _animation.AnimationStart = DateTime.MinValue;
+                        _animation.Loop = false;
+                        _animation.Visible = true;
+                        _animation.Animated = true;
+
+                        DXSoundManager.Play(SoundIndex.RollYut);
+                    }
+                    break;
+            }
+        }
+
+        private void _image_Click(object sender, EventArgs e)
+        {
+            if (_rolling) return;
+
+            if (_rolled)
+            {
+                Hide();
+                return;
+            }
+
+            Roll();
+        }
+
+        private void Hide()
+        {
+            Visible = false;
+        }
+
+        private void ReturnResult()
+        {
+            _rolling = false;
+            _rolled = true;
+
+            CEnvir.Enqueue(new C.NPCRollResult());
+        }
     }
 }

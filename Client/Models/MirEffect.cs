@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Client.Envir;
+﻿using Client.Envir;
 using Client.Models.Particles;
 using Client.Scenes;
 using Library;
-using SlimDX;
+using System;
+using System.Drawing;
 
 namespace Client.Models
 {
@@ -24,7 +19,19 @@ namespace Client.Models
         public int FrameCount;
         public TimeSpan[] Delays;
 
-        public int FrameIndex;
+        public int FrameIndex
+        {
+            get { return _FrameIndex; }
+            set
+            {
+                if (_FrameIndex == value) return;
+
+                _FrameIndex = value;
+                FrameIndexAction?.Invoke();
+            }
+        }
+        private int _FrameIndex;
+
         public Color DrawColour = Color.White;
         public bool Blend;
         public bool Reversed;
@@ -91,13 +98,12 @@ namespace Client.Models
             {
                 if (CEnvir.Now < StartTime) return 0;
 
-                TimeSpan enlapsed = CEnvir.Now - StartTime;
+                TimeSpan elapsed = CEnvir.Now - StartTime;
 
                 if (Loop)
-                    enlapsed = TimeSpan.FromTicks(enlapsed.Ticks % TotalDuration.Ticks);
+                    elapsed = TimeSpan.FromTicks(elapsed.Ticks % TotalDuration.Ticks);
 
-                return StartLight + (EndLight - StartLight)*enlapsed.Ticks/TotalDuration.Ticks;
-
+                return StartLight + (EndLight - StartLight) * elapsed.Ticks / TotalDuration.Ticks;
             }
         }
         public Color FrameLightColour => LightColours[FrameIndex];
@@ -106,6 +112,7 @@ namespace Client.Models
 
         public Action CompleteAction;
         public Action FrameAction;
+        public Action FrameIndexAction;
 
         public Point AdditionalOffSet;
 
@@ -150,6 +157,7 @@ namespace Client.Models
         {
             if (CEnvir.Now < StartTime) return;
             
+            
             if (Target != null)
             {
                 DrawX = Target.DrawX + AdditionalOffSet.X;
@@ -179,17 +187,17 @@ namespace Client.Models
     
         protected virtual int GetFrame()
         {
-            TimeSpan enlapsed = CEnvir.Now - StartTime;
+            TimeSpan elapsed = CEnvir.Now - StartTime;
 
             if (Loop)
-                enlapsed = TimeSpan.FromTicks(enlapsed.Ticks%TotalDuration.Ticks);
+                elapsed = TimeSpan.FromTicks(elapsed.Ticks % TotalDuration.Ticks);
 
             if (Reversed)
             {
                 for (int i = 0; i < Delays.Length; i++)
                 {
-                    enlapsed -= Delays[Delays.Length - 1 - i];
-                    if (enlapsed >= TimeSpan.Zero) continue;
+                    elapsed -= Delays[Delays.Length - 1 - i];
+                    if (elapsed >= TimeSpan.Zero) continue;
 
                     return i;
                 }
@@ -198,8 +206,8 @@ namespace Client.Models
             {
                 for (int i = 0; i < Delays.Length; i++)
                 {
-                    enlapsed -= Delays[i];
-                    if (enlapsed >= TimeSpan.Zero) continue;
+                    elapsed -= Delays[i];
+                    if (elapsed >= TimeSpan.Zero) continue;
 
                     return i;
                 }
@@ -222,6 +230,7 @@ namespace Client.Models
         {
             CompleteAction = null;
             FrameAction = null;
+            FrameIndexAction = null;
             GameScene.Game.MapControl.Effects.Remove(this);
             Target?.Effects.Remove(this);
         }
@@ -231,6 +240,6 @@ namespace Client.Models
     {
         Floor,
         Object,
-        Final,
+        Final
     }
 }
