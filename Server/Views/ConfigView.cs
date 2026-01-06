@@ -1,13 +1,11 @@
-﻿using System;
-using System.ComponentModel;
-using System.IO.Compression;
-using System.IO;
-using System.Windows.Forms;
-using DevExpress.XtraBars;
+﻿using DevExpress.XtraBars;
 using Library;
 using Library.SystemModels;
 using Server.Envir;
-using Server.Models;
+using System;
+using System.ComponentModel;
+using System.IO;
+using System.Windows.Forms;
 using S = Library.Network.ServerPackets;
 
 namespace Server.Views
@@ -147,6 +145,11 @@ namespace Server.Views
             EnableStruckEdit.EditValue = Config.EnableStruck;
             EnableHermitEdit.EditValue = Config.EnableHermit;
             EnableFortuneEdit.EditValue = Config.EnableFortune;
+            AdminGamemasterStartEdit.EditValue = Config.AdminStartInGamemasterMode;
+            AdminObserverStartEdit.EditValue = Config.AdminStartInObserverMode;
+            AdminSupermanStartEdit.EditValue = Config.AdminStartInSupermanMode;
+
+
 
             //Monsters
             DeadDurationEdit.EditValue = Config.DeadDuration;
@@ -261,6 +264,9 @@ namespace Server.Views
             Config.EnableStruck = (bool)EnableStruckEdit.EditValue;
             Config.EnableHermit = (bool)EnableHermitEdit.EditValue;
             Config.EnableFortune = (bool)EnableFortuneEdit.EditValue;
+            Config.AdminStartInGamemasterMode = (bool)AdminGamemasterStartEdit.EditValue;
+            Config.AdminStartInObserverMode = (bool)AdminObserverStartEdit.EditValue;
+            Config.AdminStartInSupermanMode = (bool)AdminSupermanStartEdit.EditValue;
 
             //Monsters
             Config.DeadDuration = (TimeSpan)DeadDurationEdit.EditValue;

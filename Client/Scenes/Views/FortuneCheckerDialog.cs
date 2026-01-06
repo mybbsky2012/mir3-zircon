@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Client.Controls;
+using Client.Envir;
+using Client.UserModels;
+using Library;
+using Library.SystemModels;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
-using Client.Controls;
-using Client.Envir;
-using Client.UserModels;
-using Library;
-using Library.SystemModels;
 using C = Library.Network.ClientPackets;
 
 namespace Client.Scenes.Views
@@ -34,13 +34,14 @@ namespace Client.Scenes.Views
             //HasFooter = true;
             TitleLabel.Text = "Fortune Checker";
             SetClientSize(new Size(485, 551));
-            
+            DropShadow = true;
+
             #region Search
 
             DXControl filterPanel = new DXControl
             {
                 Parent = this,
-                Size = new Size(ClientArea.Width , 26),
+                Size = new Size(ClientArea.Width, 26),
                 Location = new Point(ClientArea.Left, ClientArea.Top),
                 Border = true,
                 BorderColour = Color.FromArgb(198, 166, 99)
@@ -105,7 +106,7 @@ namespace Client.Scenes.Views
             }
 
             ItemTypeBox.ListBox.SelectItem(null);
-            
+
             SearchButton = new DXButton
             {
                 Size = new Size(80, SmallButtonHeight),
@@ -115,7 +116,7 @@ namespace Client.Scenes.Views
                 Label = { Text = "Search" }
             };
             SearchButton.MouseClick += (o, e) => Search();
-        
+
             SearchRows = new FortuneCheckerRow[9];
 
             SearchScrollBar = new DXVScrollBar
@@ -137,12 +138,11 @@ namespace Client.Scenes.Views
                     Parent = this,
                     Location = new Point(ClientArea.X, ClientArea.Y + filterPanel.Size.Height + 5 + i * 58),
                 };
-             //   SearchRows[index].MouseClick += (o, e) => { SelectedRow = SearchRows[index]; };
+                //   SearchRows[index].MouseClick += (o, e) => { SelectedRow = SearchRows[index]; };
                 SearchRows[index].MouseWheel += SearchScrollBar.DoMouseWheel;
             }
 
             #endregion
-
 
         }
 
@@ -165,7 +165,7 @@ namespace Client.Scenes.Views
             foreach (var row in SearchRows)
                 row.Visible = true;
 
-            ItemType filter = (ItemType?) ItemTypeBox.SelectedItem ?? 0;
+            ItemType filter = (ItemType?)ItemTypeBox.SelectedItem ?? 0;
             bool useFilter = ItemTypeBox.SelectedItem != null;
 
             foreach (ItemInfo info in Globals.ItemInfoList.Binding)
@@ -178,7 +178,7 @@ namespace Client.Scenes.Views
 
                 SearchResults.Add(info);
             }
-            
+
             RefreshList();
         }
         public void RefreshList()
@@ -200,6 +200,67 @@ namespace Client.Scenes.Views
             }
 
         }
+        #region IDisposable
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                if (ItemNameBox != null)
+                {
+                    if (!ItemNameBox.IsDisposed)
+                        ItemNameBox.Dispose();
+
+                    ItemNameBox = null;
+                }
+
+                if (ItemTypeBox != null)
+                {
+                    if (!ItemTypeBox.IsDisposed)
+                        ItemTypeBox.Dispose();
+
+                    ItemTypeBox = null;
+                }
+
+                if (SearchScrollBar != null)
+                {
+                    if (!SearchScrollBar.IsDisposed)
+                        SearchScrollBar.Dispose();
+
+                    SearchScrollBar = null;
+                }
+
+                if (SearchButton != null)
+                {
+                    if (!SearchButton.IsDisposed)
+                        SearchButton.Dispose();
+
+                    SearchButton = null;
+                }
+
+                if (SearchRows != null)
+                {
+                    for (int i = 0; i < SearchRows.Length; i++)
+                    {
+                        if (SearchRows[i] == null) continue;
+
+                        if (!SearchRows[i].IsDisposed)
+                            SearchRows[i].Dispose();
+
+                        SearchRows[i] = null;
+                    }
+
+                    SearchRows = null;
+                }
+
+                SearchResults?.Clear();
+                SearchResults = null;
+            }
+        }
+
+        #endregion
         private void SearchScrollBar_ValueChanged(object sender, EventArgs e)
         {
             RefreshList();
@@ -273,7 +334,7 @@ namespace Client.Scenes.Views
             NameLabel.ForeColour = Color.FromArgb(198, 166, 99);
 
             GameScene.Game.FortuneDictionary.TryGetValue(ItemInfo, out Fortune);
-            
+
             UpdateInfo();
 
             ItemInfoChanged?.Invoke(this, EventArgs.Empty);
@@ -287,7 +348,7 @@ namespace Client.Scenes.Views
                 DateLabel.Text = "Not Checked";
                 return;
             }
-            
+
             CountLabel.Text = Fortune.DropCount.ToString("#,##0");
 
             string format = "#,##0";
@@ -296,15 +357,15 @@ namespace Client.Scenes.Views
                 format += ".#####%";
             else
                 format += ".##%";
-            
-            ProgressLabel.Text = (1 + Fortune.DropCount - Fortune.Progress ).ToString(format);
+
+            ProgressLabel.Text = (1 + Fortune.DropCount - Fortune.Progress).ToString(format);
             DateLabel.Text = Functions.ToString(CEnvir.Now - Fortune.CheckDate, true, true);
         }
 
         #endregion
 
         private ClientFortuneInfo Fortune;
-        
+
         public DXItemCell ItemCell;
         public DXLabel NameLabel, CountLabelLabel, CountLabel, ProgressLabelLabel, ProgressLabel, DateLabel, TogoLabel, DateLabelLabel;
         public DXButton CheckButton;
@@ -398,7 +459,7 @@ namespace Client.Scenes.Views
                 ButtonType = ButtonType.SmallButton,
                 Size = new Size(50, SmallButtonHeight),
                 Location = new Point(Size.Width - 55, 34)
-                
+
             };
 
             CheckButton.MouseClick += CheckButton_MouseClick;
@@ -438,7 +499,7 @@ namespace Client.Scenes.Views
 
                 _ItemInfo = null;
                 ItemInfoChanged = null;
-                
+
 
                 if (ItemCell != null)
                 {
@@ -486,6 +547,14 @@ namespace Client.Scenes.Views
                         ProgressLabel.Dispose();
 
                     ProgressLabel = null;
+                }
+
+                if (CheckButton != null)
+                {
+                    if (!CheckButton.IsDisposed)
+                        CheckButton.Dispose();
+
+                    CheckButton = null;
                 }
 
             }

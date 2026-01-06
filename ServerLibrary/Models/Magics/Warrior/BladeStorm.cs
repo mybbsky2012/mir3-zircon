@@ -13,7 +13,7 @@ namespace Server.Models.Magics
         public override bool AttackSkill => true;
 
         public bool CanBladeStorm { get; private set; }
-        public DateTime BladeStormTime {  get; private set; }
+        public DateTime BladeStormTime { get; private set; }
 
         public BladeStorm(PlayerObject player, UserMagic magic) : base(player, magic)
         {
@@ -33,11 +33,10 @@ namespace Server.Models.Magics
 
         public override void Toggle(bool canUse)
         {
-            if (Magic.Cost > Player.CurrentMP || SEnvir.Now < Magic.Cooldown || Player.Dead || (Player.Poison & PoisonType.Paralysis) == PoisonType.Paralysis || (Player.Poison & PoisonType.Silenced) == PoisonType.Silenced) return;
+            if (!CheckCost() || SEnvir.Now < Magic.Cooldown || Player.Dead || (Player.Poison & PoisonType.Paralysis) == PoisonType.Paralysis || (Player.Poison & PoisonType.Silenced) == PoisonType.Silenced) return;
 
-            Player.ChangeMP(-Magic.Cost);
-            Magic.Cooldown = SEnvir.Now.AddMilliseconds(Magic.Info.Delay);
-            Player.Enqueue(new S.MagicCooldown { InfoIndex = Magic.Info.Index, Delay = Magic.Info.Delay });
+            MagicConsume();
+            MagicCooldown();
 
             if (CanBladeStorm)
             {
@@ -52,14 +51,12 @@ namespace Server.Models.Magics
 
             if (Player.GetMagic(MagicType.FlamingSword, out FlamingSword flamingSword) && SEnvir.Now.AddSeconds(2) > flamingSword.Magic.Cooldown)
             {
-                flamingSword.Magic.Cooldown = SEnvir.Now.AddSeconds(2);
-                Player.Enqueue(new S.MagicCooldown { InfoIndex = flamingSword.Magic.Info.Index, Delay = 2000 });
+                MagicCooldown(flamingSword.Magic, 2000);
             }
 
             if (Player.GetMagic(MagicType.DragonRise, out DragonRise dragonRise) && SEnvir.Now.AddSeconds(2) > dragonRise.Magic.Cooldown)
             {
-                dragonRise.Magic.Cooldown = SEnvir.Now.AddSeconds(2);
-                Player.Enqueue(new S.MagicCooldown { InfoIndex = dragonRise.Magic.Info.Index, Delay = 2000 });
+                MagicCooldown(dragonRise.Magic, 2000);
             }
         }
 

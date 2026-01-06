@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Client.Controls;
+﻿using Client.Controls;
+using Client.Envir.Translations;
 using Client.Models;
+using Client.Rendering;
 using Client.Scenes;
 using Client.Scenes.Views;
 using Client.UserModels;
@@ -16,15 +9,17 @@ using Library;
 using Library.Network;
 using Library.SystemModels;
 using MirDB;
-using SlimDX.Direct3D9;
-using System.IO.IsolatedStorage;
-using System.Security;
-using System.Security.Policy;
-using System.Security.Permissions;
-using System.Security.Cryptography.X509Certificates;
-using Client.Envir.Translations;
 using Sentry;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Client.Envir
 {
@@ -80,6 +75,16 @@ namespace Client.Envir
             try
             { A(); }
             catch { }
+        }
+
+        public static void Init(string[] args)
+        {
+            ProcessArgs(args);
+        }
+
+        private static void ProcessArgs(string[] args)
+        {
+            if (args == null || args.Length == 0) return;
         }
 
         public static void LoadLanguage()
@@ -164,7 +169,7 @@ namespace Client.Envir
                 FPSCounter = 0;
                 DPSCount = DPSCounter;
                 DPSCounter = 0;
-                DXManager.MemoryClear();
+                RenderingPipelineManager.MemoryClear();
             }
 
             Connection?.Process();
@@ -292,42 +297,15 @@ namespace Client.Envir
         }
         private static void RenderGame()
         {
-            try
+            if (Target.ClientSize.Width == 0 || Target.ClientSize.Height == 0)
             {
-                if (Target.ClientSize.Width == 0 || Target.ClientSize.Height == 0)
-                {
-                    Thread.Sleep(1);
-                    return;
-                }
+                Thread.Sleep(1);
+                return;
+            }
 
-                if (DXManager.DeviceLost)
-                {
-                    DXManager.AttemptReset();
-                    Thread.Sleep(1);
-                    return;
-                }
-
-                DXManager.Device.Clear(ClearFlags.Target, Color.Black, 1, 0);
-                DXManager.Device.BeginScene();
-                DXManager.Sprite.Begin(SpriteFlags.AlphaBlend);
-
-                DXControl.ActiveScene?.Draw();
-
-                DXManager.Sprite.End();
-                DXManager.Device.EndScene();
-
-                DXManager.Device.Present();
+            if (RenderingPipelineManager.RenderFrame(() => DXControl.ActiveScene?.Draw()))
+            {
                 FPSCounter++;
-            }
-            catch (Direct3D9Exception)
-            {
-                DXManager.DeviceLost = true;
-            }
-            catch (Exception ex)
-            {
-                SaveException(ex);
-
-                DXManager.AttemptRecovery();
             }
         }
 
@@ -337,7 +315,7 @@ namespace Client.Envir
 
             DXControl.ActiveScene.Dispose();
             DXSoundManager.StopAllSounds();
-            DXControl.ActiveScene = new LoginScene(Config.IntroSceneSize);
+            DXControl.ActiveScene = new LoginScene(Config.ExtendedLogin ? Config.GameSize : Config.IntroSceneSize);
 
             BlockList = new List<ClientBlockInfo>();
         }
@@ -373,6 +351,9 @@ namespace Client.Envir
                     Globals.CompanionLevelInfoList = Session.GetCollection<CompanionLevelInfo>();
                     Globals.DisciplineInfoList = Session.GetCollection<DisciplineInfo>();
                     Globals.FameInfoList = Session.GetCollection<FameInfo>();
+                    Globals.BundleInfoList = Session.GetCollection<BundleInfo>();
+                    Globals.LootBoxInfoList = Session.GetCollection<LootBoxInfo>();
+                    Globals.HelpInfoList = Session.GetCollection<HelpInfo>();
 
                     KeyBinds = Session.GetCollection<KeyBindInfo>();
                     WindowSettings = Session.GetCollection<WindowSetting>();
@@ -382,8 +363,19 @@ namespace Client.Envir
 
                     CheckKeyBinds();
 
-                    if (!DXManager.ValidResolutions.Contains(Config.GameSize))
-                        Config.GameSize = DXManager.ValidResolutions[0];
+                    IReadOnlyList<Size> supportedResolutions = RenderingPipelineManager.GetSupportedResolutions();
+
+                    if (supportedResolutions.Count > 0)
+                    {
+                        if (!supportedResolutions.Contains(Config.GameSize))
+                            Config.GameSize = supportedResolutions[0];
+                    }
+                    else
+                    {
+                        // Handle the case where no valid resolutions are found.
+                        // For example, set a default resolution.
+                        Config.GameSize = new Size(1024, 768);  // Default resolution
+                    }
 
                     Loaded = true;
                 }
@@ -535,6 +527,10 @@ namespace Client.Envir
                 case KeyBindAction.MenuWindow:
                     bind.Category = "Windows";
                     bind.Key1 = Keys.N;
+                    break;
+                case KeyBindAction.HelpWindow:
+                    bind.Category = "Windows";
+                    bind.Key1 = Keys.H;
                     break;
                 case KeyBindAction.ConfigWindow:
                     bind.Category = "Windows";
@@ -900,7 +896,7 @@ namespace Client.Envir
 
         public static float FontSize(float size)
         {
-            return (size - Config.FontSizeMod) * (96F / DXManager.Graphics.DpiX);
+            return (size - Config.FontSizeMod) * (96F / RenderingPipelineManager.GetHorizontalDpi());
         }
 
         public static int ErrorCount;

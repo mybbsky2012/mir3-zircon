@@ -133,10 +133,10 @@ namespace Client.Envir
         public void Process(G.CheckVersion p)
         {
             byte[] clientHash;
-            using (MD5 md5 = MD5.Create())
+            using (SHA256 sha256 = SHA256.Create())
             {
                 using (FileStream stream = File.OpenRead(Path.ChangeExtension(Application.ExecutablePath, ".dll")))
-                    clientHash = md5.ComputeHash(stream);
+                    clientHash = sha256.ComputeHash(stream);
             }
 
             Enqueue(new G.Version { ClientHash = clientHash });
@@ -564,7 +564,7 @@ namespace Client.Envir
 
                     p.Characters.Sort((x1, x2) => x2.LastLogin.CompareTo(x1.LastLogin));
 
-                    DXControl.ActiveScene = scene = new SelectScene(Config.IntroSceneSize)
+                    DXControl.ActiveScene = scene = new SelectScene(Config.ExtendedLogin ? Config.GameSize : Config.IntroSceneSize)
                     {
                         SelectBox = { CharacterList = p.Characters },
                     };
@@ -600,7 +600,7 @@ namespace Client.Envir
 
             p.Characters.Sort((x1, x2) => x2.LastLogin.CompareTo(x1.LastLogin));
 
-            DXControl.ActiveScene = scene = new SelectScene(Config.IntroSceneSize)
+            DXControl.ActiveScene = scene = new SelectScene(Config.ExtendedLogin ? Config.GameSize : Config.IntroSceneSize)
             {
                 SelectBox = { CharacterList = p.Characters },
             };
@@ -762,7 +762,7 @@ namespace Client.Envir
                         GameScene.Game.NPCAdoptCompanionBox.RefreshUnlockButton();
 
                         GameScene.Game.NPCCompanionStorageBox.Companions = p.StartInformation.Companions;
-                        GameScene.Game.NPCCompanionStorageBox.UpdateScrollBar();
+                        GameScene.Game.NPCCompanionStorageBox.Refresh();
 
                         GameScene.Game.Companion = GameScene.Game.NPCCompanionStorageBox.Companions.FirstOrDefault(x => x.Index == p.StartInformation.Companion);
 
@@ -799,6 +799,11 @@ namespace Client.Envir
         public void Process(S.DayChanged p)
         {
             GameScene.Game.DayTime = p.DayTime;
+        }
+        public void Process(S.TimeOfDayChanged p)
+        {
+            GameScene.Game.TimeOfDay = p.TimeOfDay;
+            GameScene.Game.TimeOfDayLabel = p.TimeOfDayLabel;
         }
         public void Process(S.UserLocation p)
         {
@@ -903,7 +908,7 @@ namespace Client.Envir
                     {
                         player.LightColour = Globals.PlayerLightColour;
                     }
-                    else 
+                    else
                     {
                         player.LightColour = Globals.NoneColour;
                     }
@@ -919,7 +924,7 @@ namespace Client.Envir
             if (MapObject.User.ObjectID == p.ObjectID && !GameScene.Game.Observer)
             {
                 if (MapObject.User.CurrentLocation != p.Location || MapObject.User.Direction != p.Direction)
-                    GameScene.Game.Displacement(p.Direction, p.Location);
+                    GameScene.Game.Displacement(p.Direction, p.Location, true);
 
                 MapObject.User.ServerTime = DateTime.MinValue;
 
@@ -1108,11 +1113,14 @@ namespace Client.Envir
 
                 if (ob == MapObject.User)
                 {
+                    if (MapObject.User.CurrentLocation != p.Location || MapObject.User.Direction != p.Direction)
+                        GameScene.Game.Displacement(p.Direction, p.Location);
+
                     if (GameScene.Game.MapControl.FishingState != FishingState.None)
                         GameScene.Game.MapControl.FishingState = FishingState.Cancel;
 
                     GameScene.Game.CanRun = false;
-                    
+
                     if (GameScene.Game.StruckEnabled)
                     {
                         MapObject.User.NextRunTime = CEnvir.Now.AddMilliseconds(600);
@@ -1147,6 +1155,7 @@ namespace Client.Envir
                 return;
             }
         }
+
         public void Process(S.ObjectDash p)
         {
             if (MapObject.User.ObjectID == p.ObjectID && !GameScene.Game.Observer)
@@ -1156,15 +1165,33 @@ namespace Client.Envir
             {
                 if (ob.ObjectID != p.ObjectID) continue;
 
-                ob.StanceTime = CEnvir.Now.AddSeconds(3);
-                ob.ActionQueue.Add(new ObjectAction(MirAction.Standing, p.Direction, Functions.Move(p.Location, p.Direction, -p.Distance)));
+                if (p.Distance > 0)
+                {
+                    ob.StanceTime = CEnvir.Now.AddSeconds(3);
 
-                for (int i = 1; i <= p.Distance; i++)
-                    ob.ActionQueue.Add(new ObjectAction(MirAction.Moving, p.Direction, Functions.Move(p.Location, p.Direction, i - p.Distance), 1, p.Magic));
+                    for (int i = 1; i <= p.Distance; i++)
+                        ob.ActionQueue.Add(new ObjectAction(MirAction.Moving, p.Direction, Functions.Move(p.Location, p.Direction, i - p.Distance), 1, p.Magic));
+                }
+                else if (ob == MapObject.User)
+                {
+                    GameScene.Game.CanRun = false;
+                }
 
                 return;
             }
         }
+
+        public void Process(S.ObjectIdle p)
+        {
+            foreach (MapObject ob in GameScene.Game.MapControl.Objects)
+            {
+                if (ob.ObjectID != p.ObjectID) continue;
+
+                ob.ActionQueue.Add(new ObjectAction(MirAction.Idle, p.Direction, p.Location, p.Type));
+                return;
+            }
+        }
+
         public void Process(S.ObjectAttack p)
         {
             if (MapObject.User.ObjectID == p.ObjectID && !GameScene.Game.Observer && p.AttackMagic != MagicType.DanceOfSwallow)
@@ -1336,6 +1363,33 @@ namespace Client.Envir
                             DXSoundManager.Play(SoundIndex.GreaterFireBallTravel);
                     }
                     break;
+                case MagicType.ElementalSwords:
+                    {
+                        foreach (MapObject attackTarget in targets)
+                        {
+                            source.Effects.Add(spell = new MirEffect(300, 5, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx10, 0, 0, Globals.NoneColour)
+                            {
+                                MapTarget = p.CurrentLocation,
+                                Skip = 10,
+                                Direction = p.Direction,
+                                Blend = true,
+                            });
+
+                            spell.CompleteAction = () =>
+                            {
+                                source.Effects.Add(spell = new MirProjectile(0, 3, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx10, 0, 0, Globals.NoneColour, source.CurrentLocation)
+                                {
+                                    Blend = true,
+                                    Target = attackTarget,
+                                    Has16Directions = true
+                                });
+                                spell.Process();
+                            };
+                            spell.Process();
+                            DXSoundManager.Play(SoundIndex.ElementalSwordsEnd);
+                        }
+                    }
+                    break;
             }
         }
 
@@ -1393,6 +1447,12 @@ namespace Client.Envir
                             Blend = true,
                             BlendRate = 0.6F
                         });
+
+                        if (ob.ObjectID == GameScene.Game.User.ObjectID)
+                        {
+                            GameScene.Game.BigMapBox.PlayLocatorAnim(ob.ObjectID);
+                            GameScene.Game.MiniMapBox.PlayLocatorAnim(ob.ObjectID);
+                        }
 
                         DXSoundManager.Play(SoundIndex.TeleportIn);
                         break;
@@ -1559,7 +1619,7 @@ namespace Client.Envir
                     case Effect.MirrorImage:
                         new MirEffect(1280, 10, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx2, 30, 60, Globals.NoneColour)
                         {
-                            Target = ob,
+                            MapTarget = ob.CurrentLocation,
                             Blend = true,
                         };
 
@@ -1600,7 +1660,7 @@ namespace Client.Envir
                         MapTarget = p.Location,
                         Blend = true,
                     };
-                    
+
                     DXSoundManager.Play(SoundIndex.CursedDollEnd);
                     break;
                 case Effect.UndeadSoul:
@@ -1626,6 +1686,48 @@ namespace Client.Envir
 
                     DXSoundManager.Play(SoundIndex.FireStormEnd);
                     break;
+                case Effect.FireWallSmoke:
+                    new MirEffect(220, 1, TimeSpan.FromMilliseconds(3500), LibraryFile.ProgUse, 0, 0, Globals.NoneColour)
+                    {
+                        MapTarget = p.Location,
+                        Opacity = 0.8F,
+                        DrawType = DrawType.Floor
+                    };
+                    new MirEffect(2450 + CEnvir.Random.Next(5) * 10, 10, TimeSpan.FromMilliseconds(250), LibraryFile.Magic, 0, 0, Globals.NoneColour)
+                    {
+                        Blend = true,
+                        MapTarget = p.Location,
+                        DrawType = DrawType.Floor
+                    };
+                    break;
+                case Effect.HundredFist:
+                    new MirEffect(2100, 5, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx5, 0, 0, Globals.NoneColour)
+                    {
+                        Blend = true,
+                        MapTarget = p.Location,
+                        Direction = p.Direction,
+                        Skip = 10
+                    };
+
+                    DXSoundManager.Play(SoundIndex.HundredFist);
+                    break;
+                case Effect.HundredFistStruck:
+                    new MirEffect(2200, 6, TimeSpan.FromMilliseconds(150), LibraryFile.MagicEx5, 0, 0, Globals.NoneColour)
+                    {
+                        Blend = true,
+                        MapTarget = p.Location,
+                        Direction = p.Direction,
+                        Skip = 10
+                    };
+                    break;
+                case Effect.IceAuraEnd:
+                    new MirEffect(2700, 11, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx5, 0, 0, Globals.NoneColour)
+                    {
+                        Blend = true,
+                        MapTarget = p.Location
+                    };
+                    DXSoundManager.Play(SoundIndex.GreaterIceBoltEnd);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -1636,10 +1738,16 @@ namespace Client.Envir
             {
                 if (ob.ObjectID != p.ObjectID) continue;
 
-                ob.VisibleBuffs.Add(p.Type);
+                if (!ob.VisibleBuffs.ContainsKey(p.Type))
+                    ob.VisibleBuffs[p.Type] = 0;
+
+                ob.VisibleBuffs[p.Type] = p.Extra;
 
                 if (p.Type == BuffType.SuperiorMagicShield)
                     ob.EndMagicEffect(MagicEffect.MagicShield);
+
+                if (p.Type == BuffType.ElementalSwords)
+                    ob.EndMagicEffect(MagicEffect.ElementalSwords);
 
                 return;
             }
@@ -1695,8 +1803,6 @@ namespace Client.Envir
         }
         public void Process(S.HealthChanged p)
         {
-
-
             foreach (MapObject ob in GameScene.Game.MapControl.Objects)
             {
                 if (ob.ObjectID != p.ObjectID) continue;
@@ -1777,6 +1883,11 @@ namespace Client.Envir
                     if (p.CanUse)
                         GameScene.Game.ReceiveChat(CEnvir.Language.WeaponEnergyDefensiveBlow, MessageType.Hint);
                     break;
+                case MagicType.OffensiveBlow:
+                    GameScene.Game.User.CanOffensiveBlow = p.CanUse;
+                    if (p.CanUse)
+                        GameScene.Game.ReceiveChat(CEnvir.Language.WeaponEnergyOffensiveBlow, MessageType.Hint);
+                    break;
                 case MagicType.FullBloom:
                 case MagicType.WhiteLotus:
                 case MagicType.RedLotus:
@@ -1831,19 +1942,22 @@ namespace Client.Envir
             MapObject.User.Experience = p.Experience;
             MapObject.User.MaxExperience = p.MaxExperience;
 
+            GameScene.Game.CharacterBox.UpdateDiscipline();
+
             GameScene.Game.ReceiveChat(CEnvir.Language.LevelIncreased, MessageType.System);
         }
+
         public void Process(S.GainedExperience p)
         {
             MapObject.User.Experience += p.Amount;
-
-            ClientUserItem weapon = GameScene.Game.Equipment[(int)EquipmentSlot.Weapon];
 
             if (p.Amount < 0)
             {
                 GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.LostExperience, p.Amount), MessageType.Combat);
                 return;
             }
+
+            ClientUserItem weapon = GameScene.Game.Equipment[(int)EquipmentSlot.Weapon];
 
             if (weapon != null && weapon.Info.ItemEffect != ItemEffect.PickAxe && (weapon.Flags & UserItemFlags.Refinable) != UserItemFlags.Refinable && (weapon.Flags & UserItemFlags.NonRefinable) != UserItemFlags.NonRefinable && weapon.Level < Globals.WeaponExperienceList.Count)
             {
@@ -1860,7 +1974,10 @@ namespace Client.Envir
                 else
                     GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.GainedExperienceAndWeaponExperience, p.Amount, p.Amount / 10), MessageType.Combat);
             }
+            else
+                GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.GainedExperience, p.Amount), MessageType.Combat);
         }
+
         public void Process(S.ObjectLeveled p)
         {
             foreach (MapObject ob in GameScene.Game.MapControl.Objects)
@@ -2570,7 +2687,10 @@ namespace Client.Envir
         {
             if (GameScene.Game == null) return;
 
-            GameScene.Game.ReceiveChat(p.Text, p.Type, p.LinkedItems);
+            if (!p.OverheadOnly)
+            {
+                GameScene.Game.ReceiveChat(p.Text, p.Type, p.LinkedItems);
+            }
 
             if (p.Type != MessageType.Normal || p.ObjectID <= 0) return;
 
@@ -3372,7 +3492,7 @@ namespace Client.Envir
             GameScene.Game.NPCAdoptCompanionBox.RefreshUnlockButton();
 
             GameScene.Game.NPCCompanionStorageBox.Companions = p.StartInformation.Companions;
-            GameScene.Game.NPCCompanionStorageBox.UpdateScrollBar();
+            GameScene.Game.NPCCompanionStorageBox.Refresh();
 
             GameScene.Game.Companion = GameScene.Game.NPCCompanionStorageBox.Companions.FirstOrDefault(x => x.Index == p.StartInformation.Companion);
 
@@ -3958,7 +4078,11 @@ namespace Client.Envir
         }
         public void Process(S.GuildConquestFinished p)
         {
-            GameScene.Game.ConquestWars.Remove(CEnvir.CastleInfoList.Binding.First(x => x.Index == p.Index));
+            CastleInfo castle = CEnvir.CastleInfoList.Binding.First(x => x.Index == p.Index);
+
+            GameScene.Game.ConquestWars.Remove(castle);
+
+            castle.WarDate = DateTime.MinValue;
 
             foreach (MapObject ob in GameScene.Game.MapControl.Objects)
                 ob.NameChanged();
@@ -4005,7 +4129,7 @@ namespace Client.Envir
                 {
                     DXSoundManager.Play(SoundIndex.QuestComplete);
                 }
-            
+
                 GameScene.Game.QuestChanged(p.Quest);
                 return;
             }
@@ -4045,8 +4169,8 @@ namespace Client.Envir
             if (p.UserCompanion == null) return;
 
             GameScene.Game.NPCCompanionStorageBox.Companions.Add(p.UserCompanion);
-            GameScene.Game.NPCCompanionStorageBox.UpdateScrollBar();
-            GameScene.Game.NPCAdoptCompanionBox.CompanionNameTextBox.TextBox.Text = string.Empty;
+            GameScene.Game.NPCCompanionStorageBox.Refresh();
+            GameScene.Game.NPCCompanionStorageBox.Visible = true;
         }
         public void Process(S.CompanionStore p)
         {
@@ -4058,6 +4182,16 @@ namespace Client.Envir
         public void Process(S.CompanionRetrieve p)
         {
             GameScene.Game.Companion = GameScene.Game.NPCCompanionStorageBox.Companions.FirstOrDefault(x => x.Index == p.Index);
+        }
+        public void Process(S.CompanionRelease p)
+        {
+            var companion = GameScene.Game.NPCCompanionStorageBox.Companions.FirstOrDefault(x => x.Index == p.Index);
+
+            if (companion != null)
+                GameScene.Game.NPCCompanionStorageBox.Companions.Remove(companion);
+
+            GameScene.Game.Companion = null;
+            GameScene.Game.NPCCompanionStorageBox.Refresh();
         }
         public void Process(S.CompanionWeightUpdate p)
         {
@@ -4166,8 +4300,6 @@ namespace Client.Envir
         }
         public void Process(S.MarriageOnlineChanged p)
         {
-
-
             ClientObjectData data;
 
             GameScene.Game.DataDictionary.TryGetValue(GameScene.Game.Partner.ObjectID > 0 ? GameScene.Game.Partner.ObjectID : p.ObjectID, out data);
@@ -4190,7 +4322,7 @@ namespace Client.Envir
                 Location = p.CurrentLocation,
 
                 Name = p.Name,
-        
+
                 Health = p.Health,
                 MaxHealth = p.MaxHealth,
                 Dead = p.Dead,
@@ -4263,11 +4395,21 @@ namespace Client.Envir
 
             if (!GameScene.Game.DataDictionary.TryGetValue(p.ObjectID, out data)) return;
 
+            bool playLocatorAnim = false;
+
+            if (GameScene.Game.User.ObjectID == p.ObjectID)
+            {
+                if (data.MapIndex != p.MapIndex)
+                {
+                    playLocatorAnim = true;
+                }
+            }
+
             data.Location = p.CurrentLocation;
             data.MapIndex = p.MapIndex;
 
             GameScene.Game.BigMapBox.Update(data);
-            GameScene.Game.MiniMapBox.Update(data);
+            GameScene.Game.MiniMapBox.Update(data, playLocatorAnim);
         }
         public void Process(S.DataObjectHealthMana p)
         {
@@ -4821,6 +4963,30 @@ namespace Client.Envir
         public void Process(S.SendCompanionFilters p)
         {
 
+        }
+
+        public void Process(S.BundleOpen p)
+        {
+            DXItemCell fromCell = GameScene.Game.InventoryBox.Grid.Grid[p.Slot];
+
+            GameScene.Game.BundleBox.Open(fromCell, p.Items);
+        }
+
+        public void Process(S.BundleClose p)
+        {
+            GameScene.Game.BundleBox.Close();
+        }
+
+        public void Process(S.LootBoxOpen p)
+        {
+            DXItemCell fromCell = GameScene.Game.InventoryBox.Grid.Grid[p.Slot];
+
+            GameScene.Game.LootBoxBox.Open(fromCell, p.Items);
+        }
+
+        public void Process(S.LootBoxClose p)
+        {
+            GameScene.Game.LootBoxBox.Close();
         }
     }
 }

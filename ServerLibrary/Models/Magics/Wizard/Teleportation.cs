@@ -19,8 +19,8 @@ namespace Server.Models.Magics
         public override MagicCast MagicCast(MapObject target, Point location, MirDirection direction)
         {
             var response = new MagicCast
-            { 
-                Ob = null 
+            {
+                Ob = null
             };
 
             var delay = SEnvir.Now.AddMilliseconds(500);
@@ -38,7 +38,7 @@ namespace Server.Models.Magics
                 return;
             }
 
-            if (SEnvir.Random.Next(9) > 2 + Magic.Level * 2) return;
+            if (SEnvir.Random.Next(Globals.MagicMaxLevel + 5) > 2 + Magic.Level * 2) return;
             /*
             if (CurrentMap.Info.SkillDelay > 0)
             {

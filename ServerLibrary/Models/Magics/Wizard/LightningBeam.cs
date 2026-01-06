@@ -1,5 +1,4 @@
 ﻿using Library;
-using Library.Network.ClientPackets;
 using Server.DBModels;
 using Server.Envir;
 using System.Collections.Generic;
@@ -21,7 +20,7 @@ namespace Server.Models.Magics
         {
             var shocked = GetAugmentedSkill(MagicType.Shocked);
 
-            if (shocked != null && SEnvir.Random.Next(4) <= shocked.Level)
+            if (shocked != null && SEnvir.Random.Next(Globals.MagicMaxLevel) <= shocked.Level)
             {
                 return shocked.GetPower();
             }

@@ -39,17 +39,26 @@ namespace Library
         public Stats()
         { }
 
-        public Stats(Stats stats)
+        public Stats(Stats stats, bool client = false)
         {
             foreach (KeyValuePair<Stat, int> pair in stats.Values)
-                this[pair.Key] += pair.Value;
+            {
+                var stat = pair.Key;
+
+                Type type = stat.GetType();
+
+                if (!client || !type.GetMember(stat.ToString())[0].GetCustomAttribute<StatDescription>().ServerOnly)
+                {
+                    this[pair.Key] += pair.Value;
+                }
+            }
         }
         public Stats(BinaryReader reader)
         {
             int count = reader.ReadInt32();
 
             for (int i = 0; i < count; i++)
-                Values[(Stat) reader.ReadInt32()] = reader.ReadInt32();
+                Values[(Stat)reader.ReadInt32()] = reader.ReadInt32();
         }
         public void Add(Stats stats, bool addElements = true)
         {
@@ -175,7 +184,7 @@ namespace Library
                     }
 
                     value = ei ? $"E. Adv" : $"E. Dis";
-         
+
                     return value;
                 default: return null;
             }
@@ -207,7 +216,7 @@ namespace Library
                 case StatType.Max:
                     return description.Title + ": " + string.Format(description.Format, this[description.MinStat], this[stat]);
                 case StatType.Percent:
-                    return description.Title + ": " + string.Format(description.Format, this[stat]/100D);
+                    return description.Title + ": " + string.Format(description.Format, this[stat] / 100D);
                 case StatType.Text:
                     return description.Title;
                 case StatType.Time:
@@ -221,7 +230,14 @@ namespace Library
                     if (this[Stat.MinMC] != this[Stat.MinSC] || this[Stat.MaxMC] != this[Stat.MaxSC])
                         return description.Title + ": " + string.Format(description.Format, this[description.MinStat], this[stat]);
 
-                    if (stat != Stat.MaxSC) return null;
+                    if (this[Stat.MaxSC] != 0)
+                    {
+                        if (stat != Stat.MaxSC) return null;
+                    }
+                    else
+                    {
+                        if (stat != Stat.MinSC) return null;
+                    }
 
                     return "Spell Power: " + string.Format(description.Format, this[description.MinStat], this[stat]);
                 case StatType.AttackElement:
@@ -284,7 +300,7 @@ namespace Library
 
                         if (!ei && list[1] != stat) return null; //Impossible to be false and have less than 2 stats.
                     }
-                    
+
 
                     value = ei ? $"E. Adv: " : $"E. Dis: ";
 
@@ -308,7 +324,6 @@ namespace Library
                 default: return null;
             }
         }
-
 
         public string GetFormat(Stat stat)
         {
@@ -359,8 +374,8 @@ namespace Library
 
         public bool HasElementalWeakness()
         {
-            return 
-                this[Stat.FireResistance] <= 0 && this[Stat.IceResistance] <= 0 && this[Stat.LightningResistance] <= 0 && this[Stat.WindResistance] <= 0 && 
+            return
+                this[Stat.FireResistance] <= 0 && this[Stat.IceResistance] <= 0 && this[Stat.LightningResistance] <= 0 && this[Stat.WindResistance] <= 0 &&
                 this[Stat.HolyResistance] <= 0 && this[Stat.DarkResistance] <= 0 &&
                 this[Stat.PhantomResistance] <= 0 && this[Stat.PhysicalResistance] <= 0;
         }
@@ -551,12 +566,12 @@ namespace Library
         LightningAttack,
         [StatDescription(Title = "Lightning", Format = "{0:+#0;-#0;#0}", Mode = StatType.ElementResistance)]
         LightningResistance,
-        
+
         [StatDescription(Title = "Wind", Format = "{0:+#0;-#0;#0}", Mode = StatType.AttackElement)]
         WindAttack,
         [StatDescription(Title = "Wind", Format = "{0:+#0;-#0;#0}", Mode = StatType.ElementResistance)]
         WindResistance,
-        
+
         [StatDescription(Title = "Holy", Format = "{0:+#0;-#0;#0}", Mode = StatType.AttackElement)]
         HolyAttack,
         [StatDescription(Title = "Holy", Format = "{0:+#0;-#0;#0}", Mode = StatType.ElementResistance)]
@@ -846,6 +861,9 @@ namespace Library
         [StatDescription(Mode = StatType.None)]
         Fame,
 
+        [StatDescription(Title = "Elemental Swords", Format = "{0}", Mode = StatType.Text, UsageHint = "Used in Elemental Swords to track remaining swords")]
+        ElementalSwords,
+
         [StatDescription(Title = "Throw Distance", Format = "{0}", Mode = StatType.Default, UsageHint = "1 to 4")]
         ThrowDistance = 200,
         [StatDescription(Title = "Auto Cast", Mode = StatType.Text)]
@@ -860,6 +878,15 @@ namespace Library
         NibbleChance,
         [StatDescription(Title = "Finder Chance", Format = "{0:+#0%;-#0%;#0%}", Mode = StatType.Percent)]
         FinderChance,
+
+        [StatDescription(Mode = StatType.None, ServerOnly = true)]
+        Random1 = 250,
+        [StatDescription(Mode = StatType.None, ServerOnly = true)]
+        Random2,
+        [StatDescription(Mode = StatType.None)]
+        Counter1,
+        [StatDescription(Mode = StatType.None)]
+        Counter2,
 
         [StatDescription(Title = "Duration", Mode = StatType.Time)]
         Duration = 10000,
@@ -897,5 +924,6 @@ namespace Library
         public Stat MinStat { get; set; }
         public Stat MaxStat { get; set; }
         public string UsageHint { get; set; }
+        public bool ServerOnly { get; set; }
     }
 }

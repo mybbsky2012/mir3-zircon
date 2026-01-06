@@ -1,19 +1,15 @@
 ﻿using Library;
+using MirDB;
 using Server.DBModels;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
-using G = Library.Network.GeneralPackets;
-using S = Library.Network.ServerPackets;
-using C = Library.Network.ClientPackets;
-using System.Net.Http;
-using MirDB;
-using System.IO.Compression;
 
 namespace Server.Envir
 {
@@ -250,7 +246,12 @@ namespace Server.Envir
         {
             string key = context.Request.QueryString[ActivationKey];
 
-            if (string.IsNullOrEmpty(key)) return;
+            if (string.IsNullOrEmpty(key))
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                context.Response.Close();
+                return;
+            }
 
             AccountInfo account = null;
             for (int i = 0; i < SEnvir.AccountInfoList.Count; i++)
@@ -276,7 +277,12 @@ namespace Server.Envir
         {
             string key = context.Request.QueryString[ResetKey];
 
-            if (string.IsNullOrEmpty(key)) return;
+            if (string.IsNullOrEmpty(key))
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                context.Response.Close();
+                return;
+            }
 
             AccountInfo account = null;
             for (int i = 0; i < SEnvir.AccountInfoList.Count; i++)
@@ -301,6 +307,13 @@ namespace Server.Envir
         private static void DeleteAccount(HttpListenerContext context)
         {
             string key = context.Request.QueryString[DeleteKey];
+
+            if (string.IsNullOrEmpty(key))
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                context.Response.Close();
+                return;
+            }
 
             AccountInfo account = null;
             for (int i = 0; i < SEnvir.AccountInfoList.Count; i++)

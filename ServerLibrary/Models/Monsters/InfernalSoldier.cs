@@ -1,7 +1,7 @@
 ﻿using Library;
 using Server.Envir;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using S = Library.Network.ServerPackets;
 
 namespace Server.Models.Monsters
@@ -83,6 +83,10 @@ namespace Server.Models.Monsters
                 Attack();
         }
 
+        public override bool CanAttackTarget(MapObject ob)
+        {
+            return base.CanAttackTarget(ob);
+        }
 
         protected override void Attack()
         {
@@ -112,7 +116,6 @@ namespace Server.Models.Monsters
                                    Target,
                                    false));
             }
-
         }
     }
 }

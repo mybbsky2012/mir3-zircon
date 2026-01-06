@@ -4,6 +4,7 @@ using Library;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using Frame = Library.Frame;
 using S = Library.Network.ServerPackets;
 
@@ -34,22 +35,31 @@ namespace Client.Models
             Power = info.Power;
 
             UpdateLibraries();
-            
+
             SetFrame(new ObjectAction(MirAction.Standing, Direction, CurrentLocation));
+
             switch (Effect)
             {
                 case SpellEffect.FireWall:
                 case SpellEffect.MonsterDeathCloud:
-                    FrameStart -= TimeSpan.FromMilliseconds(CEnvir.Random.Next(300));
+                    FrameStart -= TimeSpan.FromMilliseconds(CEnvir.Random.Next(750));
                     break;
                 case SpellEffect.Tempest:
-                    FrameStart -= TimeSpan.FromMilliseconds(CEnvir.Random.Next(1350));
+                    FrameStart -= TimeSpan.FromMilliseconds(CEnvir.Random.Next(1500));
                     break;
-
             }
 
-
             GameScene.Game.MapControl.AddObject(this);
+
+            switch (Effect)
+            {
+                case SpellEffect.FireWall:
+                    DXSoundManager.Play(SoundIndex.FireWallDuration);
+                    break;
+                case SpellEffect.Tempest:
+                    DXSoundManager.Play(SoundIndex.TempestDuration);
+                    break;
+            }
         }
 
         public void UpdateLibraries()
@@ -61,11 +71,11 @@ namespace Client.Models
                     CEnvir.LibraryList.TryGetValue(LibraryFile.Magic, out BodyLibrary);
                     Frames[MirAnimation.Standing] = new Frame(649, 1, 0, TimeSpan.FromDays(365));
                     Blended = true;
-                    BlendRate =0.3f;
+                    BlendRate = 0.3f;
                     break;
                 case SpellEffect.FireWall:
                     CEnvir.LibraryList.TryGetValue(LibraryFile.Magic, out BodyLibrary);
-                    Frames[MirAnimation.Standing] = new Frame(920, 3, 0, TimeSpan.FromMilliseconds(150));
+                    Frames[MirAnimation.Standing] = new Frame(920, 5, 0, TimeSpan.FromMilliseconds(150));
                     Blended = true;
                     LightColour = Globals.FireColour;
                     BlendRate = 0.55f;
@@ -79,6 +89,32 @@ namespace Client.Models
                     BlendRate = 0.55f;
                     Light = 15;
                     break;
+                case SpellEffect.IceAura:
+                    CEnvir.LibraryList.TryGetValue(LibraryFile.MagicEx5, out BodyLibrary);
+                    Frames[MirAnimation.Standing] = new Frame(2600, 10, 0, TimeSpan.FromMilliseconds(150));
+                    Blended = true;
+                    LightColour = Globals.IceColour;
+                    BlendRate = 0.55f;
+                    Light = 15;
+                    break;
+                //{
+                //    var effect = new MirEffect(2600, 10, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx5, 10, 30, Globals.IceColour)
+                //    {
+                //        Blend = true,
+                //        Target = this,
+                //        Loop = true
+                //    };
+                //    effect.CompleteAction += () =>
+                //    {
+                //        effects.Add(effect = new MirEffect(2700, 10, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx5, 30, 10, Globals.IceColour)
+                //        {
+                //            Blend = true,
+                //            Target = this,
+                //        });
+                //        effect.Process();
+                //    };
+                //    effects.Add(effect);
+                //}
                 case SpellEffect.TrapOctagon:
                     CEnvir.LibraryList.TryGetValue(LibraryFile.Magic, out BodyLibrary);
                     Frames[MirAnimation.Standing] = new Frame(640, 10, 0, TimeSpan.FromMilliseconds(100));
@@ -118,7 +154,7 @@ namespace Client.Models
                     break;
                 case SpellEffect.Rubble:
                     CEnvir.LibraryList.TryGetValue(LibraryFile.ProgUse, out BodyLibrary);
-                    int index ;
+                    int index;
 
                     if (Power > 20)
                         index = 234;
@@ -128,11 +164,12 @@ namespace Client.Models
                         index = 232;
                     else if (Power > 5)
                         index = 231;
-                    else 
+                    else
                         index = 230;
 
                     Frames[MirAnimation.Standing] = new Frame(index, 1, 0, TimeSpan.FromMilliseconds(100));
 
+                    DXSoundManager.Play(SoundIndex.MiningStruck);
                     Light = 0;
                     break;
                 case SpellEffect.ZombieHole:
@@ -142,7 +179,6 @@ namespace Client.Models
                     Light = 0;
                     break;
             }
-
         }
 
         public override void SetAnimation(ObjectAction action)
@@ -156,13 +192,43 @@ namespace Client.Models
         {
             if (Blended)
                 BodyLibrary.DrawBlend(DrawFrame, DrawX, DrawY, DrawColour, true, BlendRate, ImageType.Image);
-            else 
+            else
                 BodyLibrary.Draw(DrawFrame, DrawX, DrawY, DrawColour, true, 1F, ImageType.Image);
         }
 
         public override bool MouseOver(Point p)
         {
             return false;
+        }
+
+        public override void Remove()
+        {
+            base.Remove();
+
+            switch (Effect)
+            {
+                case SpellEffect.FireWall:
+                    if (!ExistingEffects(Effect))
+                    {
+                        DXSoundManager.Stop(SoundIndex.FireWallDuration);
+                    }
+                    break;
+                case SpellEffect.Tempest:
+                    if (!ExistingEffects(Effect))
+                    {
+                        DXSoundManager.Stop(SoundIndex.TempestDuration);
+                    }
+                    break;
+            }
+        }
+
+        private static bool ExistingEffects(SpellEffect effect)
+        {
+            bool nearby = GameScene.Game.MapControl.Objects.OfType<SpellObject>().Any(s =>
+                s.Effect == effect && !s.Dead &&
+                Functions.InRange(User.CurrentLocation, s.CurrentLocation, 20));
+
+            return nearby;
         }
     }
 }

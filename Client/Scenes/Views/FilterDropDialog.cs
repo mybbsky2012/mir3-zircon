@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Windows.Forms;
-using Client.Controls;
+﻿using Client.Controls;
 using Client.Envir;
-using Client.Models;
 using Client.UserModels;
 using Library;
-using C = Library.Network.ClientPackets;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
 
 namespace Client.Scenes.Views
 {
@@ -73,6 +70,29 @@ namespace Client.Scenes.Views
                 {
                     DropFiltersMap[i].TextBox.Text = items[i];
                 }
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (!disposing) return;
+
+            if (DropFiltersMap != null)
+            {
+                foreach (KeyValuePair<int, DXTextBox> pair in DropFiltersMap)
+                {
+                    DXTextBox textBox = pair.Value;
+
+                    if (textBox == null) continue;
+                    if (textBox.IsDisposed) continue;
+
+                    textBox.Dispose();
+                }
+
+                DropFiltersMap.Clear();
+                DropFiltersMap = null;
             }
         }
 

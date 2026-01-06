@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 
-using S = Library.Network.ServerPackets;
-
 namespace Server.Models.Magics
 {
     [MagicType(MagicType.Neutralize)]
@@ -79,8 +77,7 @@ namespace Server.Models.Magics
 
             if (count > 0)
             {
-                augmentNeutralize.Cooldown = SEnvir.Now.AddMilliseconds(augmentNeutralize.Info.Delay);
-                Player.Enqueue(new S.MagicCooldown { InfoIndex = augmentNeutralize.Info.Index, Delay = augmentNeutralize.Info.Delay });
+                MagicCooldown(augmentNeutralize);
             }
 
             if (target == null)

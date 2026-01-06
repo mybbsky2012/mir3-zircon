@@ -20,9 +20,7 @@ namespace Client.Scenes.Views
         public DXItemGrid Grid;
 
         public DXLabel TitleLabel, PrimaryCurrencyLabel, SecondaryCurrencyLabel, WeightLabel, WalletLabel, PrimaryCurrencyTitle, SecondaryCurrencyTitle;
-        public DXButton CloseButton, SortButton, TrashButton;
-
-        public DXButton SellButton;
+        public DXButton CloseButton, SortButton, TrashButton, SellButton;
 
         public List<DXItemCell> SelectedItems = new();
 
@@ -178,12 +176,15 @@ namespace Client.Scenes.Views
             Index = 130;
             Movable = true;
             Sort = true;
+            DropShadow = true;
 
             CloseButton = new DXButton
             {
                 Parent = this,
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
+                Hint = CEnvir.Language.CommonControlClose,
+                HintPosition = HintPosition.TopLeft
             };
             CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
@@ -434,11 +435,11 @@ namespace Client.Scenes.Views
             else
             {
                 //Sell all
-                foreach(DXItemCell itemCell in Grid.Grid)
+                foreach (DXItemCell itemCell in Grid.Grid)
                 {
                     if (itemCell.Item == null) continue;
                     if ((itemCell.Item.Flags & UserItemFlags.Locked) == UserItemFlags.Locked) continue;
-                    
+
                     if (SellableItemTypes.Count > 0 && !SellableItemTypes.Contains(itemCell.Item.Info.ItemType)) continue;
 
                     links.Add(new CellLinkInfo { Count = itemCell.Item.Count, GridType = GridType.Inventory, Slot = itemCell.Slot });
@@ -698,6 +699,14 @@ namespace Client.Scenes.Views
                         TrashButton.Dispose();
 
                     TrashButton = null;
+                }
+
+                if (SellButton != null)
+                {
+                    if (!SellButton.IsDisposed)
+                        SellButton.Dispose();
+
+                    SellButton = null;
                 }
 
                 if (PrimaryCurrencyTitle != null)

@@ -1,11 +1,8 @@
 ﻿using Library;
 using Library.Network;
 using Server.Envir;
-using Server.Models.Magics;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using S = Library.Network.ServerPackets;
 
 namespace Server.Models.Monsters
@@ -48,13 +45,12 @@ namespace Server.Models.Monsters
                 SetHP(0);
                 return;
             }
-
         }
         protected override bool InAttackRange()
         {
             if (Target.CurrentMap != CurrentMap) return false;
 
-            return Target.CurrentLocation != CurrentLocation && Functions.InRange(CurrentLocation, Target.CurrentLocation, 1);
+            return Target.CurrentLocation != CurrentLocation && Functions.InRange(CurrentLocation, Target.CurrentLocation, MonsterInfo.ViewRange);
         }
 
         public override void ProcessTarget()

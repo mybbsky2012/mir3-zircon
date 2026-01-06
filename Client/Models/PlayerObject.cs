@@ -1,14 +1,13 @@
-﻿
-using Client.Envir;
+﻿using Client.Envir;
 using Client.Models.Player;
+using Client.Rendering;
 using Client.Scenes;
 using Library;
-using SlimDX;
-using SlimDX.Direct3D9;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using Frame = Library.Frame;
 using S = Library.Network.ServerPackets;
 
@@ -110,6 +109,8 @@ namespace Client.Models
             [12] = LibraryFile.M_Helmet13,
             [13] = LibraryFile.M_Helmet14,
 
+            [20] = LibraryFile.M_HelmetCx1,
+
             [0 + FemaleOffSet] = LibraryFile.WM_Helmet1,
             [1 + FemaleOffSet] = LibraryFile.WM_Helmet2,
             [2 + FemaleOffSet] = LibraryFile.WM_Helmet3,
@@ -121,15 +122,21 @@ namespace Client.Models
             [12 + FemaleOffSet] = LibraryFile.WM_Helmet13,
             [13 + FemaleOffSet] = LibraryFile.WM_Helmet14,
 
+            [20 + FemaleOffSet] = LibraryFile.WM_HelmetCx1,
+
             [0 + AssassinOffSet] = LibraryFile.M_HelmetA1,
             [1 + AssassinOffSet] = LibraryFile.M_HelmetA2,
             [2 + AssassinOffSet] = LibraryFile.M_HelmetA3,
             [3 + AssassinOffSet] = LibraryFile.M_HelmetA4,
 
+            [20 + AssassinOffSet] = LibraryFile.M_HelmetACx1,
+
             [0 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HelmetA1,
             [1 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HelmetA2,
             [2 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HelmetA3,
             [3 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HelmetA4,
+
+            [20 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HelmetACx1,
         };
         #endregion
 
@@ -146,6 +153,7 @@ namespace Client.Models
             [12] = LibraryFile.M_HumEx12,
             [13] = LibraryFile.M_HumEx13,
 
+            [20] = LibraryFile.M_HumCx1,
 
             [0 + FemaleOffSet] = LibraryFile.WM_Hum,
             [1 + FemaleOffSet] = LibraryFile.WM_HumEx1,
@@ -157,16 +165,21 @@ namespace Client.Models
             [12 + FemaleOffSet] = LibraryFile.WM_HumEx12,
             [13 + FemaleOffSet] = LibraryFile.WM_HumEx13,
 
+            [20 + FemaleOffSet] = LibraryFile.WM_HumCx1,
 
             [0 + AssassinOffSet] = LibraryFile.M_HumA,
             [1 + AssassinOffSet] = LibraryFile.M_HumAEx1,
             [2 + AssassinOffSet] = LibraryFile.M_HumAEx2,
             [3 + AssassinOffSet] = LibraryFile.M_HumAEx3,
 
+            [20 + AssassinOffSet] = LibraryFile.M_HumACx1,
+
             [0 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HumA,
             [1 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HumAEx1,
             [2 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HumAEx2,
             [3 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HumAEx3,
+
+            [20 + AssassinOffSet + FemaleOffSet] = LibraryFile.WM_HumACx1
         };
         #endregion
 
@@ -215,7 +228,7 @@ namespace Client.Models
         public int HelmetShape;
 
         public int HairFrame => DrawFrame + (HairType - 1) * HairTypeOffSet;
-        public int HelmetFrame => DrawFrame + ((HelmetShape % 10) - 1) * ArmourShapeOffSet + ArmourShift;
+        public int HelmetFrame => DrawFrame + ((HelmetShape - 1) % 10) * ArmourShapeOffSet + ArmourShift;
 
         public MirLibrary WeaponLibrary1, WeaponLibrary2;
         public int WeaponShapeOffSet;
@@ -270,8 +283,13 @@ namespace Client.Models
 
             Poison = info.Poison;
 
-            foreach (BuffType type in info.Buffs)
-                VisibleBuffs.Add(type);
+            foreach (BuffType type in info.Buffs.Keys)
+            {
+                if (!VisibleBuffs.ContainsKey(type))
+                    VisibleBuffs[type] = 0;
+
+                VisibleBuffs[type] = info.Buffs[type];
+            }
 
             Title = info.GuildName;
 
@@ -382,7 +400,6 @@ namespace Client.Models
                                 file = LibraryFile.M_Hum;
                                 ArmourShape = 0;
                             }
-
                             if (CostumeShape >= 0)
                             {
                                 if (!CostumeList.TryGetValue(CostumeShape / 10, out file))
@@ -396,7 +413,8 @@ namespace Client.Models
 
                             CEnvir.LibraryList.TryGetValue(LibraryFile.M_Hair, out HairLibrary);
 
-                            if (!HelmetList.TryGetValue(HelmetShape / 10, out file)) file = LibraryFile.None;
+                            if (!HelmetList.TryGetValue((HelmetShape - 1) / 10, out file)) file = LibraryFile.None;
+
                             CEnvir.LibraryList.TryGetValue(file, out HelmetLibrary);
 
                             if (!WeaponList.TryGetValue(LibraryWeaponShape / 10, out file)) file = LibraryFile.None;
@@ -409,6 +427,7 @@ namespace Client.Models
                             }
                             break;
                         case MirGender.Female:
+
                             if (!ArmourList.TryGetValue(ArmourShape / 11 + FemaleOffSet, out file))
                             {
                                 file = LibraryFile.WM_Hum;
@@ -428,7 +447,7 @@ namespace Client.Models
 
                             CEnvir.LibraryList.TryGetValue(LibraryFile.WM_Hair, out HairLibrary);
 
-                            if (!HelmetList.TryGetValue(HelmetShape / 10 + FemaleOffSet, out file)) file = LibraryFile.None;
+                            if (!HelmetList.TryGetValue(((HelmetShape - 1) / 10) + FemaleOffSet, out file)) file = LibraryFile.None;
                             CEnvir.LibraryList.TryGetValue(file, out HelmetLibrary);
 
                             if (!WeaponList.TryGetValue(LibraryWeaponShape / 10 + FemaleOffSet, out file)) file = LibraryFile.None;
@@ -468,7 +487,7 @@ namespace Client.Models
                             CEnvir.LibraryList.TryGetValue(file, out BodyLibrary);
                             CEnvir.LibraryList.TryGetValue(LibraryFile.M_HairA, out HairLibrary);
 
-                            if (!HelmetList.TryGetValue(HelmetShape / 10 + AssassinOffSet, out file)) file = LibraryFile.None;
+                            if (!HelmetList.TryGetValue(((HelmetShape - 1) / 10) + AssassinOffSet, out file)) file = LibraryFile.None;
                             CEnvir.LibraryList.TryGetValue(file, out HelmetLibrary);
 
                             if (!WeaponList.TryGetValue(LibraryWeaponShape / 10, out file)) file = LibraryFile.None;
@@ -513,7 +532,7 @@ namespace Client.Models
                             CEnvir.LibraryList.TryGetValue(file, out BodyLibrary);
                             CEnvir.LibraryList.TryGetValue(LibraryFile.WM_HairA, out HairLibrary);
 
-                            if (!HelmetList.TryGetValue(HelmetShape / 10 + AssassinOffSet + FemaleOffSet, out file)) file = LibraryFile.None;
+                            if (!HelmetList.TryGetValue(((HelmetShape - 1) / 10) + AssassinOffSet + FemaleOffSet, out file)) file = LibraryFile.None;
                             CEnvir.LibraryList.TryGetValue(file, out HelmetLibrary);
 
                             if (!WeaponList.TryGetValue(LibraryWeaponShape / 10 + FemaleOffSet, out file)) file = LibraryFile.None;
@@ -553,24 +572,23 @@ namespace Client.Models
             switch (action.Action)
             {
                 case MirAction.Standing:
-                    //if(VisibleBuffs.Contains(BuffType.Stealth))
                     animation = MirAnimation.Standing;
 
                     if (CEnvir.Now < StanceTime)
                         animation = MirAnimation.Stance;
 
-                    if (VisibleBuffs.Contains(BuffType.Cloak))
+                    if (VisibleBuffs.ContainsKey(BuffType.Cloak))
                         animation = MirAnimation.CreepStanding;
 
                     if (Horse != HorseType.None)
                         animation = MirAnimation.HorseStanding;
 
-                    if (VisibleBuffs.Contains(BuffType.DragonRepulse))
+                    if (VisibleBuffs.ContainsKey(BuffType.DragonRepulse))
                         animation = MirAnimation.DragonRepulseMiddle;
                     else if (CurrentAnimation == MirAnimation.DragonRepulseMiddle)
                         animation = MirAnimation.DragonRepulseEnd;
 
-                    if (VisibleBuffs.Contains(BuffType.ElementalHurricane))
+                    if (VisibleBuffs.ContainsKey(BuffType.ElementalHurricane))
                         animation = MirAnimation.ChannellingMiddle;
 
                     break;
@@ -584,8 +602,8 @@ namespace Client.Models
 
                     if ((MagicType)action.Extra[1] == MagicType.ShoulderDash || (MagicType)action.Extra[1] == MagicType.Assault)
                         animation = MirAnimation.Combat8;
-                    else if (VisibleBuffs.Contains(BuffType.Cloak))
-                        animation = VisibleBuffs.Contains(BuffType.GhostWalk) ? MirAnimation.CreepWalkFast : MirAnimation.CreepWalkSlow;
+                    else if (VisibleBuffs.ContainsKey(BuffType.Cloak))
+                        animation = VisibleBuffs.ContainsKey(BuffType.GhostWalk) ? MirAnimation.CreepWalkFast : MirAnimation.CreepWalkSlow;
                     else if ((int)action.Extra[0] >= 2)
                     {
                         animation = MirAnimation.Running;
@@ -622,7 +640,7 @@ namespace Client.Models
                     if (type == MagicType.PoisonousCloud)
                         DrawWeapon = false;
 
-                    if (VisibleBuffs.Contains(BuffType.ElementalHurricane))
+                    if (VisibleBuffs.ContainsKey(BuffType.ElementalHurricane))
                         animation = MirAnimation.ChannellingEnd;
 
                     break;
@@ -812,7 +830,6 @@ namespace Client.Models
                     }
                     break;
             }
-
         }
 
         public override void DoNextAction()
@@ -910,6 +927,25 @@ namespace Client.Models
                             break;
                     }
                     break;
+                case MirAction.Attack:
+                    switch (MagicType)
+                    {
+                        case MagicType.OffensiveBlow:
+                            if (FrameIndex == 3)
+                            {
+                                Effects.Add(new MirEffect(2305, 5, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx5, 10, 50, Globals.FireColour)
+                                {
+                                    Blend = true,
+                                    Target = this,
+                                    Direction = Direction,
+                                    Skip = 10
+                                });
+
+                                DXSoundManager.Play(SoundIndex.OffensiveBlow);
+                            }
+                            break;
+                    }
+                    break;
             }
         }
 
@@ -917,14 +953,14 @@ namespace Client.Models
         public override void Draw()
         {
             if (BodyLibrary == null) return;
-            DrawPlayer(true);
+            DrawPlayer(true, MouseObject == this && MouseObject != User);
         }
 
-        public void DrawPlayer(bool shadow = false)
+        public void DrawPlayer(bool shadow = false, bool allowOutline = false)
         {
             ExteriorEffectManager.DrawExteriorEffects(this, true);
 
-            DrawBody(shadow);
+            DrawBody(shadow, allowOutline);
 
             ExteriorEffectManager.DrawExteriorEffects(this, false);
         }
@@ -938,12 +974,12 @@ namespace Client.Models
             //DXManager.SetBlend(false);
         }
 
-        public void DrawBody(bool shadow)
+        public void DrawBody(bool shadow, bool allowOutline)
         {
-            Surface oldSurface = DXManager.CurrentSurface;
-            DXManager.SetSurface(DXManager.ScratchSurface);
-            DXManager.Device.Clear(ClearFlags.Target, 0, 0, 0);
-            DXManager.Sprite.Flush();
+            RenderSurface oldSurface = RenderingPipelineManager.GetCurrentSurface();
+            RenderingPipelineManager.SetSurface(RenderingPipelineManager.GetScratchSurface());
+            RenderingPipelineManager.Clear(RenderClearFlags.Target, Color.FromArgb(0), 0, 0);
+            RenderingPipelineManager.FlushSprite();
 
             int l = int.MaxValue, t = int.MaxValue, r = int.MinValue, b = int.MinValue;
 
@@ -1151,8 +1187,8 @@ namespace Client.Models
                 }
             }
 
-            DXManager.SetSurface(oldSurface);
-            float oldOpacity = DXManager.Opacity;
+            RenderingPipelineManager.SetSurface(oldSurface);
+            float oldOpacity = RenderingPipelineManager.GetOpacity();
 
             if (shadow)
             {
@@ -1179,7 +1215,10 @@ namespace Client.Models
                 }
             }
 
-            if (oldOpacity != Opacity && !DXManager.Blending) DXManager.SetOpacity(Opacity);
+            if (oldOpacity != Opacity && !RenderingPipelineManager.IsBlending())
+            {
+                RenderingPipelineManager.SetOpacity(Opacity);
+            }
 
             switch (CurrentAnimation)
             {
@@ -1204,10 +1243,30 @@ namespace Client.Models
                     break;
             }
 
-            DXManager.Sprite.Draw(DXManager.ScratchTexture, Rectangle.FromLTRB(l, t, r, b), Vector3.Zero, new Vector3(l, t, 0), DrawColour);
+            bool outlineEnabled = false;
+
+            if (allowOutline && Config.ShowTargetOutline)
+            {
+                RenderingPipelineManager.EnableOutlineEffect(Color.Red, 2f);
+                outlineEnabled = true;
+            }
+
+            Rectangle scratchSource = Rectangle.FromLTRB(l, t, r, b);
+            RectangleF scratchDestination = new RectangleF(l, t, r - l, b - t);
+            RenderTexture scratchTexture = RenderingPipelineManager.GetScratchTexture();
+
+            RenderingPipelineManager.DrawTexture(scratchTexture, scratchSource, scratchDestination, DrawColour);
             CEnvir.DPSCounter++;
 
-            if (oldOpacity != Opacity && !DXManager.Blending) DXManager.SetOpacity(oldOpacity);
+            if (outlineEnabled)
+            {
+                RenderingPipelineManager.DisableOutlineEffect();
+            }
+
+            if (oldOpacity != Opacity && !RenderingPipelineManager.IsBlending())
+            {
+                RenderingPipelineManager.SetOpacity(oldOpacity);
+            }
         }
 
         public void DrawShadow2(int l, int t, int r, int b)
@@ -1219,21 +1278,29 @@ namespace Client.Models
             int w = (DrawX + image.OffSetX) - l;
             int h = (DrawY + image.OffSetY) - t;
 
-            Matrix m = Matrix.Scaling(1F, 0.5f, 0);
+            float translateX = DrawX + image.ShadowOffSetX - w + image.Height / 2F + h / 2F;
+            float translateY = DrawY + image.ShadowOffSetY - h / 2F;
 
-            m.M21 = -0.50F;
-            DXManager.Sprite.Transform = m * Matrix.Translation(DrawX + image.ShadowOffSetX - w + (image.Height) / 2 + h / 2, DrawY + image.ShadowOffSetY - h / 2, 0);
+            Matrix3x2 transform = new Matrix3x2(1F, 0F, -0.5F, 0.5F, translateX, translateY);
+            RenderTexture scratchTexture = RenderingPipelineManager.GetScratchTexture();
+            Rectangle scratchSource = Rectangle.FromLTRB(l, t, r, b);
 
-            DXManager.Device.SetSamplerState(0, SamplerState.MinFilter, TextureFilter.None);
+            RenderingPipelineManager.SetTextureFilter(TextureFilterMode.None);
 
-            float oldOpacity = DXManager.Opacity;
-            if (oldOpacity != 0.5F) DXManager.SetOpacity(0.5F);
-            DXManager.Sprite.Draw(DXManager.ScratchTexture, Rectangle.FromLTRB(l, t, r, b), Vector3.Zero, Vector3.Zero, Color.Black);
+            float oldOpacity = RenderingPipelineManager.GetOpacity();
+            if (oldOpacity != 0.5F)
+            {
+                RenderingPipelineManager.SetOpacity(0.5F);
+            }
 
-            DXManager.Sprite.Transform = Matrix.Identity;
-            DXManager.Device.SetSamplerState(0, SamplerState.MinFilter, TextureFilter.Point);
+            RenderingPipelineManager.DrawTexture(scratchTexture, scratchSource, transform, System.Numerics.Vector3.Zero, System.Numerics.Vector3.Zero, Color.Black);
 
-            if (0.5F != oldOpacity) DXManager.SetOpacity(oldOpacity);
+            RenderingPipelineManager.SetTextureFilter(TextureFilterMode.Point);
+
+            if (0.5F != oldOpacity)
+            {
+                RenderingPipelineManager.SetOpacity(oldOpacity);
+            }
         }
 
         public override void DrawHealth()

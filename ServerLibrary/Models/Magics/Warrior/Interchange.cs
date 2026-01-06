@@ -3,7 +3,6 @@ using Server.DBModels;
 using Server.Envir;
 using System.Drawing;
 using System.Linq;
-using S = Library.Network.ServerPackets;
 
 namespace Server.Models.Magics
 {
@@ -62,7 +61,7 @@ namespace Server.Models.Magics
                     return;
             }
 
-            if (SEnvir.Random.Next(9) > 2 + Magic.Level * 2) return;
+            if (SEnvir.Random.Next(Globals.MagicMaxLevel + 5) > 2 + Magic.Level * 2) return;
 
             Point current = CurrentLocation;
 
@@ -90,8 +89,7 @@ namespace Server.Models.Magics
             if (SEnvir.Now <= Player.PvPTime.AddSeconds(30))
                 delay *= 10;
 
-            Magic.Cooldown = SEnvir.Now.AddMilliseconds(delay);
-            Player.Enqueue(new S.MagicCooldown { InfoIndex = Magic.Info.Index, Delay = delay });
+            MagicCooldown(null, delay);
 
             Player.LevelMagic(Magic);
         }

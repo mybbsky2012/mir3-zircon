@@ -1,6 +1,6 @@
-﻿using System;
-using Library;
+﻿using Library;
 using MirDB;
+using System;
 
 namespace Server.DBModels
 {
@@ -38,7 +38,7 @@ namespace Server.DBModels
             }
         }
         private AccountInfo _Account;
-        
+
         public BuffType Type
         {
             get { return _Type; }
@@ -53,7 +53,7 @@ namespace Server.DBModels
             }
         }
         private BuffType _Type;
-        
+
         public Stats Stats
         {
             get { return _Stats; }
@@ -128,7 +128,7 @@ namespace Server.DBModels
             }
         }
         private int _ItemIndex;
-        
+
 
         public bool Visible
         {
@@ -159,6 +159,36 @@ namespace Server.DBModels
             }
         }
         private bool _Pause;
+
+        public bool Hidden
+        {
+            get { return _Hidden; }
+            set
+            {
+                if (_Hidden == value) return;
+
+                var oldValue = _Hidden;
+                _Hidden = value;
+
+                OnChanged(oldValue, value, "Hidden");
+            }
+        }
+        private bool _Hidden;
+
+        public int Extra
+        {
+            get { return _Extra; }
+            set
+            {
+                if (_Extra == value) return;
+
+                var oldValue = _Extra;
+                _Extra = value;
+
+                OnChanged(oldValue, value, "Extra");
+            }
+        }
+        private int _Extra;
 
         protected override void OnDeleted()
         {
@@ -200,6 +230,7 @@ namespace Server.DBModels
                 Pause = Pause,
                 Stats = Stats,
                 ItemIndex = ItemIndex,
+                Extra = Extra
             };
         }
     }

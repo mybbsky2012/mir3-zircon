@@ -87,6 +87,7 @@ namespace Server.Envir.Translations
         public override string GuildStorageSafeZone { get; set; } = "You cannot use guild storage unless you are in a safe zone";
         public override string CompanionNoRoom { get; set; } = "Your companion cannot carry this many items";
         public override string StorageLimit { get; set; } = "You cannot expand your storage anymore.";
+        public override string NotEnoughBagSpaceAvailable { get; set; } = "Not enough bag space available.";
 
         public override string MarryAlreadyMarried { get; set; } = "You are already married.";
         public override string MarryNeedLevel { get; set; } = "You need to be atleast level 22 to get married.";
@@ -110,12 +111,14 @@ namespace Server.Envir.Translations
 
         public override string CompanionAppearanceAlready { get; set; } = "The {0} appearance is already available.";
         public override string CompanionNeedTicket { get; set; } = "You need to have a Companion ticket to unlock a new appearance.";
+        public override string CompanionNeedItem { get; set; } = "You need to have a {0} to unlock a new appearance.";
         public override string CompanionSkillEnabled { get; set; } = "Companion Skill level {0} Enabled.";
         public override string CompanionSkillDisabled { get; set; } = "Companion Skill level {0} Disabled.";
         public override string CompanionAppearanceLocked { get; set; } = "The {0} appearance is not available to you.";
-        public override string CompanionNeedGold { get; set; } = "You cannot afford to adopt this companion.";
+        public override string CompanionNeedCurrency { get; set; } = "You cannot afford to adopt this companion.";
         public override string CompanionBadName { get; set; } = "The name given for your new companion is not acceptable.";
-        public override string CompanionRetrieveFailed { get; set; } = "Able able to retrieve {0} because it is currently with {1}.";
+        public override string CompanionRetrieveFailed { get; set; } = "Unable to retrieve {0} because it is currently with {1}.";
+        public override string CompanionReleaseFailed { get; set; } = "Unable to release {0} because it is currently with {1}.";
         public override string QuestSelectReward { get; set; } = "You must select a reward";
         public override string QuestNeedSpace { get; set; } = "Unable to complete quest, Not enough space in your inventory.";
 

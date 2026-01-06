@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Client.Controls;
+using Client.Envir;
+using Client.Rendering;
+using Client.Scenes.Views;
+using Client.UserModels;
+using Library;
+using System;
 using System.Drawing;
 using System.Net.Sockets;
 using System.Threading;
 using System.Windows.Forms;
-using Client.Controls;
-using Client.Envir;
-using Client.Scenes.Views;
-using Client.UserModels;
-using Library;
-using SlimDX.Direct3D9;
 using C = Library.Network.ClientPackets;
 using Font = System.Drawing.Font;
 
@@ -106,13 +106,35 @@ namespace Client.Scenes
 
         public LoginScene(Size size) : base(size)
         {
+            if (Config.ExtendedLogin)
+            {
+                DXImageControl extendedBackground = new DXImageControl
+                {
+                    Index = 0,
+                    LibraryFile = LibraryFile.Interface1cExtended,
+                    Parent = this
+                };
+
+                extendedBackground.Location = new Point((size.Width - extendedBackground.Size.Width) / 2, (size.Height - extendedBackground.Size.Height) / 2);
+            }
+
             DXImageControl background = new DXImageControl
             {
                 Index = 20,
                 LibraryFile = LibraryFile.Interface1c,
                 Parent = this,
+                Size = new Size(1024, 768)
             };
 
+            if (Config.ExtendedLogin)
+            {
+                background.Index = 0;
+                background.FixedSize = true;
+            }
+
+            background.Location = new Point((size.Width - background.Size.Width) / 2, (size.Height - background.Size.Height) / 2);
+
+            // Birds
             DXAnimatedControl control = new DXAnimatedControl
             {
                 BaseIndex = 2200,
@@ -121,18 +143,11 @@ namespace Client.Scenes
                 AnimationDelay = TimeSpan.FromSeconds(10),
                 FrameCount = 100,
                 Parent = background,
-                Loop = false,
-                UseOffSet = true,
-            };
-            control.BeforeDraw += (o, e) =>
-            {
-                DXManager.Device.SetSamplerState(0, SamplerState.MagFilter, TextureFilter.None);
-            };
-            control.AfterDraw += (o, e) =>
-            {
-                DXManager.Device.SetSamplerState(0, SamplerState.MagFilter, TextureFilter.Point);
+                Loop = true,
+                UseOffSet = true
             };
 
+            // Flags
             control = new DXAnimatedControl
             {
                 BaseIndex = 2400,
@@ -141,17 +156,10 @@ namespace Client.Scenes
                 AnimationDelay = TimeSpan.FromSeconds(5),
                 FrameCount = 30,
                 Parent = background,
-                UseOffSet = true,
-            };
-            control.BeforeDraw += (o, e) =>
-            {
-                DXManager.Device.SetSamplerState(0, SamplerState.MagFilter, TextureFilter.None);
-            };
-            control.AfterDraw += (o, e) =>
-            {
-                DXManager.Device.SetSamplerState(0, SamplerState.MagFilter, TextureFilter.Point);
+                UseOffSet = true
             };
 
+            // Ray of light
             new DXAnimatedControl
             {
                 BaseIndex = 2300,
@@ -160,10 +168,10 @@ namespace Client.Scenes
                 AnimationDelay = TimeSpan.FromSeconds(10),
                 FrameCount = 30,
                 Parent = background,
-                Blend = true,
+                Blend = true
             };
 
-
+            // Water
             new DXAnimatedControl
             {
                 BaseIndex = 2500,
@@ -172,7 +180,7 @@ namespace Client.Scenes
                 AnimationDelay = TimeSpan.FromSeconds(8),
                 FrameCount = 30,
                 Parent = background,
-                UseOffSet = true,
+                UseOffSet = true
             };
 
             LogoBackground = new DXImageControl
@@ -194,7 +202,7 @@ namespace Client.Scenes
             };
 
             LogoBackground.Location = new Point((Size.Width - LogoBackground.Size.Width) / 2, 25);
-            Logo.Location = new Point(((Size.Width - Logo.Size.Width) / 2) - 270, -27);
+            Logo.Location = new Point(-35, -35);
 
             ConfigBox = new DXConfigWindow
             {
@@ -217,20 +225,17 @@ namespace Client.Scenes
             };
             RankingBox.Location = new Point((Size.Width - RankingBox.Size.Width) / 2, (Size.Height - RankingBox.Size.Height) / 2);
 
-
             AccountBox = new NewAccountDialog
             {
                 Parent = this,
             };
             AccountBox.Location = new Point((Size.Width - AccountBox.Size.Width) / 2, (Size.Height - AccountBox.Size.Height) / 2);
 
-
             ChangeBox = new ChangePasswordDialog
             {
                 Parent = this,
             };
             ChangeBox.Location = new Point((Size.Width - ChangeBox.Size.Width) / 2, (Size.Height - ChangeBox.Size.Height) / 2);
-
 
             RequestPasswordBox = new RequestResetPasswordDialog
             {
@@ -255,8 +260,6 @@ namespace Client.Scenes
                 Parent = this,
             };
             RequestActivationBox.Location = new Point((Size.Width - RequestActivationBox.Size.Width) / 2, (Size.Height - RequestActivationBox.Size.Height) / 2);
-
-
 
             DXSoundManager.Play(SoundIndex.LoginScene2);
         }
@@ -732,7 +735,7 @@ namespace Client.Scenes
                     Label = { Text = CEnvir.Language.LoginDialogOptionButtonLabel, ForeColour = Color.FromArgb(255, 227, 165) },
                 };
                 OptionButton.MouseClick += OptionButton_MouseClick;
-                
+
                 NewAccountButton = new DXButton
                 {
                     Parent = this,

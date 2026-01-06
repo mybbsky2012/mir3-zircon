@@ -7,8 +7,8 @@ using System.Drawing;
 
 namespace Client.Models
 {
-    public  class MirProjectile : MirEffect
-   {
+    public class MirProjectile : MirEffect
+    {
         public Point Origin { get; set; }
         public int Speed { get; set; }
         public bool Explode { get; set; }
@@ -50,7 +50,7 @@ namespace Client.Models
             int y1 = (location.Y - MapObject.User.CurrentLocation.Y + MapObject.OffSetY) * MapObject.CellHeight - MapObject.User.MovingOffSet.Y;
 
             Direction16 = Functions.Direction16(new Point(x, y / 32 * 48), new Point(x1, y1 / 32 * 48));
-            long duration = Functions.Distance(new Point(x, y / 32 * 48), new Point(x1, y1 / 32 * 48)) * TimeSpan.TicksPerMillisecond;
+            long duration = Functions.Distance(new Point(x, y / 32 * 48), new Point(x1, y1 / 32 * 48)) * (TimeSpan.TicksPerMillisecond);
 
             if (Delay > 0)
                 duration *= Delay;
@@ -110,7 +110,7 @@ namespace Client.Models
         {
             TimeSpan enlapsed = CEnvir.Now - StartTime;
 
-            enlapsed = TimeSpan.FromTicks(enlapsed.Ticks%TotalDuration.Ticks);
+            enlapsed = TimeSpan.FromTicks(enlapsed.Ticks % TotalDuration.Ticks);
 
             for (int i = 0; i < Delays.Length; i++)
             {

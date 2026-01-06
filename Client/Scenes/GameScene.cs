@@ -39,7 +39,7 @@ namespace Client.Scenes
             }
         }
         private DXItemCell _SelectedCell;
-        
+
         #region User
 
         public UserObject User
@@ -87,7 +87,7 @@ namespace Client.Scenes
 
         public MapObject MagicObject, MouseObject, TargetObject, FocusObject;
         public DXControl ItemLabel, MagicLabel;
-        
+
         #region MouseItem
 
         public ClientUserItem MouseItem
@@ -147,6 +147,7 @@ namespace Client.Scenes
 
         public MenuDialog MenuBox;
         public DXConfigWindow ConfigBox;
+        public HelpDialog HelpBox;
         public CaptionDialog CaptionBox;
         public InventoryDialog InventoryBox;
         public CharacterDialog CharacterBox;
@@ -199,6 +200,8 @@ namespace Client.Scenes
         public NPCAccessoryRefineDialog NPCAccessoryRefineBox;
         public CurrencyDialog CurrencyBox;
         public TimerDialog TimerBox;
+        public BundleDialog BundleBox;
+        public LootBoxDialog LootBoxBox;
 
         public FishingDialog FishingBox;
         public FishingCatchDialog FishingCatchBox;
@@ -229,7 +232,7 @@ namespace Client.Scenes
             {
                 if (_AutoRun == value) return;
                 _AutoRun = value;
-                
+
                 ReceiveChat(value ? CEnvir.Language.GameSceneAutoRunOn : CEnvir.Language.GameSceneAutoRunOff, MessageType.Hint);
             }
         }
@@ -257,8 +260,6 @@ namespace Client.Scenes
         }
 
         #endregion
-
-        
 
         #region NPCID
 
@@ -291,7 +292,7 @@ namespace Client.Scenes
             set
             {
                 if (_Companion == value) return;
-                
+
                 _Companion = value;
 
                 CompanionChanged();
@@ -307,14 +308,14 @@ namespace Client.Scenes
             set
             {
                 if (_Partner == value) return;
-                
+
                 _Partner = value;
 
                 MarriageChanged();
             }
         }
         private ClientPlayerInfo _Partner;
-        
+
 
         public uint InspectID;
         public DateTime PickUpTime, UseItemTime, NPCTime, ToggleTime, InspectTime, ItemTime = CEnvir.Now, ReincarnationPillTime, ItemReviveTime;
@@ -346,11 +347,35 @@ namespace Client.Scenes
             }
         }
         private float _DayTime;
-        
+
+        public TimeOfDay TimeOfDay
+        {
+            get => _TimeOfDay;
+            set
+            {
+                if (_TimeOfDay == value) return;
+
+                _TimeOfDay = value;
+            }
+        }
+        private TimeOfDay _TimeOfDay;
+
+        public string TimeOfDayLabel
+        {
+            get => _TimeOfDayLabel;
+            set
+            {
+                if (_TimeOfDayLabel == value) return;
+
+                _TimeOfDayLabel = value;
+            }
+        }
+        private string _TimeOfDayLabel = string.Empty;
+
         public override void OnSizeChanged(Size oValue, Size nValue)
         {
             base.OnSizeChanged(oValue, nValue);
-            
+
             SetDefaultLocations();
 
             foreach (DXWindow window in DXWindow.Windows)
@@ -368,7 +393,9 @@ namespace Client.Scenes
             FishingBox?.LoadSettings();
             GroupBox?.LoadSettings();
             GuildBox?.LoadSettings();
-            MenuBox?.LoadSettings();
+            ConfigBox?.LoadSettings();
+            MenuBox?.LoadSettings();          
+            HelpBox?.LoadSettings();
 
             LoadChatTabs();
         }
@@ -411,7 +438,13 @@ namespace Client.Scenes
                 Parent = this,
                 Visible = false,
                 NetworkTab = { Enabled = false, TabButton = { Visible = false } },
-                ColourTab = { TabButton = { Visible = true } },
+                UITab = { TabButton = { Visible = true } },
+            };
+
+            HelpBox = new HelpDialog
+            {
+                Parent = this,
+                Visible = false
             };
 
             ExitBox = new ExitDialog
@@ -485,7 +518,7 @@ namespace Client.Scenes
                 Visible = false,
             };
             NPCAdoptCompanionBox = new NPCAdoptCompanionDialog
-            { 
+            {
                 Parent = this,
                 Visible = false,
             };
@@ -699,6 +732,18 @@ namespace Client.Scenes
                 Visible = false,
             };
 
+            BundleBox = new BundleDialog
+            {
+                Parent = this,
+                Visible = false
+            };
+
+            LootBoxBox = new LootBoxDialog
+            {
+                Parent = this,
+                Visible = false
+            };
+
             SetDefaultLocations();
 
             LoadChatTabs();
@@ -719,6 +764,7 @@ namespace Client.Scenes
             GroupBox.LoadSettings();
             GuildBox.LoadSettings();
             MenuBox.LoadSettings();
+            HelpBox.LoadSettings();
         }
 
         #region Methods
@@ -728,12 +774,12 @@ namespace Client.Scenes
 
             MenuBox.Location = new Point(Size.Width - MenuBox.Size.Width, Size.Height - MenuBox.Size.Height - MainPanel.Size.Height);
 
-            ConfigBox.Location = new Point((Size.Width - ConfigBox.Size.Width)/2, (Size.Height - ConfigBox.Size.Height)/2);
+            ConfigBox.Location = new Point((Size.Width - ConfigBox.Size.Width) / 2, (Size.Height - ConfigBox.Size.Height) / 2);
 
             CaptionBox.Location = Point.Empty;
 
-            ChatOptionsBox.Location = new Point((Size.Width - ChatOptionsBox.Size.Width)/2, (Size.Height - ChatOptionsBox.Size.Height)/2);
-            
+            ChatOptionsBox.Location = new Point((Size.Width - ChatOptionsBox.Size.Width) / 2, (Size.Height - ChatOptionsBox.Size.Height) / 2);
+
             ExitBox.Location = new Point((Size.Width - ExitBox.Size.Width) / 2, (Size.Height - ExitBox.Size.Height) / 2);
 
             TradeBox.Location = new Point((Size.Width - TradeBox.Size.Width) / 2, (Size.Height - TradeBox.Size.Height) / 2);
@@ -743,17 +789,17 @@ namespace Client.Scenes
             GuildMemberBox.Location = new Point((Size.Width - GuildMemberBox.Size.Width) / 2, (Size.Height - GuildMemberBox.Size.Height) / 2);
 
             InventoryBox.Location = new Point(Size.Width - InventoryBox.Size.Width, MiniMapBox.Size.Height);
-            
+
             CharacterBox.Location = Point.Empty;
 
             MapControl.Size = Size;
 
-            MainPanel.Location = new Point((Size.Width - MainPanel.Size.Width)/2, Size.Height - MainPanel.Size.Height);
+            MainPanel.Location = new Point((Size.Width - MainPanel.Size.Width) / 2, Size.Height - MainPanel.Size.Height);
 
             ChatTextBox.Location = new Point((Size.Width - ChatTextBox.Size.Width) / 2, (Size.Height - ChatTextBox.Size.Height) / 2);
 
             BeltBox.Location = new Point(MainPanel.Location.X + MainPanel.Size.Width - BeltBox.Size.Width, MainPanel.Location.Y - BeltBox.Size.Height);
-            
+
             NPCBox.Location = Point.Empty;
 
             NPCGoodsBox.Location = new Point(0, NPCBox.Size.Height);
@@ -770,11 +816,11 @@ namespace Client.Scenes
 
             MagicBox.Location = new Point(Size.Width - MagicBox.Size.Width, 0);
 
-            GroupBox.Location = new Point((Size.Width - GroupBox.Size.Width)/2, (Size.Height - GroupBox.Size.Height)/2);
+            GroupBox.Location = new Point((Size.Width - GroupBox.Size.Width) / 2, (Size.Height - GroupBox.Size.Height) / 2);
 
             StorageBox.Location = new Point(Size.Width - StorageBox.Size.Width - InventoryBox.Size.Width, 0);
 
-            AutoPotionBox.Location = new Point((Size.Width - AutoPotionBox.Size.Width)/2, (Size.Height - AutoPotionBox.Size.Height)/2);
+            AutoPotionBox.Location = new Point((Size.Width - AutoPotionBox.Size.Width) / 2, (Size.Height - AutoPotionBox.Size.Height) / 2);
 
             InspectBox.Location = new Point(CharacterBox.Size.Width, 0);
 
@@ -800,7 +846,11 @@ namespace Client.Scenes
 
             FishingCatchBox.Location = new Point(((Size.Width - FishingCatchBox.Size.Width) / 2), ((Size.Height - FishingCatchBox.Size.Height) / 2) + 200);
 
-            TimerBox.Location = new Point(Size.Width - 120, Size.Height - 180);
+            TimerBox.Location = new Point(MainPanel.DisplayArea.Right - 115, Size.Height - 170);
+
+            BundleBox.Location = new Point((Size.Width - BundleBox.Size.Width) / 2, (Size.Height - BundleBox.Size.Height) / 2);
+
+            LootBoxBox.Location = new Point((Size.Width - LootBoxBox.Size.Width) / 2, (Size.Height - LootBoxBox.Size.Height) / 2);
         }
 
         public void SaveChatTabs()
@@ -945,7 +995,7 @@ namespace Client.Scenes
             if (MouseControl == MapControl)
             {
                 if (CEnvir.Ctrl && MapObject.MouseObject?.Race == ObjectType.Item)
-                    MouseItem = ((ItemObject) MapObject.MouseObject).Item;
+                    MouseItem = ((ItemObject)MapObject.MouseObject).Item;
                 else
                     MouseItem = null;
             }
@@ -997,8 +1047,8 @@ namespace Client.Scenes
                 ob.Process();
 
             for (int i = MapControl.Effects.Count - 1; i >= 0; i--)
-                    MapControl.Effects[i].Process();
-           
+                MapControl.Effects[i].Process();
+
             for (int i = MapControl.ParticleEffects.Count - 1; i >= 0; i--)
                 MapControl.ParticleEffects[i].Process();
 
@@ -1056,6 +1106,8 @@ namespace Client.Scenes
         {
             base.OnKeyPress(e);
 
+            if (e.Handled) return;
+
             switch ((Keys)e.KeyChar)
             {
                 case Keys.Enter:
@@ -1084,6 +1136,9 @@ namespace Client.Scenes
                 {
                     case KeyBindAction.MenuWindow:
                         MenuBox.Visible = !MenuBox.Visible;
+                        break;
+                    case KeyBindAction.HelpWindow:
+                        HelpBox.Visible = !HelpBox.Visible;
                         break;
                     case KeyBindAction.ConfigWindow:
                         ConfigBox.Visible = !ConfigBox.Visible;
@@ -1199,13 +1254,13 @@ namespace Client.Scenes
                         break;
                     case KeyBindAction.ChangeAttackMode:
                         if (Observer) continue;
-                        User.AttackMode = (AttackMode) (((int) User.AttackMode + 1) % 5);
+                        User.AttackMode = (AttackMode)(((int)User.AttackMode + 1) % 5);
                         CEnvir.Enqueue(new C.ChangeAttackMode { Mode = User.AttackMode });
                         break;
                     case KeyBindAction.ChangePetMode:
                         if (Observer) continue;
 
-                        User.PetMode = (PetMode) (((int) User.PetMode + 1) % 5);
+                        User.PetMode = (PetMode)(((int)User.PetMode + 1) % 5);
                         CEnvir.Enqueue(new C.ChangePetMode { Mode = User.PetMode });
                         break;
                     case KeyBindAction.GroupAllowSwitch:
@@ -1263,6 +1318,7 @@ namespace Client.Scenes
                         break;
                     case KeyBindAction.UseBelt01:
                         if (Observer) continue;
+                        if (e.Shift && Config.ShiftOpenChat) return;
 
                         if (BeltBox.Grid.Grid.Length > 0)
                         {
@@ -1546,14 +1602,14 @@ namespace Client.Scenes
 
             if (MouseItem.Info.ItemEffect == ItemEffect.ItemPart)
                 displayInfo = Globals.ItemInfoList.Binding.First(x => x.Index == MouseItem.AddedStats[Stat.ItemIndex]);
-            
+
 
             DXLabel label = new DXLabel
             {
                 ForeColour = Color.Yellow,
                 Location = new Point(4, 4),
                 Parent = ItemLabel,
-                Text = displayInfo.ItemName 
+                Text = displayInfo.ItemName
             };
 
             if (MouseItem.Info.ItemEffect == ItemEffect.ItemPart)
@@ -1596,7 +1652,7 @@ namespace Client.Scenes
                     case ItemType.Weapon:
                     case ItemType.Shield:
                     case ItemType.Torch:
-                        if (User.HandWeight - (Equipment[(int) EquipmentSlot.Weapon]?.Info.Weight ?? 0) + MouseItem.Info.Weight > User.Stats[Stat.HandWeight])
+                        if (User.HandWeight - (Equipment[(int)EquipmentSlot.Weapon]?.Info.Weight ?? 0) + MouseItem.Info.Weight > User.Stats[Stat.HandWeight])
                             label.ForeColour = Color.Red;
                         break;
                     case ItemType.Armour:
@@ -1611,7 +1667,7 @@ namespace Client.Scenes
                             label.ForeColour = Color.Red;
                         break;
                 }
-                
+
                 ItemLabel.Size = new Size(label.DisplayArea.Right + 4 > ItemLabel.Size.Width ? label.DisplayArea.Right + 4 : ItemLabel.Size.Width,
                     label.DisplayArea.Bottom > ItemLabel.Size.Height ? label.DisplayArea.Bottom : ItemLabel.Size.Height);
                 needSpacer = true;
@@ -1705,7 +1761,7 @@ namespace Client.Scenes
                             ForeColour = MouseItem.CurrentDurability == 0 ? Color.Red : Color.White,
                             Location = new Point(ItemLabel.DisplayArea.Right, 4),
                             Parent = ItemLabel,
-                            Text = $"Quality: {Math.Round(MouseItem.CurrentDurability/1000M)}/{Math.Round(MouseItem.MaxDurability/1000M)}",
+                            Text = $"Quality: {Math.Round(MouseItem.CurrentDurability / 1000M)}/{Math.Round(MouseItem.MaxDurability / 1000M)}",
                         };
 
                         ItemLabel.Size = new Size(label.DisplayArea.Right + 4, ItemLabel.Size.Height);
@@ -1719,7 +1775,47 @@ namespace Client.Scenes
                             ForeColour = MouseItem.CurrentDurability == 0 ? Color.Red : Color.White,
                             Location = new Point(ItemLabel.DisplayArea.Right, 4),
                             Parent = ItemLabel,
-                            Text = $"Purity: {Math.Round(MouseItem.CurrentDurability/1000M)}",
+                            Text = $"Purity: {Math.Round(MouseItem.CurrentDurability / 1000M)}",
+                        };
+
+                        ItemLabel.Size = new Size(label.DisplayArea.Right + 4, ItemLabel.Size.Height);
+                    }
+                    break;
+                case ItemType.Bundle:
+                    break;
+                case ItemType.LootBox:
+
+                    var remainingRerolls = MouseItem.AddedStats[Stat.Counter1];
+                    var lootBoxState = MouseItem.AddedStats[Stat.Counter2];
+
+                    if (lootBoxState > 1)
+                    {
+                        var openCount = 0;
+
+                        for (int i = 0; i < LootBoxInfo.SlotSize; i++)
+                        {
+                            if ((MouseItem.CurrentDurability & (1 << i)) != 0)
+                                openCount++;
+                        }
+
+                        label = new DXLabel
+                        {
+                            ForeColour = Color.Yellow,
+                            Location = new Point(ItemLabel.DisplayArea.Right, 4),
+                            Parent = ItemLabel,
+                            Text = $"Open Count: {openCount}/{LootBoxInfo.SlotSize}",
+                        };
+
+                        ItemLabel.Size = new Size(label.DisplayArea.Right + 4, ItemLabel.Size.Height);
+                    }
+                    else
+                    {
+                        label = new DXLabel
+                        {
+                            ForeColour = Color.Yellow,
+                            Location = new Point(ItemLabel.DisplayArea.Right, 4),
+                            Parent = ItemLabel,
+                            Text = $"Reroll Count: {remainingRerolls}/{Globals.LootBoxRerollCount}",
                         };
 
                         ItemLabel.Size = new Size(label.DisplayArea.Right + 4, ItemLabel.Size.Height);
@@ -1729,7 +1825,6 @@ namespace Client.Scenes
                     EquipmentItemInfo();
                     break;
             }
-
 
             if (displayInfo.RequiredGender != RequiredGender.None)
             {
@@ -1757,7 +1852,6 @@ namespace Client.Scenes
                 ItemLabel.Size = new Size(label.DisplayArea.Right + 4 > ItemLabel.Size.Width ? label.DisplayArea.Right + 4 : ItemLabel.Size.Width,
                     label.DisplayArea.Bottom > ItemLabel.Size.Height ? label.DisplayArea.Bottom : ItemLabel.Size.Height);
             }
-
 
             if (displayInfo.RequiredClass != RequiredClass.All)
             {
@@ -1787,7 +1881,7 @@ namespace Client.Scenes
                 MemberInfo[] infos = type.GetMember(displayInfo.RequiredClass.ToString());
 
                 DescriptionAttribute description = infos[0].GetCustomAttribute<DescriptionAttribute>();
-                
+
                 label = new DXLabel
                 {
                     ForeColour = colour,
@@ -1799,8 +1893,6 @@ namespace Client.Scenes
                 ItemLabel.Size = new Size(label.DisplayArea.Right + 4 > ItemLabel.Size.Width ? label.DisplayArea.Right + 4 : ItemLabel.Size.Width,
                     label.DisplayArea.Bottom > ItemLabel.Size.Height ? label.DisplayArea.Bottom : ItemLabel.Size.Height);
             }
-
-
 
             if (displayInfo.RequiredAmount > 0)
             {
@@ -1908,7 +2000,6 @@ namespace Client.Scenes
                     label.DisplayArea.Bottom > ItemLabel.Size.Height ? label.DisplayArea.Bottom : ItemLabel.Size.Height);
             }
 
-
             bool spacer = false;
             long sale = MouseItem.Price(Math.Max(1, MouseItem.Count));
             if (sale > 0)
@@ -1925,7 +2016,6 @@ namespace Client.Scenes
                     label.DisplayArea.Bottom > ItemLabel.Size.Height ? label.DisplayArea.Bottom : ItemLabel.Size.Height);
             }
             ItemLabel.Size = new Size(ItemLabel.Size.Width, ItemLabel.Size.Height + 4);
-
 
             if (MouseItem.Info.Durability > 0 && !MouseItem.Info.CanRepair && MouseItem.Info.StackSize == 1)
             {
@@ -1974,7 +2064,7 @@ namespace Client.Scenes
                 ItemLabel.Size = new Size(ItemLabel.Size.Width, ItemLabel.Size.Height);
                 spacer = true;
             }
-            
+
             if (!MouseItem.Info.CanTrade || (MouseItem.Flags & UserItemFlags.Bound) == UserItemFlags.Bound)
             {
                 label = new DXLabel
@@ -2102,7 +2192,6 @@ namespace Client.Scenes
             if (spacer)
                 ItemLabel.Size = new Size(ItemLabel.Size.Width, ItemLabel.Size.Height + 4);
 
-
             if (MouseItem.Info.Durability > 0 && MouseItem.Info.CanRepair && MouseItem.Info.StackSize == 1 && MouseItem.Info.ItemType != ItemType.Book)
             {
                 label = new DXLabel
@@ -2138,7 +2227,7 @@ namespace Client.Scenes
                     Text = $"Expires in {Functions.ToString(MouseItem.ExpireTime, true)}",
                     ForeColour = Color.Chocolate,
                 };
-                
+
 
                 ItemLabel.Size = new Size(label.DisplayArea.Right + 4 > ItemLabel.Size.Width ? label.DisplayArea.Right + 4 : ItemLabel.Size.Width,
                     label.DisplayArea.Bottom > ItemLabel.Size.Height ? label.DisplayArea.Bottom : ItemLabel.Size.Height);
@@ -2173,7 +2262,6 @@ namespace Client.Scenes
 
                 ItemLabel.Size = new Size(ItemLabel.Size.Width, ItemLabel.Size.Height + 4);
             }
-
 
             if (MouseItem.Info.Set != null)
                 SetItemInfo(MouseItem.Info.Set);
@@ -2272,9 +2360,8 @@ namespace Client.Scenes
 
                 ItemLabel.Size = new Size(ItemLabel.Size.Width, ItemLabel.Size.Height + 4);
             }
-
-
         }
+
         private void EquipmentItemInfo()
         {
             Stats stats = new Stats();
@@ -2286,7 +2373,7 @@ namespace Client.Scenes
 
             stats.Add(displayInfo.Stats, displayInfo.ItemType != ItemType.Weapon);
             stats.Add(MouseItem.AddedStats, MouseItem.Info.ItemType != ItemType.Weapon);
-            
+
             if (displayInfo.ItemType == ItemType.Weapon)
             {
                 Stat ele = MouseItem.AddedStats.GetWeaponElement();
@@ -2306,7 +2393,7 @@ namespace Client.Scenes
                     ForeColour = MouseItem.CurrentDurability == 0 ? Color.Red : Color.FromArgb(132, 255, 255),
                     Location = new Point(ItemLabel.DisplayArea.Right, 4),
                     Parent = ItemLabel,
-                    Text = $"Durability: {Math.Round(MouseItem.CurrentDurability/1000M)}/{Math.Round(MouseItem.MaxDurability/1000M)}",
+                    Text = $"Durability: {Math.Round(MouseItem.CurrentDurability / 1000M)}/{Math.Round(MouseItem.MaxDurability / 1000M)}",
                 };
 
                 ItemLabel.Size = new Size(label.DisplayArea.Right + 4, ItemLabel.Size.Height);
@@ -2468,14 +2555,14 @@ namespace Client.Scenes
 
             }
         }
+
         private void CreatePotionLabel()
         {
             if (MouseItem == null) return;
 
             Stats stats = new Stats();
-            
+
             stats.Add(MouseItem.Info.Stats);
-            
 
             DXLabel label;
             foreach (KeyValuePair<Stat, int> pair in stats.Values)
@@ -2518,13 +2605,14 @@ namespace Client.Scenes
                     ForeColour = Color.White,
                     Location = new Point(4, ItemLabel.DisplayArea.Bottom),
                     Parent = ItemLabel,
-                    Text = $"Cooldown: {MouseItem.Info.Durability/1000M:#,##0.#} Seconds"
+                    Text = $"Cooldown: {Functions.ToString(TimeSpan.FromMilliseconds(MouseItem.Info.Durability), true)}"
                 };
 
                 ItemLabel.Size = new Size(label.DisplayArea.Right + 4 > ItemLabel.Size.Width ? label.DisplayArea.Right + 4 : ItemLabel.Size.Width,
                     label.DisplayArea.Bottom > ItemLabel.Size.Height ? label.DisplayArea.Bottom : ItemLabel.Size.Height);
             }
         }
+
         private void CreateMagicLabel()
         {
             if (MouseMagic == null) return;
@@ -2646,7 +2734,7 @@ namespace Client.Scenes
             label = new DXLabel
             {
                 ForeColour = Color.White,
-                Location = new Point(width , MagicLabel.DisplayArea.Bottom),
+                Location = new Point(width, MagicLabel.DisplayArea.Bottom),
                 Parent = MagicLabel,
                 Text = $"Experience: {MouseMagic.Experience2:#,##0}",
             };
@@ -2719,7 +2807,7 @@ namespace Client.Scenes
 
             ItemLabel.Size = new Size(label.DisplayArea.Right + 4 > ItemLabel.Size.Width ? label.DisplayArea.Right + 4 : ItemLabel.Size.Width,
                 label.DisplayArea.Bottom > ItemLabel.Size.Height ? label.DisplayArea.Bottom : ItemLabel.Size.Height);
-            
+
             label = new DXLabel
             {
                 ForeColour = Color.LimeGreen,
@@ -2763,7 +2851,7 @@ namespace Client.Scenes
                     if (equip[j] == null) continue;
                     if (equip[j].Info != info) continue;
                     if (equip[j].CurrentDurability == 0 && equip[j].Info.Durability > 0) continue;
-                    
+
                     counted.Add(j);
 
                     hasPart = true;
@@ -2844,7 +2932,6 @@ namespace Client.Scenes
             ItemLabel.Size = new Size(ItemLabel.Size.Width, ItemLabel.Size.Height + 4);
         }
 
-
         public void UseMagic(SpellKey key)
         {
             if (Game.Observer || User == null || User.Horse != HorseType.None || MagicBarBox == null) return;
@@ -2916,6 +3003,7 @@ namespace Client.Scenes
                 case MagicType.BladeStorm:
                 case MagicType.DemonicRecovery:
                 case MagicType.DefensiveBlow:
+                case MagicType.OffensiveBlow:
                     if (CEnvir.Now < magic.NextCast || magic.Cost > User.CurrentMP) return;
                     magic.NextCast = CEnvir.Now.AddSeconds(0.5D); //Act as an anti spam
                     CEnvir.Enqueue(new C.MagicToggle { Magic = magic.Info.Magic });
@@ -2955,10 +3043,10 @@ namespace Client.Scenes
                     return;
             }
 
-            if (CEnvir.Now < User.NextMagicTime || User.Dead || 
+            if (CEnvir.Now < User.NextMagicTime || User.Dead ||
                 User.Buffs.Any(x => x.Type == BuffType.DragonRepulse) ||
-                (User.Buffs.Any(x => x.Type == BuffType.ElementalHurricane) && magic.Info.Magic != MagicType.ElementalHurricane) ||     
-                (User.Poison & PoisonType.Paralysis) == PoisonType.Paralysis || 
+                (User.Buffs.Any(x => x.Type == BuffType.ElementalHurricane) && magic.Info.Magic != MagicType.ElementalHurricane) ||
+                (User.Poison & PoisonType.Paralysis) == PoisonType.Paralysis ||
                 (User.Poison & PoisonType.Silenced) == PoisonType.Silenced) return;
 
             if (CEnvir.Now < magic.NextCast)
@@ -2974,7 +3062,7 @@ namespace Client.Scenes
             switch (magic.Info.Magic)
             {
                 case MagicType.Cloak:
-                    if (User.VisibleBuffs.Contains(BuffType.Cloak)) break;
+                    if (User.VisibleBuffs.ContainsKey(BuffType.Cloak)) break;
                     if (CEnvir.Now < User.CombatTime.AddSeconds(10))
                     {
                         if (CEnvir.Now >= OutputTime)
@@ -2996,7 +3084,7 @@ namespace Client.Scenes
                     }
                     break;
                 case MagicType.DarkConversion:
-                    if (User.VisibleBuffs.Contains(BuffType.DarkConversion)) break;
+                    if (User.VisibleBuffs.ContainsKey(BuffType.DarkConversion)) break;
 
                     if (magic.Cost > User.CurrentMP)
                     {
@@ -3030,7 +3118,7 @@ namespace Client.Scenes
                     break;
                 case MagicType.ElementalHurricane:
                     int cost = magic.Cost;
-                    if (MapObject.User.VisibleBuffs.Contains(BuffType.ElementalHurricane))
+                    if (MapObject.User.VisibleBuffs.ContainsKey(BuffType.ElementalHurricane))
                         cost = 0;
 
                     if (cost > User.CurrentMP)
@@ -3094,8 +3182,6 @@ namespace Client.Scenes
                     CEnvir.Enqueue(new C.Magic { Action = MirAction.Spell, Type = magic.Info.Magic, Target = target.ObjectID });
                     return;
 
-                case MagicType.ElementalSwords:
-
                 case MagicType.FireBall:
                 case MagicType.IceBolt:
                 case MagicType.LightningBall:
@@ -3110,6 +3196,7 @@ namespace Client.Scenes
                 case MagicType.ExpelUndead:
                 case MagicType.LightningStrike:
                 case MagicType.IceRain:
+                case MagicType.IceDragon:
 
                 case MagicType.PoisonDust:
                 case MagicType.ExplosiveTalisman:
@@ -3119,8 +3206,12 @@ namespace Client.Scenes
                 case MagicType.Parasite:
                 case MagicType.Neutralize:
                 case MagicType.SearingLight:
+                case MagicType.BindingTalisman:
+                case MagicType.BrainStorm:
 
                 case MagicType.Hemorrhage:
+                case MagicType.FlamingDaggers:
+                case MagicType.Shredding:
                     if (CanAttackTarget(MagicObject))
                         target = MagicObject;
 
@@ -3134,6 +3225,23 @@ namespace Client.Scenes
                             MapObject.MagicObject = null;
                     }
                     break;
+                case MagicType.HundredFist:
+                    if (CanAttackTarget(MagicObject))
+                        target = MagicObject;
+                    if (CanAttackTarget(MouseObject))
+                    {
+                        target = MouseObject;
+
+                        if (MouseObject.Race == ObjectType.Monster && ((MonsterObject)MouseObject).MonsterInfo.AI >= 0)
+                            MapObject.MagicObject = target;
+                        else
+                            MapObject.MagicObject = null;
+                    }
+                    if (target == null || !Functions.IsStraightEightDirection(User.CurrentLocation, target.CurrentLocation))
+                        return;
+
+                    break;
+
                 case MagicType.WraithGrip:
                 case MagicType.HellFire:
                 case MagicType.Abyss:
@@ -3145,7 +3253,6 @@ namespace Client.Scenes
                     if (CanAttackTarget(MouseObject))
                         target = MouseObject;
                     break;
-
                 case MagicType.MagicCombustion:
                     if (!CanAttackTarget(MouseObject) || MouseObject.Race != ObjectType.Player) return;
 
@@ -3187,7 +3294,7 @@ namespace Client.Scenes
                     break;
 
                 case MagicType.Rake:
-                    if (!User.VisibleBuffs.Contains(BuffType.Cloak)) return;
+                    if (!User.VisibleBuffs.ContainsKey(BuffType.Cloak)) return;
                     break;
 
                 case MagicType.Chain:
@@ -3210,7 +3317,7 @@ namespace Client.Scenes
                     direction = MirDirection.Down;
                     break;
                 case MagicType.Endurance:
-                    direction = MirDirection.Down;                    
+                    direction = MirDirection.Down;
                     break;
                 case MagicType.Renounce:
                     break;
@@ -3227,8 +3334,12 @@ namespace Client.Scenes
                     break;
                 case MagicType.JudgementOfHeaven:
                     break;
+
                 case MagicType.SeismicSlam:
                 case MagicType.CrushingWave:
+                case MagicType.ElementalSwords:
+                case MagicType.TaecheonSword:
+                case MagicType.FireSword:
 
                 case MagicType.Repulsion:
                 case MagicType.ScortchedEarth:
@@ -3240,6 +3351,9 @@ namespace Client.Scenes
                 case MagicType.ThunderStrike:
                 case MagicType.MirrorImage:
                 case MagicType.ElementalHurricane:
+                case MagicType.IceAura:
+                case MagicType.IceBreaker:
+                case MagicType.FrozenDragon:
 
                 case MagicType.Invisibility:
                 case MagicType.CombatKick:
@@ -3251,6 +3365,8 @@ namespace Client.Scenes
                 case MagicType.SummonDemonicCreature:
                 case MagicType.DemonExplosion:
                 case MagicType.DarkSoulPrison:
+                case MagicType.HeavenlySky:
+                case MagicType.PoisonCloud:
 
                 case MagicType.PoisonousCloud:
                 case MagicType.Cloak:
@@ -3263,6 +3379,8 @@ namespace Client.Scenes
                 case MagicType.RagingWind:
                 case MagicType.Concentration:
                 case MagicType.Containment:
+                case MagicType.FourWheels:
+                case MagicType.CrescentMoon:
                     break;
 
                 case MagicType.SwiftBlade:
@@ -3328,6 +3446,8 @@ namespace Client.Scenes
                 case MagicType.ImprovedExplosiveTalisman:
                 case MagicType.PoisonDust:
                 case MagicType.Neutralize:
+                case MagicType.BindingTalisman:
+                case MagicType.BrainStorm:
                     targetLocation = MapControl.MapLocation;
                     break;
                 default:
@@ -3338,7 +3458,7 @@ namespace Client.Scenes
             //switch spell type.
 
             if (MouseObject != null && MouseObject.Race == ObjectType.Monster)
-                FocusObject = (MonsterObject) MouseObject;
+                FocusObject = (MonsterObject)MouseObject;
 
             User.MagicAction = new ObjectAction(MirAction.Spell, direction, MapObject.User.CurrentLocation, magic.Info.Magic, new List<uint> { targetID }, new List<Point> { targetLocation }, false, Element.None);
         }
@@ -3352,7 +3472,7 @@ namespace Client.Scenes
                 case ObjectType.Player:
                     return true;
                 case ObjectType.Monster:
-                    MonsterObject mob = (MonsterObject) ob;
+                    MonsterObject mob = (MonsterObject)ob;
 
                     if (mob.MonsterInfo.AI < 0) return false;
 
@@ -3390,7 +3510,7 @@ namespace Client.Scenes
             if (image >= 0 && CEnvir.LibraryList.TryGetValue(LibraryFile.Inventory, out library))
             {
                 Size imageSize = library.GetSize(image);
-                Point p = new Point(CEnvir.MouseLocation.X - imageSize.Width/2, CEnvir.MouseLocation.Y - imageSize.Height/2);
+                Point p = new Point(CEnvir.MouseLocation.X - imageSize.Width / 2, CEnvir.MouseLocation.Y - imageSize.Height / 2);
 
                 if (p.X + imageSize.Width >= Size.Width + Location.X)
                     p.X = Size.Width - imageSize.Width + Location.X;
@@ -3418,13 +3538,17 @@ namespace Client.Scenes
                 MagicLabel.Draw();
         }
 
-        public void Displacement(MirDirection direction, Point location)
+        public void Displacement(MirDirection direction, Point location, bool clearQueue = false)
         {
-            //if (MapObject.User.Direction == direction && MapObject.User.CurrentLocation == location) return;
-
             MapObject.User.ServerTime = DateTime.MinValue;
             MapObject.User.SetAction(new ObjectAction(MirAction.Standing, direction, location));
             MapObject.User.NextActionTime = CEnvir.Now.AddMilliseconds(300);
+
+            if (clearQueue)
+            {
+                // Queue might contain actions at an old location (causing desync), so clear it out
+                MapObject.User.ActionQueue.Clear();
+            }
         }
 
         public void FillItems(List<ClientUserItem> items)
@@ -3665,13 +3789,13 @@ namespace Client.Scenes
         public bool CanWearItem(ClientUserItem item, EquipmentSlot slot)
         {
             if (!CanUseItem(item)) return false;
-            
+
             switch (slot)
             {
                 case EquipmentSlot.Weapon:
                 case EquipmentSlot.Torch:
                 case EquipmentSlot.Shield:
-                    if (User.HandWeight - (Equipment[(int) slot]?.Info.Weight ?? 0) + item.Weight > User.Stats[Stat.HandWeight])
+                    if (User.HandWeight - (Equipment[(int)slot]?.Info.Weight ?? 0) + item.Weight > User.Stats[Stat.HandWeight])
                     {
                         ReceiveChat(string.Format(CEnvir.Language.GameSceneHoldTooHeavy, item.Info.ItemName), MessageType.System);
                         return false;
@@ -3689,7 +3813,7 @@ namespace Client.Scenes
                     }
                     break;
                 default:
-                    if (User.WearWeight - (Equipment[(int) slot]?.Info.Weight ?? 0) + item.Weight > User.Stats[Stat.WearWeight])
+                    if (User.WearWeight - (Equipment[(int)slot]?.Info.Weight ?? 0) + item.Weight > User.Stats[Stat.WearWeight])
                     {
                         ReceiveChat(string.Format(CEnvir.Language.GameSceneWearTooHeavy, item.Info.ItemName), MessageType.System);
                         return false;
@@ -3705,7 +3829,7 @@ namespace Client.Scenes
             if (Companion == null) return false;
 
             if (!CanCompanionUseItem(item.Info)) return false;
-            
+
             return true;
         }
         public bool CanCompanionUseItem(ItemInfo info)
@@ -3767,7 +3891,7 @@ namespace Client.Scenes
         public void ClassChanged()
         {
             if (User == null) return;
-            
+
             MainPanel.ClassLabel.Text = User.Class.ToString();
 
             foreach (NPCGoodsCell cell in NPCGoodsBox.Cells)
@@ -3906,7 +4030,7 @@ namespace Client.Scenes
         }
         public void CompanionChanged()
         {
-            NPCCompanionStorageBox.UpdateScrollBar();
+            NPCCompanionStorageBox.Refresh();
 
             CompanionBox.CompanionChanged();
         }
@@ -3990,7 +4114,7 @@ namespace Client.Scenes
             QuestBox.PopulateQuests();
 
             QuestTrackerBox.PopulateQuests();
-            
+
             NPCQuestListBox.UpdateQuestDisplay();
 
             UpdateQuestIcons();
@@ -4067,7 +4191,7 @@ namespace Client.Scenes
                     builder.AppendFormat("Kill {0} ", task.Amount);
                     break;
                 case QuestTaskType.GainItem:
-                    builder.AppendFormat("Collect {0} {1} from ", task.Amount, task.ItemParameter?.ItemName);  
+                    builder.AppendFormat("Collect {0} {1} from ", task.Amount, task.ItemParameter?.ItemName);
                     break;
                 case QuestTaskType.Region:
                     builder.AppendFormat("Goto {0} in {1}", task.RegionParameter?.Description, task.RegionParameter?.Map.PlayerDescription);
@@ -4275,12 +4399,12 @@ namespace Client.Scenes
                 return image;
             }
 
-            return new DXControl
+            return new DXMapInfoControl
             {
                 Size = new Size(3, 3),
                 DrawTexture = true,
                 Hint = npc.NPCName,
-                BackColour = Color.Lime
+                BackColour = Color.Yellow
             };
         }
 
@@ -4326,8 +4450,8 @@ namespace Client.Scenes
                 if (member.ObjectID == objectID) return true;
 
             if (GuildBox.GuildInfo != null)
-            foreach (ClientGuildMemberInfo member in GuildBox.GuildInfo.Members)
-                if (member.ObjectID == objectID) return true;
+                foreach (ClientGuildMemberInfo member in GuildBox.GuildInfo.Members)
+                    if (member.ObjectID == objectID) return true;
 
             return false;
         }
@@ -4427,6 +4551,14 @@ namespace Client.Scenes
                         ExitBox.Dispose();
 
                     ExitBox = null;
+                }
+
+                if (HelpBox != null)
+                {
+                    if (!HelpBox.IsDisposed)
+                        HelpBox.Dispose();
+
+                    HelpBox = null;
                 }
 
                 if (ChatTextBox != null)
@@ -4564,6 +4696,7 @@ namespace Client.Scenes
 
                     NPCItemFragmentBox = null;
                 }
+
                 if (NPCAccessoryUpgradeBox != null)
                 {
                     if (!NPCAccessoryUpgradeBox.IsDisposed)
@@ -4571,6 +4704,7 @@ namespace Client.Scenes
 
                     NPCAccessoryUpgradeBox = null;
                 }
+
                 if (NPCAccessoryLevelBox != null)
                 {
                     if (!NPCAccessoryLevelBox.IsDisposed)
@@ -4578,6 +4712,7 @@ namespace Client.Scenes
 
                     NPCAccessoryLevelBox = null;
                 }
+
                 if (NPCAccessoryResetBox != null)
                 {
                     if (!NPCAccessoryResetBox.IsDisposed)
@@ -4585,8 +4720,6 @@ namespace Client.Scenes
 
                     NPCAccessoryResetBox = null;
                 }
-
-
 
                 if (MiniMapBox != null)
                 {
@@ -4797,7 +4930,7 @@ namespace Client.Scenes
                 InspectTime = DateTime.MinValue;
                 ItemTime = DateTime.MinValue;
                 ItemReviveTime = DateTime.MinValue;
-                
+
                 _DayTime = 0f;
             }
         }
@@ -4805,4 +4938,4 @@ namespace Client.Scenes
         #endregion
 
     }
-} 
+}

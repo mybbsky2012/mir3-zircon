@@ -52,6 +52,7 @@
             DisciplineInfoButton = new DevExpress.XtraNavBar.NavBarItem();
             CompanionInfoButton = new DevExpress.XtraNavBar.NavBarItem();
             CurrencyInfoButton = new DevExpress.XtraNavBar.NavBarItem();
+            HelpInfoButton = new DevExpress.XtraNavBar.NavBarItem();
             navBarGroup5 = new DevExpress.XtraNavBar.NavBarGroup();
             MapInfoButton = new DevExpress.XtraNavBar.NavBarItem();
             InstanceInfoButton = new DevExpress.XtraNavBar.NavBarItem();
@@ -71,6 +72,8 @@
             ItemInfoStatButton = new DevExpress.XtraNavBar.NavBarItem();
             SetInfoButton = new DevExpress.XtraNavBar.NavBarItem();
             WeaponCraftInfoButton = new DevExpress.XtraNavBar.NavBarItem();
+            BundleInfoButton = new DevExpress.XtraNavBar.NavBarItem();
+            LootBoxInfoButton = new DevExpress.XtraNavBar.NavBarItem();
             navBarGroup6 = new DevExpress.XtraNavBar.NavBarGroup();
             MonsterInfoButton = new DevExpress.XtraNavBar.NavBarItem();
             MonsterInfoStatButton = new DevExpress.XtraNavBar.NavBarItem();
@@ -106,7 +109,6 @@
             barDockControlLeft = new DevExpress.XtraBars.BarDockControl();
             barDockControlRight = new DevExpress.XtraBars.BarDockControl();
             InterfaceTimer = new System.Windows.Forms.Timer(components);
-            navBarItem6 = new DevExpress.XtraNavBar.NavBarItem();
             ((System.ComponentModel.ISupportInitialize)ribbonControl1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)navBarControl1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)DManager).BeginInit();
@@ -197,7 +199,7 @@
             navBarControl1.ActiveGroup = navBarGroup1;
             navBarControl1.Dock = System.Windows.Forms.DockStyle.Left;
             navBarControl1.Groups.AddRange(new DevExpress.XtraNavBar.NavBarGroup[] { navBarGroup1, navBarGroup4, navBarGroup5, navBarGroup8, navBarGroup7, navBarGroup6, navBarGroup3 });
-            navBarControl1.Items.AddRange(new DevExpress.XtraNavBar.NavBarItem[] { LogNavButton, ChatLogButton, ConfigButton, MapInfoButton, MonsterInfoButton, ItemInfoButton, InstanceInfoButton, NPCInfoButton, NPCPageButton, MagicInfoButton, AccountInfoButton, CharacterInfoButton, MovementInfoButton, ItemInfoStatButton, MonsterInfoStatButton, SetInfoButton, StoreInfoButton, BaseStatButton, SafeZoneInfoButton, RespawnInfoButton, MapRegionButton, DropInfoButton, UserDropButton, QuestInfoButton, CompanionInfoButton, EventInfoButton, CastleInfoButton, PaymentButton, StoreSalesButton, DiagnosticButton, ConquestStatsButton, UserMailButton, WeaponCraftInfoButton, CurrencyInfoButton, FishingInfoButton, FameInfoButton, DisciplineInfoButton, NPCDataButton });
+            navBarControl1.Items.AddRange(new DevExpress.XtraNavBar.NavBarItem[] { LogNavButton, ChatLogButton, ConfigButton, MapInfoButton, MonsterInfoButton, ItemInfoButton, InstanceInfoButton, NPCInfoButton, NPCPageButton, MagicInfoButton, AccountInfoButton, CharacterInfoButton, MovementInfoButton, ItemInfoStatButton, MonsterInfoStatButton, SetInfoButton, StoreInfoButton, BaseStatButton, SafeZoneInfoButton, RespawnInfoButton, MapRegionButton, DropInfoButton, UserDropButton, QuestInfoButton, CompanionInfoButton, EventInfoButton, CastleInfoButton, PaymentButton, StoreSalesButton, DiagnosticButton, ConquestStatsButton, UserMailButton, WeaponCraftInfoButton, CurrencyInfoButton, FishingInfoButton, FameInfoButton, DisciplineInfoButton, NPCDataButton, BundleInfoButton, LootBoxInfoButton, HelpInfoButton });
             navBarControl1.Location = new System.Drawing.Point(0, 144);
             navBarControl1.Name = "navBarControl1";
             navBarControl1.OptionsNavPane.ExpandedWidth = 144;
@@ -239,7 +241,7 @@
             navBarGroup4.Caption = "Player";
             navBarGroup4.ImageOptions.LargeImage = (System.Drawing.Image)resources.GetObject("navBarGroup4.ImageOptions.LargeImage");
             navBarGroup4.ImageOptions.SmallImage = (System.Drawing.Image)resources.GetObject("navBarGroup4.ImageOptions.SmallImage");
-            navBarGroup4.ItemLinks.AddRange(new DevExpress.XtraNavBar.NavBarItemLink[] { new DevExpress.XtraNavBar.NavBarItemLink(BaseStatButton), new DevExpress.XtraNavBar.NavBarItemLink(MagicInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(FameInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(DisciplineInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(CompanionInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(CurrencyInfoButton) });
+            navBarGroup4.ItemLinks.AddRange(new DevExpress.XtraNavBar.NavBarItemLink[] { new DevExpress.XtraNavBar.NavBarItemLink(BaseStatButton), new DevExpress.XtraNavBar.NavBarItemLink(MagicInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(FameInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(DisciplineInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(CompanionInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(CurrencyInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(HelpInfoButton) });
             navBarGroup4.Name = "navBarGroup4";
             // 
             // BaseStatButton
@@ -285,6 +287,14 @@
             CurrencyInfoButton.ImageOptions.SmallImage = (System.Drawing.Image)resources.GetObject("CurrencyInfoButton.ImageOptions.SmallImage");
             CurrencyInfoButton.Name = "CurrencyInfoButton";
             CurrencyInfoButton.LinkClicked += CurrencyInfoButton_LinkClicked;
+            // 
+            // HelpInfoButton
+            // 
+            HelpInfoButton.Caption = "Help Info";
+            HelpInfoButton.ImageOptions.LargeImage = (System.Drawing.Image)resources.GetObject("HelpInfoButton.ImageOptions.LargeImage");
+            HelpInfoButton.ImageOptions.SmallImage = (System.Drawing.Image)resources.GetObject("HelpInfoButton.ImageOptions.SmallImage");
+            HelpInfoButton.Name = "HelpInfoButton";
+            HelpInfoButton.LinkClicked += HelpInfoButton_LinkClicked;
             // 
             // navBarGroup5
             // 
@@ -392,7 +402,7 @@
             navBarGroup7.Caption = "Item";
             navBarGroup7.ImageOptions.LargeImage = (System.Drawing.Image)resources.GetObject("navBarGroup7.ImageOptions.LargeImage");
             navBarGroup7.ImageOptions.SmallImage = (System.Drawing.Image)resources.GetObject("navBarGroup7.ImageOptions.SmallImage");
-            navBarGroup7.ItemLinks.AddRange(new DevExpress.XtraNavBar.NavBarItemLink[] { new DevExpress.XtraNavBar.NavBarItemLink(ItemInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(ItemInfoStatButton), new DevExpress.XtraNavBar.NavBarItemLink(SetInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(WeaponCraftInfoButton) });
+            navBarGroup7.ItemLinks.AddRange(new DevExpress.XtraNavBar.NavBarItemLink[] { new DevExpress.XtraNavBar.NavBarItemLink(ItemInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(ItemInfoStatButton), new DevExpress.XtraNavBar.NavBarItemLink(SetInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(WeaponCraftInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(BundleInfoButton), new DevExpress.XtraNavBar.NavBarItemLink(LootBoxInfoButton) });
             navBarGroup7.Name = "navBarGroup7";
             // 
             // ItemInfoButton
@@ -422,6 +432,22 @@
             WeaponCraftInfoButton.ImageOptions.SmallImage = (System.Drawing.Image)resources.GetObject("WeaponCraftInfoButton.ImageOptions.SmallImage");
             WeaponCraftInfoButton.Name = "WeaponCraftInfoButton";
             WeaponCraftInfoButton.LinkClicked += WeaponCraftInfoButton_LinkClicked;
+            // 
+            // BundleInfoButton
+            // 
+            BundleInfoButton.Caption = "Bundle Info";
+            BundleInfoButton.ImageOptions.LargeImage = (System.Drawing.Image)resources.GetObject("BundleInfoButton.ImageOptions.LargeImage");
+            BundleInfoButton.ImageOptions.SmallImage = (System.Drawing.Image)resources.GetObject("BundleInfoButton.ImageOptions.SmallImage");
+            BundleInfoButton.Name = "BundleInfoButton";
+            BundleInfoButton.LinkClicked += BundleInfoButton_LinkClicked;
+            // 
+            // LootBoxInfoButton
+            // 
+            LootBoxInfoButton.Caption = "Loot Box Info";
+            LootBoxInfoButton.ImageOptions.LargeImage = (System.Drawing.Image)resources.GetObject("LootBoxInfoButton.ImageOptions.LargeImage");
+            LootBoxInfoButton.ImageOptions.SmallImage = (System.Drawing.Image)resources.GetObject("LootBoxInfoButton.ImageOptions.SmallImage");
+            LootBoxInfoButton.Name = "LootBoxInfoButton";
+            LootBoxInfoButton.LinkClicked += LootBoxInfoButton_LinkClicked;
             // 
             // navBarGroup6
             // 
@@ -667,10 +693,6 @@
             InterfaceTimer.Interval = 1000;
             InterfaceTimer.Tick += InterfaceTimer_Tick;
             // 
-            // navBarItem6
-            // 
-            navBarItem6.Name = "navBarItem6";
-            // 
             // SMain
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -766,16 +788,18 @@
         private DevExpress.XtraNavBar.NavBarItem UserMailButton;
         private DevExpress.XtraNavBar.NavBarItem WeaponCraftInfoButton;
         private DevExpress.XtraNavBar.NavBarItem CurrencyInfoButton;
-        private DevExpress.XtraNavBar.NavBarItem navBarItem6;
         private DevExpress.XtraNavBar.NavBarItem FishingInfoButton;
         private DevExpress.XtraNavBar.NavBarItem DisciplineInfoButton;
         private DevExpress.XtraNavBar.NavBarItem NPCDataButton;
         private DevExpress.XtraNavBar.NavBarItem FameInfoButton;
+        private DevExpress.XtraNavBar.NavBarItem HelpInfoButton;
         private DevExpress.XtraNavBar.NavBarGroup navBarGroup4;
         private DevExpress.XtraNavBar.NavBarGroup navBarGroup5;
         private DevExpress.XtraNavBar.NavBarGroup navBarGroup8;
         private DevExpress.XtraNavBar.NavBarGroup navBarGroup7;
         private DevExpress.XtraNavBar.NavBarGroup navBarGroup6;
+        private DevExpress.XtraNavBar.NavBarItem BundleInfoButton;
+        private DevExpress.XtraNavBar.NavBarItem LootBoxInfoButton;
     }
 }
 

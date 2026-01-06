@@ -121,6 +121,16 @@ namespace Library
         Food = 3,
     }
 
+    public enum CompanionAction
+    {
+        None = 0,
+        Moving = 1,
+        Pickup = 2,
+        Hunger = 3,
+        Eating = 4,
+        Idle = 5
+    }
+
     [Flags]
     public enum DaysOfWeek
     {
@@ -201,7 +211,9 @@ namespace Library
         RefineCorundumOre,
         AccessoryRefineCombTarget,
         AccessoryRefineCombItems,
-        PartsStorage
+        PartsStorage,
+        Bundle,
+        LootBox
     }
 
     public enum InventoryMode
@@ -218,7 +230,7 @@ namespace Library
         HuntGold = 2,
 
         Observable = 3,
-        Brown  = 4,
+        Brown = 4,
         PKPoint = 5,
         PvPCurse = 6,
         Redemption = 7,
@@ -248,6 +260,8 @@ namespace Library
         ReflectDamage = 103,
         Invincibility = 104,
         DefensiveBlow = 105,
+        Dash = 106,
+        ElementalSwords = 107,
 
         //Wiz
         Renounce = 200,
@@ -274,7 +288,7 @@ namespace Library
 
         //Ass
         PoisonousCloud = 400,
-        FullBloom = 401, 
+        FullBloom = 401,
         WhiteLotus = 402,
         RedLotus = 403,
         Cloak = 404,
@@ -415,7 +429,10 @@ namespace Library
         Bait = 31,
         Finder = 32,
         Reel = 33,
-        Currency = 34
+        Currency = 34,
+        Bundle = 35,
+        [Description("Loot Box")]
+        LootBox = 36
     }
 
     public enum MirAction : byte
@@ -434,7 +451,8 @@ namespace Library
         Hide,
         Mount,
         Mining,
-        Fishing
+        Fishing,
+        Idle
     }
 
     public enum MirAnimation : byte
@@ -489,7 +507,6 @@ namespace Library
         FishingWait,
         FishingReel
     }
-    
 
     public enum MessageAction
     {
@@ -561,7 +578,7 @@ namespace Library
 
         Discipline = 20
     }
-    
+
     public enum Element : byte
     {
         None,
@@ -612,6 +629,11 @@ namespace Library
         DefensiveBlow = 130,
         ElementalSwords = 131,
         Shuriken = 132,
+        HundredFist = 133,
+        OffensiveBlow = 134,
+        TaecheonSword = 135,
+        FireSword = 136,
+        FlameArt = 137, //NOT CODED
 
         FireBall = 201,
         LightningBall = 202,
@@ -649,12 +671,17 @@ namespace Library
         Burning = 234,
         Shocked = 235,
         LightningStrike = 236,
-        MirrorImage = 237,//NOT CODED
+        MirrorImage = 237,
         IceRain = 238,
         FrostBite = 239,
         Asteroid = 240,
         Storm = 241,//NOT CODED
         Tornado = 242,//NOT CODED
+        IceAura = 243,
+        IceDragon = 244,
+        IceBreaker = 245,
+        FrozenDragon = 246,
+        UnityWithNature = 247, //NOT CODED
 
         Heal = 300,
         SpiritSword = 301,
@@ -703,6 +730,11 @@ namespace Library
         AugmentCelestialLight = 344,
         CorpseExploder = 345,
         SummonDead = 346,
+        BindingTalisman = 347,
+        BrainStorm = 348,
+        HeavenlySky = 349,
+        PoisonCloud = 350,
+        SupremeHealing = 351, //NOT CODED
 
         WillowDance = 401,
         VineTreeDance = 402,
@@ -757,6 +789,11 @@ namespace Library
         Hemorrhage = 451,
         BurningFire = 452,
         ChainOfFire = 453,
+        FlamingDaggers = 454,
+        Shredding = 455,
+        FourWheels = 456,
+        CrescentMoon = 457,
+        ManaBurn = 458, //NOT CODED
 
         MonsterScortchedEarth = 501,
         MonsterIceStorm = 502,
@@ -823,7 +860,7 @@ namespace Library
         //NF_StoneBuilding25 = 25,
         //NF_StoneBuilding26 = 26,
         NumaElite = 27,
-        //NF_Phantom = 28,
+        Phantom = 28,
         CrimsonNecromancer = 29,
 
         Chicken = 30,
@@ -882,7 +919,7 @@ namespace Library
         Earwig = 79,
 
         IronLance = 80,
-        WasHatchling = 81,
+        WaspHatchling = 81,
         ButterflyWorm = 82,
         WedgeMothLarva = 83,
         LesserWedgeMoth = 84,
@@ -923,9 +960,9 @@ namespace Library
         ArachnidGazer = 116,
         RedMoonGuardian = 117,
         RedMoonProtector = 118,
-        //NF_RedMoonRedProtector = 119,
+        RedMoonRedProtector = 119,
 
-        //NF_RedMoonGrayProtector = 120,
+        RedMoonGrayProtector = 120,
         VenomousArachnid = 121,
         DarkArachnid = 122,
         ForestGuard = 123,
@@ -1138,6 +1175,7 @@ namespace Library
 
         //Mon33
 
+        //Mon34
         Companion_Pig = 340,
         Companion_TuskLord = 341,
         Companion_SkeletonLord = 342,
@@ -1275,6 +1313,16 @@ namespace Library
         //Mon51
 
         //Mon52
+        WildBrownHorse = 520,
+        WildWhiteHorse = 521,
+        WildBlackHorse = 522,
+        //NF_Blank523 = 523,
+        WildRedHorse = 524,
+        //NF_Blank525 = 525,
+        //NF_Blank526 = 526,
+        //NF_Blank527 = 527,
+        //NF_Blank528 = 528,
+        //NF_Blank529 = 529,
 
         //MonMagicEx25
         SeaHorseCavalry = 530,
@@ -1306,6 +1354,9 @@ namespace Library
         Tornado = 566,
 
         //Mon57
+        Companion_Dog = 570,
+        Companion_Jinchon = 571,
+        Companion_Dino = 572,
 
         //Mon58
 
@@ -1316,7 +1367,7 @@ namespace Library
         CastleFlag = 1000
     }
 
-   
+
     public enum MapIcon
     {
         None,
@@ -1364,7 +1415,8 @@ namespace Library
         ForestWalkway2,
         ForestWalkway3,
         Star,
-        Lock
+        Lock,
+        Boat
     }
 
     public enum Effect
@@ -1400,7 +1452,14 @@ namespace Library
 
         DemonExplosion,
         ParasiteExplode,
-        BurningFireExplode
+        BurningFireExplode,
+
+        FireWallSmoke,
+
+        HundredFist,
+        HundredFistStruck,
+
+        IceAuraEnd
     }
 
     [Flags]
@@ -1423,6 +1482,7 @@ namespace Library
         Containment = 1 << 12,  //Tick damage, stops movement, displays effect
         Chain = 1 << 13,        //Tick damage, limits movement, displays effect
         Hemorrhage = 1 << 14,   //Tick damage, stops recovery, displays effect
+        Binding = 1 << 15,      //Tick damage, stops movement, displays effect
     }
 
     public enum SpellEffect
@@ -1433,6 +1493,7 @@ namespace Library
 
         FireWall,
         Tempest,
+        IceAura,
 
         TrapOctagon,
         DarkSoulPrison,
@@ -1452,7 +1513,9 @@ namespace Library
     {
         ReflectDamage,
         Assault,
+        ElementalSwords,
         DefensiveBlow,
+        HundredFist,
 
         MagicShield,
         MagicShieldStruck,
@@ -1477,6 +1540,7 @@ namespace Library
         Containment,
         Chain,
         Hemorrhage,
+        Binding,
 
         Ranking,
         Developer,
@@ -1572,7 +1636,7 @@ namespace Library
         S_PenanceThurible = 51,
         S_CensorshipThurible = 52,
         S_PetrichorThurible = 53,
-        
+
         //EquipEffect_Full [100~119]
         A_FireDragonWings = 100,
         A_SmallYellowWings = 101,
@@ -1676,6 +1740,16 @@ namespace Library
         MagicRing = 101
     }
 
+    public enum BundleType
+    {
+        [Description("Any Of")]
+        AnyOf,
+        [Description("All Of")]
+        AllOf,
+        [Description("One Of")]
+        OneOf
+    }
+
     public enum CurrencyType
     {
         Gold = 0,
@@ -1699,7 +1773,7 @@ namespace Library
     public enum UserItemFlags
     {
         None = 0,
-        
+
         Locked = 1,
         Bound = 2,
         Worthless = 4,
@@ -1710,7 +1784,7 @@ namespace Library
         Marriage = 128,
         NonRefinable = 256
     }
-    
+
     public enum HorseType : byte
     {
         None = 0,
@@ -1721,7 +1795,7 @@ namespace Library
         WhiteUnicorn = 5,
         RedUnicorn = 6
     }
-    
+
     public enum OnlineState : byte
     {
         Online,
@@ -1993,7 +2067,7 @@ namespace Library
         KeyExpired,
         Success
     }
-    
+
 
     public enum ActivationResult : byte
     {
@@ -2192,6 +2266,9 @@ namespace Library
         GlaiveAttack,
         ClawAttack,
 
+        MiningHit,
+        MiningStruck,
+
         GenericStruckPlayer,
         GenericStruckMonster,
 
@@ -2246,8 +2323,10 @@ namespace Library
 
         SwiftBladeEnd,
 
-        ElementalSwordStart,
-        ElementalSwordEnd,
+        SeismicSlam,
+
+        ElementalSwordsStart,
+        ElementalSwordsEnd,
 
         FireBallStart,
         FireBallTravel,
@@ -2298,7 +2377,8 @@ namespace Library
         BlowEarthTravel,
 
         FireWallStart,
-        FireWallEnd,
+        FireWallDurationLong,
+        FireWallDuration,
 
         ExpelUndeadStart,
         ExpelUndeadEnd,
@@ -2322,6 +2402,8 @@ namespace Library
 
         ChainLightningStart,
         ChainLightningEnd,
+
+        TempestDuration,
 
         ParasiteTravel,
         ParasiteExplode,
@@ -2433,7 +2515,29 @@ namespace Library
         EvasionStart,
         RagingWindStart,
 
+        Hemorrhage,
         ChainofFireExplode,
+
+        HundredFist,
+        OffensiveBlow,
+
+        IceAuraTravel,
+        IceDragonTravel,
+        IceDragonBreak,
+        BindingTalisman,
+        BrainStorm,
+        FlamingDaggers,
+        Shredding,
+
+        TaecheonSword,
+        FireSword,
+        IceBreaker,
+        FrozenDragon,
+        HeavenlySky,
+        PoisonCloud,
+        FourWheels,
+        CrescentMoon,
+
         #endregion
 
         #region Monsters

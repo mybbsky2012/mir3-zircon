@@ -1,6 +1,6 @@
 ﻿using Library;
 using Server.DBModels;
-using S = Library.Network.ServerPackets;
+using Server.Envir;
 
 namespace Server.Models.Magics
 {
@@ -27,11 +27,14 @@ namespace Server.Models.Magics
 
         public override int ModifyPowerAdditionner(bool primary, int power, MapObject ob, Stats stats = null, int extra = 0)
         {
-            if (ob.CurrentHP < ob.Stats[Stat.Health] * 100 / 30)
+            if (ob.CurrentHP < ob.Stats[Stat.Health] * 30 / 100)
             {
-                power += power * Magic.GetPower() / 100;
+                if (SEnvir.Random.Next(Globals.MagicMaxLevel + 1) <= Magic.Level)
+                {
+                    power += power * Magic.GetPower() / 100;
 
-                Player.LevelMagic(Magic);
+                    Player.LevelMagic(Magic);
+                }
             }
 
             return power;
@@ -39,7 +42,7 @@ namespace Server.Models.Magics
 
         public override void AttackComplete(MapObject target)
         {
-            
+
         }
     }
 }

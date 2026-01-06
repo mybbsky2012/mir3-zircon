@@ -1,9 +1,8 @@
-﻿using System.Drawing;
-using System.Windows.Forms;
-using Client.Envir;
+﻿using Client.Envir;
 using Client.UserModels;
+using System.Drawing;
+using System.Windows.Forms;
 
-//Cleaned
 namespace Client.Controls
 {
     public sealed class DXMessageBox : DXWindow
@@ -68,7 +67,7 @@ namespace Client.Controls
             Buttons = buttons;
             Modal = true;
             HasFooter = true;
-
+            DropShadow = true;
             TitleLabel.Text = caption;
 
             Parent = ActiveScene;
@@ -157,7 +156,7 @@ namespace Client.Controls
 
             return box;
         }
-        
+
         public override void OnKeyPress(KeyPressEventArgs e)
         {
             base.OnKeyPress(e);

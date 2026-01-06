@@ -1,18 +1,16 @@
-﻿using System;
+﻿using Client.Controls;
+using Client.Envir;
+using Client.Models;
+using Client.UserModels;
+using Library;
+using Library.SystemModels;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Windows.Forms;
-using Client.Controls;
-using Client.Envir;
-using Client.Models;
-using Client.UserModels;
-using Library;
-using Library.Network.ServerPackets;
-using Library.SystemModels;
 using C = Library.Network.ClientPackets;
 
 namespace Client.Scenes.Views
@@ -83,6 +81,7 @@ namespace Client.Scenes.Views
         public DungeonFinderDialog()
         {
             TitleLabel.Text = "Dungeon Finder";
+            DropShadow = true;
             SetClientSize(new Size(560, 461));
 
             TabControl = new DXTabControl
@@ -439,7 +438,89 @@ namespace Client.Scenes.Views
 
             if (disposing)
             {
+                SelectedDungeonRowChanged = null;
 
+                if (TabControl != null)
+                {
+                    if (!TabControl.IsDisposed)
+                        TabControl.Dispose();
+
+                    TabControl = null;
+                }
+
+                if (DungeonTab != null)
+                {
+                    if (!DungeonTab.IsDisposed)
+                        DungeonTab.Dispose();
+
+                    DungeonTab = null;
+                }
+
+                if (RaidTab != null)
+                {
+                    if (!RaidTab.IsDisposed)
+                        RaidTab.Dispose();
+
+                    RaidTab = null;
+                }
+
+                if (DungeonNameBox != null)
+                {
+                    if (!DungeonNameBox.IsDisposed)
+                        DungeonNameBox.Dispose();
+
+                    DungeonNameBox = null;
+                }
+
+                if (SortBox != null)
+                {
+                    if (!SortBox.IsDisposed)
+                        SortBox.Dispose();
+
+                    SortBox = null;
+                }
+
+                if (SearchButton != null)
+                {
+                    if (!SearchButton.IsDisposed)
+                        SearchButton.Dispose();
+
+                    SearchButton = null;
+                }
+
+                if (DungeonScrollBar != null)
+                {
+                    if (!DungeonScrollBar.IsDisposed)
+                        DungeonScrollBar.Dispose();
+
+                    DungeonScrollBar = null;
+                }
+
+                if (DungeonRows != null)
+                {
+                    for (int i = 0; i < DungeonRows.Length; i++)
+                    {
+                        if (DungeonRows[i] == null) continue;
+
+                        if (!DungeonRows[i].IsDisposed)
+                            DungeonRows[i].Dispose();
+
+                        DungeonRows[i] = null;
+                    }
+
+                    DungeonRows = null;
+                }
+
+                DungeonSearchResults?.Clear();
+                DungeonSearchResults = null;
+
+                if (JoinButton != null)
+                {
+                    if (!JoinButton.IsDisposed)
+                        JoinButton.Dispose();
+
+                    JoinButton = null;
+                }
             }
         }
 

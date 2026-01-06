@@ -1,7 +1,7 @@
-﻿using S = Library.Network.ServerPackets;
-using Server.DBModels;
+﻿using Server.DBModels;
 using Server.Envir.Commands.Exceptions;
 using Server.Models;
+using S = Library.Network.ServerPackets;
 
 namespace Server.Envir.Commands.Command.Admin
 {
@@ -24,13 +24,17 @@ namespace Server.Envir.Commands.Command.Admin
 
             if (targetCharacter.Discipline != null)
             {
+                foreach (var magic in targetCharacter.Discipline.Magics)
+                {
+                    targetCharacter.Player?.MagicObjects.Remove(magic.Info.Magic);
+                }
+
                 targetCharacter.Discipline.Delete();
                 targetCharacter.Discipline = null;
 
                 targetCharacter.Player?.Enqueue(new S.DisciplineUpdate { Discipline = null });
+                targetCharacter.Player?.RefreshStats();
             }
-
-            targetCharacter.Player?.RefreshStats();
         }
     }
 }

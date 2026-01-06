@@ -1,16 +1,23 @@
-﻿using System;
+﻿using Client.Envir;
+using Client.Rendering;
+using Library;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using Client.Envir;
-using Library;
-using SlimDX;
-using SlimDX.Direct3D9;
 
 //Cleaned
 namespace Client.Controls
 {
-    public class DXControl : IDisposable
+    public class Constants
+    {
+        public static Color ActiveTabColour = Color.White;
+        public static Color InactiveTabColour = Color.FromArgb(123, 105, 66);
+
+        //TODO - Add more colour constants here
+    }
+
+    public class DXControl : IDisposable, ITextureCacheItem
     {
         #region Static
         public static List<DXControl> MessageBoxList = new List<DXControl>();
@@ -72,13 +79,15 @@ namespace Client.Controls
         public static int TabHeight { get; }
         public static int HeaderBarSize { get; }
         public static int HeaderSize { get; }
+        public static int NoHeaderSize { get; }
         public static int FooterSize { get; }
         public static int NoFooterSize { get; }
+        public static int SlimFooterSize { get; }
         public static int SmallButtonHeight { get; }
 
         public static DXLabel DebugLabel, HintLabel, PingLabel;
         protected static MirLibrary InterfaceLibrary;
-        
+
         static DXControl()
         {
             DebugLabel = new DXLabel
@@ -116,6 +125,8 @@ namespace Client.Controls
 
             if (InterfaceLibrary == null) return;
 
+            //TODO - Move this out to where its needed. Base control doesn't need this info
+
             DefaultHeight = InterfaceLibrary.GetSize(16).Height;
             TabHeight = InterfaceLibrary.GetSize(19).Height;
             SmallButtonHeight = InterfaceLibrary.GetSize(41).Height;
@@ -125,18 +136,20 @@ namespace Client.Controls
             HeaderSize = HeaderBarSize;
             HeaderSize += InterfaceLibrary.GetSize(3).Height;
 
-            NoFooterSize = InterfaceLibrary.GetSize(2).Height;
+            NoHeaderSize = InterfaceLibrary.GetSize(2).Height;
 
-            FooterSize = HeaderBarSize;
+            FooterSize = InterfaceLibrary.GetSize(126).Height;
             FooterSize += InterfaceLibrary.GetSize(2).Height;
             FooterSize += InterfaceLibrary.GetSize(10).Height;
 
+            NoFooterSize = InterfaceLibrary.GetSize(2).Height;
+            SlimFooterSize = InterfaceLibrary.GetSize(126).Height;
         }
 
         #endregion
 
         #region Properties
-        
+
         protected internal List<DXControl> Controls { get; private set; } = new List<DXControl>();
 
         #region AllowDragOut
@@ -162,7 +175,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region AllowResize
 
         public bool AllowResize
@@ -263,22 +276,25 @@ namespace Client.Controls
 
         #region BorderInformation
 
-        public Vector2[] BorderInformation
+        public LinePoint[] BorderInformation
         {
             get => _BorderInformation;
             set
             {
-                if (_BorderInformation == value) return;
+                if (_BorderInformation == value)
+                {
+                    return;
+                }
 
-                Vector2[] oldValue = _BorderInformation;
+                LinePoint[] oldValue = _BorderInformation;
                 _BorderInformation = value;
 
                 OnBorderInformationChanged(oldValue, value);
             }
         }
-        private Vector2[] _BorderInformation;
+        private LinePoint[] _BorderInformation;
         public event EventHandler<EventArgs> BorderInformationChanged;
-        public virtual void OnBorderInformationChanged(Vector2[] oValue, Vector2[] nValue)
+        public virtual void OnBorderInformationChanged(LinePoint[] oValue, LinePoint[] nValue)
         {
             BorderInformationChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -409,7 +425,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region Enabled
 
         public bool Enabled
@@ -434,7 +450,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region ForeColour
 
         public Color ForeColour
@@ -588,7 +604,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region Movable
 
         public bool Movable
@@ -684,7 +700,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region Parent
 
         public DXControl Parent
@@ -740,7 +756,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region Size
 
         public virtual Size Size
@@ -841,7 +857,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region Text
 
         public string Text
@@ -1009,38 +1025,44 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         public const int ResizeBuffer = 9;
         protected internal Point MovePoint;
         private Point ResizePoint;
         public bool ResizeLeft, ResizeRight, ResizeUp, ResizeDown;
 
         #region Texture
+        private RenderTargetResource _controlRenderTarget;
         public bool TextureValid { get; set; }
-        public Texture ControlTexture { get; set; }
+        public RenderTexture ControlTexture { get; set; }
         public Size TextureSize { get; set; }
-        public Surface ControlSurface { get; set; }
+        public RenderSurface ControlSurface { get; private set; }
         public DateTime ExpireTime { get; protected set; }
 
         protected virtual void CreateTexture()
         {
-            if (ControlTexture == null || DisplayArea.Size != TextureSize)
+            if (!_controlRenderTarget.IsValid || !ControlTexture.IsValid || DisplayArea.Size != TextureSize)
             {
                 DisposeTexture();
                 TextureSize = DisplayArea.Size;
-                ControlTexture = new Texture(DXManager.Device, TextureSize.Width, TextureSize.Height, 1, Usage.RenderTarget, Format.A8R8G8B8, Pool.Default);
-                ControlSurface = ControlTexture.GetSurfaceLevel(0);
-                DXManager.ControlList.Add(this);
+                _controlRenderTarget = RenderingPipelineManager.CreateRenderTarget(TextureSize);
+
+                ControlTexture = _controlRenderTarget.Texture;
+                ControlSurface = _controlRenderTarget.Surface;
+                RenderingPipelineManager.RegisterControlCache(this);
             }
 
-            Surface previous = DXManager.CurrentSurface;
-            DXManager.SetSurface(ControlSurface);
-            
-            DXManager.Device.Clear(ClearFlags.Target, BackColour, 0, 0);
+            if (!ControlSurface.IsValid)
+                throw new InvalidOperationException("Control surface is not available.");
+
+            RenderSurface previous = RenderingPipelineManager.GetCurrentSurface();
+            RenderingPipelineManager.SetSurface(ControlSurface);
+
+            RenderingPipelineManager.Clear(RenderClearFlags.Target, BackColour, 0, 0);
 
             OnClearTexture();
-            
-            DXManager.SetSurface(previous);
+
+            RenderingPipelineManager.SetSurface(previous);
             TextureValid = true;
 
             ExpireTime = CEnvir.Now + Config.CacheDuration;
@@ -1050,27 +1072,20 @@ namespace Client.Controls
         }
         public virtual void DisposeTexture()
         {
-            if (ControlTexture != null)
+            if (_controlRenderTarget.IsValid)
             {
-                if (!ControlTexture.Disposed)
-                    ControlTexture.Dispose();
-
-                ControlTexture = null;
+                RenderingPipelineManager.ReleaseRenderTarget(_controlRenderTarget);
+                _controlRenderTarget = default;
             }
 
-            if (ControlSurface != null)
-            {
-                if (!ControlSurface.Disposed)
-                    ControlSurface.Dispose();
-
-                ControlSurface = null;
-            }
+            ControlTexture = default;
+            ControlSurface = default;
 
             TextureSize = Size.Empty;
             ExpireTime = DateTime.MinValue;
             TextureValid = false;
 
-            DXManager.ControlList.Remove(this);
+            RenderingPipelineManager.UnregisterControlCache(this);
         }
         #endregion
 
@@ -1113,25 +1128,28 @@ namespace Client.Controls
         protected internal virtual void UpdateBorderInformation()
         {
             BorderInformation = null;
-            if (!Border || DisplayArea.Width == 0 || DisplayArea.Height == 0) return;
-            /*
-            BorderInformation = new[]
+            if (!Border || DisplayArea.Width == 0 || DisplayArea.Height == 0)
             {
-                new Vector2(DisplayArea.Left - 1, DisplayArea.Top - 1),
-                new Vector2(DisplayArea.Right, DisplayArea.Top - 1),
-                new Vector2(DisplayArea.Right, DisplayArea.Bottom),
-                new Vector2(DisplayArea.Left - 1, DisplayArea.Bottom),
-                new Vector2(DisplayArea.Left - 1, DisplayArea.Top - 1)
-            };
-            */
+                return;
+            }
+            /*
+BorderInformation = new[]
+{
+   new LinePoint(DisplayArea.Left - 1, DisplayArea.Top - 1),
+   new LinePoint(DisplayArea.Right, DisplayArea.Top - 1),
+   new LinePoint(DisplayArea.Right, DisplayArea.Bottom),
+   new LinePoint(DisplayArea.Left - 1, DisplayArea.Bottom),
+   new LinePoint(DisplayArea.Left - 1, DisplayArea.Top - 1)
+};
+*/
 
             BorderInformation = new[]
             {
-                new Vector2(0, 0),
-                new Vector2(Size.Width + 1, 0),
-                new Vector2(Size.Width + 1, Size.Height + 1),
-                new Vector2(0, Size.Height + 1),
-                new Vector2(0, 0)
+                new LinePoint(0, 0),
+                new LinePoint(Size.Width + 1, 0),
+                new LinePoint(Size.Width + 1, Size.Height + 1),
+                new LinePoint(0, Size.Height + 1),
+                new LinePoint(0, 0)
             };
         }
         protected internal virtual void CheckIsVisible()
@@ -1158,7 +1176,7 @@ namespace Client.Controls
 
         public virtual void OnSorted()
         {
-            
+
         }
         public void BringToFront()
         {
@@ -1240,7 +1258,7 @@ namespace Client.Controls
 
             MouseLeave?.Invoke(this, EventArgs.Empty);
         }
-        
+
         public virtual void OnMouseMove(MouseEventArgs e)
         {
             if (!IsEnabled)
@@ -1258,7 +1276,7 @@ namespace Client.Controls
 
                 Point nLocation = Location;
                 Size nSize = Size;
-                
+
 
                 if (ResizeUp)
                 {
@@ -1268,10 +1286,10 @@ namespace Client.Controls
 
                     nSize = new Size(nSize.Width, nSize.Height - (nLocation.Y - Location.Y));
 
-                    if (nSize.Height < ResizeBuffer*2)
+                    if (nSize.Height < ResizeBuffer * 2)
                     {
-                        nLocation.Y = Location.Y + Size.Height - ResizeBuffer*2;
-                        nSize.Height = ResizeBuffer*2;
+                        nLocation.Y = Location.Y + Size.Height - ResizeBuffer * 2;
+                        nSize.Height = ResizeBuffer * 2;
                     }
                     ResizePoint = new Point(ResizePoint.X, ResizePoint.Y + (nLocation.Y - Location.Y));
                 }
@@ -1282,8 +1300,8 @@ namespace Client.Controls
                     if (nSize.Height + nLocation.Y >= ActiveScene.Size.Height)
                         nSize.Height = ActiveScene.Size.Height - nLocation.Y;
 
-                    if (nSize.Height < ResizeBuffer*2)
-                        nSize.Height = ResizeBuffer*2;
+                    if (nSize.Height < ResizeBuffer * 2)
+                        nSize.Height = ResizeBuffer * 2;
 
                     ResizePoint = new Point(ResizePoint.X, ResizePoint.Y + (nSize.Height - Size.Height));
                 }
@@ -1291,7 +1309,7 @@ namespace Client.Controls
                 if (ResizeLeft)
                 {
                     nLocation = new Point(nLocation.X + tempPoint.X, nLocation.Y);
-                    
+
                     if (DisplayArea.X + tempPoint.X < 0) nLocation.X += DisplayArea.X - tempPoint.X;
 
 
@@ -1307,14 +1325,14 @@ namespace Client.Controls
                 }
                 else if (ResizeRight)
                 {
-                    nSize = new Size(nSize.Width + tempPoint.X, nSize.Height );
+                    nSize = new Size(nSize.Width + tempPoint.X, nSize.Height);
 
                     if (nSize.Width + nLocation.X >= ActiveScene.Size.Width)
                         nSize.Width = ActiveScene.Size.Width - nLocation.X;
 
                     if (nSize.Width < ResizeBuffer * 2)
                         nSize.Width = ResizeBuffer * 2;
-                    ResizePoint = new Point(ResizePoint.X + (nSize.Width - Size.Width), ResizePoint.Y );
+                    ResizePoint = new Point(ResizePoint.X + (nSize.Width - Size.Width), ResizePoint.Y);
                 }
 
                 Size oldSize = nSize;
@@ -1332,12 +1350,12 @@ namespace Client.Controls
 
                 if (ResizeLeft)
                 {
-                    nLocation = new Point(nLocation.X - nSize.Width + oldSize.Width, nLocation.Y );
+                    nLocation = new Point(nLocation.X - nSize.Width + oldSize.Width, nLocation.Y);
                     ResizePoint = new Point(ResizePoint.X - nSize.Width + oldSize.Width, ResizePoint.Y);
                 }
                 else if (ResizeRight)
                 {
-                    ResizePoint = new Point(ResizePoint.X + nSize.Width - oldSize.Width, ResizePoint.Y );
+                    ResizePoint = new Point(ResizePoint.X + nSize.Width - oldSize.Width, ResizePoint.Y);
                 }
                 Location = nLocation;
                 Size = nSize;
@@ -1382,7 +1400,7 @@ namespace Client.Controls
                 }
                 else if (top || bottom)
                     Cursor.Current = Cursors.SizeNS;
-                
+
             }
 
             if (IsMoving)
@@ -1425,7 +1443,7 @@ namespace Client.Controls
 
                 if (Tag is Size)
                 {
-                    Size clipSize = (Size) Tag;
+                    Size clipSize = (Size)Tag;
                     Point change = new Point(tempPoint.X - Location.X, tempPoint.Y - Location.Y);
 
                     if (DisplayArea.X + change.X < ActiveScene.Location.X) tempPoint.X -= DisplayArea.X + change.X - ActiveScene.Location.X;
@@ -1441,12 +1459,12 @@ namespace Client.Controls
 
 
             if (!IsMoving && !IsResizing && !left && !right && !top && !bottom)
-            for (int i = Controls.Count - 1; i >= 0; i--)
-                if (Controls[i].IsMouseOver(e.Location))
-                {
-                    Controls[i].OnMouseMove(e);
-                    return;
-                }
+                for (int i = Controls.Count - 1; i >= 0; i--)
+                    if (Controls[i].IsMouseOver(e.Location))
+                    {
+                        Controls[i].OnMouseMove(e);
+                        return;
+                    }
 
             MouseControl = this;
 
@@ -1652,7 +1670,7 @@ namespace Client.Controls
             DrawBorder();
             OnAfterDraw();
         }
-        
+
         protected virtual void OnBeforeDraw()
         {
             BeforeDraw?.Invoke(this, EventArgs.Empty);
@@ -1667,21 +1685,28 @@ namespace Client.Controls
         }
         protected virtual void DrawBorder()
         {
-            if (!Border || BorderInformation == null) return;
-            
-            if (DXManager.Line.Width != BorderSize)
-                DXManager.Line.Width = BorderSize;
+            if (!Border || BorderInformation == null)
+            {
+                return;
+            }
 
-            Surface old = DXManager.CurrentSurface;
-            DXManager.SetSurface(DXManager.ScratchSurface);
+            if (RenderingPipelineManager.GetLineWidth() != BorderSize)
+            {
+                RenderingPipelineManager.SetLineWidth(BorderSize);
+            }
 
-            DXManager.Device.Clear(ClearFlags.Target, 0, 0, 0);
+            RenderSurface old = RenderingPipelineManager.GetCurrentSurface();
+            RenderingPipelineManager.SetSurface(RenderingPipelineManager.GetScratchSurface());
 
-            DXManager.Line.Draw(BorderInformation, BorderColour);
+            RenderingPipelineManager.Clear(RenderClearFlags.Target, Color.FromArgb(0), 0, 0);
 
-            DXManager.SetSurface(old);
+            RenderingPipelineManager.DrawLine(BorderInformation, BorderColour);
 
-            PresentTexture(DXManager.ScratchTexture, Parent, Rectangle.Inflate(DisplayArea, 1, 1), Color.White, this);
+            RenderingPipelineManager.SetSurface(old);
+
+            RenderTexture scratchHandle = RenderingPipelineManager.GetScratchTexture();
+
+            PresentTexture(scratchHandle, Parent, Rectangle.Inflate(DisplayArea, 1, 1), Color.White, this);
         }
 
         protected virtual void DrawChildControls()
@@ -1691,6 +1716,7 @@ namespace Client.Controls
                 control.Draw();
             }
         }
+
         protected virtual void DrawControl()
         {
             if (!DrawTexture) return;
@@ -1702,36 +1728,59 @@ namespace Client.Controls
                 if (!TextureValid) return;
             }
 
-            float oldOpacity = DXManager.Opacity;
+            float oldOpacity = RenderingPipelineManager.GetOpacity();
 
-            DXManager.SetOpacity(Opacity);
+            RenderingPipelineManager.SetOpacity(Opacity);
 
             PresentTexture(ControlTexture, Parent, DisplayArea, IsEnabled ? Color.White : Color.FromArgb(75, 75, 75), this);
 
-            DXManager.SetOpacity(oldOpacity);
-            
+            RenderingPipelineManager.SetOpacity(oldOpacity);
+
             ExpireTime = CEnvir.Now + Config.CacheDuration;
         }
 
-        public static void PresentTexture(Texture texture, DXControl parent, Rectangle displayArea, Color colour, DXControl control, int offX = 0, int offY = 0, float scale = 1.0f)
+        public static void PresentTexture(RenderTexture texture, DXControl parent, Rectangle displayArea, Color colour, DXControl control, int offX = 0, int offY = 0, float scale = 1.0f, bool intersectParent = true)
         {
+            if (!texture.IsValid)
+                return;
+
+            float uiScale = 1f;// control.UiScale;
+            float finalScale = scale * uiScale;
+
+            Rectangle scaledArea = new Rectangle(
+                (int)(displayArea.X * uiScale),
+                (int)(displayArea.Y * uiScale),
+                (int)(displayArea.Width * uiScale),
+                (int)(displayArea.Height * uiScale));
+
             Rectangle bounds = ActiveScene.DisplayArea;
-            Rectangle textureArea = Rectangle.Intersect(bounds, displayArea);
-            
+            Rectangle scaledTextureArea = Rectangle.Intersect(bounds, scaledArea);
+
             if (!control.IsMoving || !control.AllowDragOut)
+            {
                 while (parent != null)
                 {
                     if (parent.IsMoving && parent.AllowDragOut)
                     {
                         bounds = ActiveScene.DisplayArea;
-                        textureArea = Rectangle.Intersect(bounds, displayArea);
+                        if (intersectParent)
+                            scaledTextureArea = Rectangle.Intersect(bounds, scaledArea);
                         break;
                     }
 
-                    bounds = parent.DisplayArea;
-                    textureArea = Rectangle.Intersect(bounds, textureArea);
+                    var parentUiScale = 1f; //parent.UiScale;
 
-                    if (bounds.IntersectsWith(displayArea))
+                    Rectangle scaledParent = new Rectangle(
+                        (int)(parent.DisplayArea.X * parentUiScale),
+                        (int)(parent.DisplayArea.Y * parentUiScale),
+                        (int)(parent.DisplayArea.Width * parentUiScale),
+                        (int)(parent.DisplayArea.Height * parentUiScale));
+
+                    bounds = scaledParent;
+                    if (intersectParent)
+                        scaledTextureArea = Rectangle.Intersect(bounds, scaledTextureArea);
+
+                    if (bounds.IntersectsWith(scaledArea))
                     {
                         parent = parent.Parent;
                         continue;
@@ -1739,22 +1788,33 @@ namespace Client.Controls
 
                     return;
                 }
+            }
 
-            if (textureArea.IsEmpty) return;
-            
-            textureArea.Location = new Point(textureArea.X - displayArea.X, textureArea.Y - displayArea.Y);
+            if (scaledTextureArea.IsEmpty)
+            {
+                return;
+            }
 
-            float fX = displayArea.X + textureArea.Location.X + offX;
-            float fY = displayArea.Y + textureArea.Location.Y + offY;
+            Rectangle textureArea = new Rectangle(
+                (int)((scaledTextureArea.X - scaledArea.X) / uiScale),
+                (int)((scaledTextureArea.Y - scaledArea.Y) / uiScale),
+                (int)(scaledTextureArea.Width / uiScale),
+                (int)(scaledTextureArea.Height / uiScale));
 
-            fX /= scale;
-            fY /= scale;
+            if (textureArea.Width <= 0 || textureArea.Height <= 0)
+                return;
 
-            DXManager.Sprite.Transform = Matrix.Scaling(scale, scale, 1);
+            float destinationX = scaledTextureArea.X + offX * uiScale;
+            float destinationY = scaledTextureArea.Y + offY * uiScale;
+            float destinationWidth = textureArea.Width * finalScale;
+            float destinationHeight = textureArea.Height * finalScale;
 
-            DXManager.Sprite.Draw(texture, textureArea, Vector3.Zero, new Vector3(fX, fY, 0), colour);
+            if (destinationWidth <= 0 || destinationHeight <= 0)
+                return;
 
-            DXManager.Sprite.Transform = Matrix.Identity;
+            RectangleF destinationRectangle = new RectangleF(destinationX, destinationY, destinationWidth, destinationHeight);
+
+            RenderingPipelineManager.DrawTexture(texture, textureArea, destinationRectangle, colour);
         }
 
         #endregion
@@ -1898,5 +1958,4 @@ namespace Client.Controls
 
         #endregion
     }
-
 }

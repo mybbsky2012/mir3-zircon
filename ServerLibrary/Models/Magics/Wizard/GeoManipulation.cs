@@ -3,8 +3,6 @@ using Server.DBModels;
 using Server.Envir;
 using System.Drawing;
 
-using S = Library.Network.ServerPackets;
-
 namespace Server.Models.Magics
 {
     [MagicType(MagicType.GeoManipulation)]
@@ -71,8 +69,7 @@ namespace Server.Models.Magics
             if (SEnvir.Now <= Player.PvPTime.AddSeconds(30))
                 delay *= 10;
 
-            Magic.Cooldown = SEnvir.Now.AddMilliseconds(delay);
-            Player.Enqueue(new S.MagicCooldown { InfoIndex = Magic.Info.Index, Delay = delay });
+            MagicCooldown(null, delay);
         }
     }
 }

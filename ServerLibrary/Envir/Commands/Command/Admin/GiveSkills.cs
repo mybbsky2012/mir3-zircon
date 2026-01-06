@@ -1,10 +1,8 @@
 ﻿using Library;
-using Library.Network.ClientPackets;
 using Library.SystemModels;
 using Server.DBModels;
 using Server.Envir.Commands.Exceptions;
 using Server.Models;
-using System.Runtime;
 using S = Library.Network.ServerPackets;
 
 namespace Server.Envir.Commands.Command.Admin
@@ -26,7 +24,7 @@ namespace Server.Envir.Commands.Command.Admin
             UserMagic uMagic;
             foreach (MagicInfo mInfo in SEnvir.MagicInfoList.Binding)
             {
-                if (mInfo.NeedLevel1 > player.Level || mInfo.Class != player.Class || mInfo.School == MagicSchool.None)
+                if (mInfo.NeedLevel1 > player.Level || mInfo.Class != player.Class || mInfo.School == MagicSchool.None || mInfo.School == MagicSchool.Discipline)
                     continue;
 
                 if (!player.GetMagic(mInfo.Magic, out MagicObject magicObject))

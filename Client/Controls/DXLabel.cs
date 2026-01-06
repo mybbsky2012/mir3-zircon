@@ -1,10 +1,9 @@
-﻿using System;
+﻿using Client.Envir;
+using Client.Rendering;
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
-using Client.Envir;
-using SlimDX;
-using SlimDX.Direct3D9;
 using Font = System.Drawing.Font;
 
 //Cleaned
@@ -16,9 +15,11 @@ namespace Client.Controls
         public static Size GetSize(string text, Font font, bool outline, int paddingBottom = 0)
         {
             if (string.IsNullOrEmpty(text))
+            {
                 return Size.Empty;
-            
-            Size tempSize = TextRenderer.MeasureText(DXManager.Graphics, text, font);
+            }
+
+            Size tempSize = RenderingPipelineManager.MeasureText(text, font);
 
             if (outline && tempSize.Width > 0 && tempSize.Height > 0)
             {
@@ -32,7 +33,7 @@ namespace Client.Controls
         }
         public static Size GetHeight(DXLabel label, int width)
         {
-            Size tempSize = TextRenderer.MeasureText(DXManager.Graphics, label.Text, label.Font, new Size(width, 2000), label.DrawFormat);
+            Size tempSize = RenderingPipelineManager.MeasureText(label.Text, label.Font, new Size(width, 2000), label.DrawFormat);
 
             if (label.Outline && tempSize.Width > 0 && tempSize.Height > 0)
             {
@@ -72,7 +73,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region DrawFormat
 
         public TextFormatFlags DrawFormat
@@ -98,7 +99,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region Font
 
         public Font Font
@@ -256,8 +257,8 @@ namespace Client.Controls
             DrawTexture = true;
             AutoSize = true;
             Font = new Font(Config.FontName, CEnvir.FontSize(8F));
-            DrawFormat = TextFormatFlags.WordBreak;
-            
+            DrawFormat = TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix;
+
             Outline = true;
             ForeColour = Color.FromArgb(198, 166, 99);
             OutlineColour = Color.Black;
@@ -271,25 +272,28 @@ namespace Client.Controls
             Size = GetSize(Text, Font, Outline, PaddingBottom);
         }
 
+        private RenderTexture _labelTextureHandle;
+
         protected override void CreateTexture()
         {
             int width = DisplayArea.Width;
             int height = DisplayArea.Height;
 
-            if (ControlTexture == null || DisplayArea.Size != TextureSize)
+            if (!ControlTexture.IsValid || DisplayArea.Size != TextureSize)
             {
                 DisposeTexture();
                 TextureSize = DisplayArea.Size;
-                ControlTexture = new Texture(DXManager.Device, TextureSize.Width, TextureSize.Height, 1, Usage.None, Format.A8R8G8B8, Pool.Managed);
-                DXManager.ControlList.Add(this);
-            }
-            
-            DataRectangle rect = ControlTexture.LockRectangle(0, LockFlags.Discard);
+                _labelTextureHandle = RenderingPipelineManager.CreateTexture(TextureSize, RenderTextureFormat.A8R8G8B8, RenderTextureUsage.None, RenderTexturePool.Managed);
 
-            using (Bitmap image = new Bitmap(width, height, width*4, PixelFormat.Format32bppArgb, rect.Data.DataPointer))
+                ControlTexture = _labelTextureHandle;
+                RenderingPipelineManager.RegisterControlCache(this);
+            }
+
+            using (TextureLock textureLock = RenderingPipelineManager.LockTexture(_labelTextureHandle, TextureLockMode.Discard))
+            using (Bitmap image = new Bitmap(width, height, textureLock.Pitch, PixelFormat.Format32bppArgb, textureLock.DataPointer))
             using (Graphics graphics = Graphics.FromImage(image))
             {
-                DXManager.ConfigureGraphics(graphics);
+                RenderingPipelineManager.ConfigureGraphics(graphics);
                 graphics.Clear(BackColour);
 
                 if (Outline)
@@ -302,29 +306,41 @@ namespace Client.Controls
                 }
                 else
                 {
-                    if (DropShadow)
-                    {
-                        TextRenderer.DrawText(graphics, Text, Font, new Rectangle(2, 1, width, height), Color.Black, DrawFormat);
-                    }
-
                     TextRenderer.DrawText(graphics, Text, Font, new Rectangle(1, 0, width, height), ForeColour, DrawFormat);
                 }
             }
-            ControlTexture.UnlockRectangle(0);
-            rect.Data.Dispose();
-            
             TextureValid = true;
             ExpireTime = CEnvir.Now + Config.CacheDuration;
         }
+        public override void DisposeTexture()
+        {
+            if (_labelTextureHandle.IsValid)
+            {
+                RenderingPipelineManager.ReleaseTexture(_labelTextureHandle);
+                _labelTextureHandle = default;
+            }
+
+            base.DisposeTexture();
+        }
         protected override void DrawControl()
         {
-            if (!DrawTexture) return;
+            if (!DrawTexture)
+            {
+                return;
+            }
 
-            if (!TextureValid) CreateTexture();
+            if (!TextureValid)
+            {
+                CreateTexture();
+            }
 
-            DXManager.SetOpacity(Opacity);
-            
+            float oldOpacity = RenderingPipelineManager.GetOpacity();
+
+            RenderingPipelineManager.SetOpacity(Opacity);
+
             PresentTexture(ControlTexture, Parent, DisplayArea, IsEnabled ? Color.White : Color.FromArgb(75, 75, 75), this);
+
+            RenderingPipelineManager.SetOpacity(oldOpacity);
 
             ExpireTime = CEnvir.Now + Config.CacheDuration;
         }

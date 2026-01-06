@@ -1,11 +1,11 @@
 ﻿using Client.Envir;
 using Client.Models;
+using Client.Rendering;
 using Client.Scenes;
 using Client.Scenes.Views;
 using Client.UserModels;
 using Library;
 using Library.SystemModels;
-using SlimDX;
 using System;
 using System.Drawing;
 using System.Linq;
@@ -77,7 +77,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region GridType
 
         public GridType GridType
@@ -125,7 +125,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region Item
 
         public ClientUserItem Item
@@ -149,7 +149,7 @@ namespace Client.Controls
             }
             set
             {
-                if (ItemGrid[Slot] == value  || Linked || Slot >= ItemGrid.Length) return;
+                if (ItemGrid[Slot] == value || Linked || Slot >= ItemGrid.Length) return;
 
                 ClientUserItem oldValue = ItemGrid[Slot];
                 ItemGrid[Slot] = value;
@@ -212,7 +212,7 @@ namespace Client.Controls
         public void OnLockedChanged(bool oValue, bool nValue)
         {
             LockedChanged?.Invoke(this, EventArgs.Empty);
-            
+
             UpdateBorder();
         }
 
@@ -262,7 +262,7 @@ namespace Client.Controls
         public void OnSelectedChanged(bool oValue, bool nValue)
         {
             SelectedChanged?.Invoke(this, EventArgs.Empty);
-            
+
             UpdateBorder();
         }
 
@@ -294,6 +294,31 @@ namespace Client.Controls
 
         #endregion
 
+        #region LootBox Locked
+
+        public bool LootBoxLocked
+        {
+            get => _LootBoxLocked;
+            set
+            {
+                if (_LootBoxLocked == value) return;
+
+                bool oldValue = _LootBoxLocked;
+                _LootBoxLocked = value;
+
+                OnLootBoxLockedChanged(oldValue, value);
+            }
+        }
+        private bool _LootBoxLocked;
+        public event EventHandler<EventArgs> LootBoxLockedChanged;
+        public void OnLootBoxLockedChanged(bool oValue, bool nValue)
+        {
+            LootBoxLockedChanged?.Invoke(this, EventArgs.Empty);
+            RefreshItem();
+        }
+
+        #endregion
+
         #region ShowCountLabel
 
         public bool ShowCountLabel
@@ -317,7 +342,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         public ClientUserItem QuickInfoItem { get; private set; }
 
         #region QuickInfo
@@ -352,7 +377,7 @@ namespace Client.Controls
                 if (GridType == GridType.Belt)
                     GameScene.Game.BeltBox.Links[Slot].LinkInfoIndex = -1;
             }
-            
+
 
             RefreshItem();
             LinkedInfoChanged?.Invoke(this, EventArgs.Empty);
@@ -389,7 +414,7 @@ namespace Client.Controls
             {
                 GameScene.Game.BeltBox.Links[Slot].LinkItemIndex = -1;
             }
-           
+
             RefreshItem();
             LinkedItemChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -427,7 +452,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         #region LinkedCount
 
         public long LinkedCount
@@ -499,7 +524,7 @@ namespace Client.Controls
         }
 
         #endregion
-        
+
         public DXLabel CountLabel;
         public override void OnMouseWheel(MouseEventArgs e)
         {
@@ -515,7 +540,7 @@ namespace Client.Controls
         public override void OnBorderChanged(bool oValue, bool nValue)
         {
             base.OnBorderChanged(oValue, nValue);
-            
+
             TextureValid = false;
 
             UpdateBorder();
@@ -569,7 +594,6 @@ namespace Client.Controls
             ShowCountLabel = true;
             AllowLink = true;
 
-
             BorderColour = Color.FromArgb(99, 83, 50);
             Size = new Size(CellWidth, CellHeight);
 
@@ -592,22 +616,28 @@ namespace Client.Controls
         {
             base.OnClearTexture();
 
-            if (!Border || BorderInformation == null) return;
+            if (!Border || BorderInformation == null)
+            {
+                return;
+            }
 
-            DXManager.Line.Draw(BorderInformation, BorderColour);
+            RenderingPipelineManager.DrawLine(BorderInformation, BorderColour);
         }
         protected internal override void UpdateBorderInformation()
         {
             BorderInformation = null;
-            if (!Border || Size.Width == 0 || Size.Height == 0) return;
+            if (!Border || Size.Width == 0 || Size.Height == 0)
+            {
+                return;
+            }
 
             BorderInformation = new[]
             {
-                new Vector2(0, 0),
-                new Vector2(Size.Width - 1, 0 ),
-                new Vector2(Size.Width - 1, Size.Height - 1),
-                new Vector2(0 , Size.Height - 1),
-                new Vector2(0 , 0 )
+                new LinePoint(0, 0),
+                new LinePoint(Size.Width - 1, 0),
+                new LinePoint(Size.Width - 1, Size.Height - 1),
+                new LinePoint(0, Size.Height - 1),
+                new LinePoint(0, 0)
             };
             TextureValid = false;
         }
@@ -619,6 +649,23 @@ namespace Client.Controls
             MirLibrary Library;
 
             CEnvir.LibraryList.TryGetValue(LibraryFile.StoreItems, out Library);
+
+            if (LootBoxLocked)
+            {
+                CEnvir.LibraryList.TryGetValue(LibraryFile.GameInter2, out Library);
+                MirImage image = Library.CreateImage(2930, ImageType.Image);
+                if (image != null)
+                {
+                    Rectangle area = new Rectangle(DisplayArea.X, DisplayArea.Y, image.Width, image.Height);
+                    area.Offset((Size.Width - image.Width) / 2, (Size.Height - image.Height) / 2);
+                    ItemInfo info = Item.Info;
+                    PresentTexture(image.Image, this, area, Item.Count > 0 ? Color.White : Color.Gray, this);
+                }
+
+                base.DrawControl();
+
+                return;
+            }
 
             if (Library != null && Item != null)
             {
@@ -668,7 +715,6 @@ namespace Client.Controls
                 if (Item != null && (Item.Flags & UserItemFlags.Locked) == UserItemFlags.Locked && image != null && !Hidden && GridType != GridType.Inspect)
                     PresentTexture(image.Image, this, new Rectangle(DisplayArea.X + 1, DisplayArea.Y + 1, image.Width, image.Height), Item.Count > 0 ? Color.White : Color.Gray, this);
 
-
                 image = InterfaceLibrary.CreateImage(49, ImageType.Image);
                 if (Item != null && GameScene.Game != null && !GameScene.Game.CanUseItem(Item) && image != null && !Hidden && GridType != GridType.Inspect)
                     PresentTexture(image.Image, this, new Rectangle(DisplayArea.Right - 12, DisplayArea.Y + 1, image.Width, image.Height), Item.Count > 0 ? Color.White : Color.Gray, this);
@@ -693,12 +739,12 @@ namespace Client.Controls
             }
 
             if (!Enabled)
-                BackColour = Color.FromArgb(125,0,125,125);
+                BackColour = Color.FromArgb(125, 0, 125, 125);
             else if (Locked || Selected || (!Linked && Link != null))
                 BackColour = Color.FromArgb(125, 255, 125, 125);
 
             DrawTexture = MouseControl == this || !Enabled || Locked || Selected || FixedBorder || (!Linked && Link != null);
-            
+
             if (MouseControl == this || Locked || Selected || (!Linked && Link != null))
             {
                 if (!FixedBorderColour)
@@ -708,7 +754,7 @@ namespace Client.Controls
             else
             {
                 if (!FixedBorderColour)
-                   BorderColour = Color.FromArgb(99, 83, 50);
+                    BorderColour = Color.FromArgb(99, 83, 50);
                 Border = FixedBorder;
             }
         }
@@ -723,15 +769,15 @@ namespace Client.Controls
                     row.ItemCell.RefreshItem();
 
             if ((GridType == GridType.Belt || GridType == GridType.AutoPotion) && QuickInfo != null)
-                QuickInfoItem.Count = GameScene.Game.Inventory.Where(x => x?.Info == QuickInfo).Sum(x => x.Count) +( GameScene.Game.Companion?.InventoryArray.Where(x => x?.Info == QuickInfo).Sum(x => x.Count) ?? 0);
-            
+                QuickInfoItem.Count = GameScene.Game.Inventory.Where(x => x?.Info == QuickInfo).Sum(x => x.Count) + (GameScene.Game.Companion?.InventoryArray.Where(x => x?.Info == QuickInfo).Sum(x => x.Count) ?? 0);
+
             if (MouseControl == this)
             {
                 GameScene.Game.MouseItem = null;
                 GameScene.Game.MouseItem = Item;
             }
 
-            CountLabel.Visible = ShowCountLabel && !Hidden && Item != null && (!CEnvir.IsCurrencyItem(Item.Info) && Item.Info.ItemEffect != ItemEffect.Experience) && (Item.Info.StackSize > 1 || Item.Count > 1);
+            CountLabel.Visible = ShowCountLabel && !Hidden && !LootBoxLocked && Item != null && (!CEnvir.IsCurrencyItem(Item.Info) && Item.Info.ItemEffect != ItemEffect.Experience) && (Item.Info.StackSize > 1 || Item.Count > 1);
             CountLabel.Text = Linked ? LinkedCount.ToString() : Item?.Count.ToString();
         }
         public void MoveItem()
@@ -785,7 +831,7 @@ namespace Client.Controls
                         //Don't want to move items around the character body (no point)
                         return;
                     }
-                             
+
                     if (Item == null || (SelectedCell.Item.Info == Item.Info && SelectedCell.Item.Count < SelectedCell.Item.Info.StackSize))
                         SelectedCell.MoveItem(this);
                     else
@@ -829,7 +875,7 @@ namespace Client.Controls
 
             if (fromCell == SelectedCell) SelectedCell = null;
 
-            if (!GameScene.Game.CanWearItem(fromCell.Item, (EquipmentSlot) Slot)) return;
+            if (!GameScene.Game.CanWearItem(fromCell.Item, (EquipmentSlot)Slot)) return;
 
             C.ItemMove packet = new C.ItemMove
             {
@@ -928,14 +974,14 @@ namespace Client.Controls
 
             if (toCell.GridType == GridType.AutoPotion)
             {
-                
+
                 if (GridType == toCell.GridType) return;
                 if (!Item.Info.CanAutoPot) return;
 
                 if (Selected) SelectedCell = null;
 
                 toCell.QuickInfo = Item.Info;
-                
+
                 GameScene.Game.AutoPotionBox.Rows[toCell.Slot].SendUpdate();
                 return;
             }
@@ -982,7 +1028,7 @@ namespace Client.Controls
                         toCell.LinkedCount = window.Amount;
                         toCell.Link = this;
                     };
-                    
+
                     return;
                 }
 
@@ -991,7 +1037,7 @@ namespace Client.Controls
                 return;
 
             }
-            
+
             C.ItemMove packet = new C.ItemMove
             {
                 FromGrid = GridType,
@@ -1016,15 +1062,10 @@ namespace Client.Controls
             CEnvir.Enqueue(packet);
         }
 
-        public bool SellMode
-        {
-            get { return (GameScene.Game.InventoryBox.InvMode == InventoryMode.Sell && GridType == GridType.Inventory); }
-        }
-
         public bool MoveItem(DXItemGrid toGrid, bool skipCount = false)
         {
             if (toGrid.GridType == GridType.Belt || toGrid.GridType == GridType.AutoPotion) return false;
-          
+
             C.ItemMove packet = new C.ItemMove
             {
                 FromGrid = GridType,
@@ -1550,17 +1591,42 @@ namespace Client.Controls
                     if (!GameScene.Game.CanUseItem(Item)) return false;
 
                     if (GridType != GridType.Inventory && GridType != GridType.PartsStorage && GridType != GridType.CompanionEquipment && GridType != GridType.CompanionInventory) return false;
-                        
+
                     if ((Item.Info.Shape == 19 || Item.Info.Shape == 20 || Item.Info.Shape == 21 || Item.Info.Shape == 22) && MapObject.User.Horse != HorseType.None) return false;
 
                     if ((CEnvir.Now < GameScene.Game.UseItemTime && Item.Info.ItemEffect != ItemEffect.ElixirOfPurification)) return false;
 
                     GameScene.Game.UseItemTime = CEnvir.Now.AddMilliseconds(Math.Max(250, Item.Info.Durability));
-                    
 
                     Locked = true;
 
                     CEnvir.Enqueue(new C.ItemUse { Link = new CellLinkInfo { GridType = GridType, Slot = Slot, Count = 1 } });
+                    PlayItemSound();
+                    break;
+                case ItemType.Bundle:
+                    if (!GameScene.Game.CanUseItem(Item)) return false;
+
+                    if (CEnvir.Now < GameScene.Game.UseItemTime || MapObject.User.Horse != HorseType.None) return false;
+
+                    if (GameScene.Game.BundleBox.Visible) return false;
+
+                    GameScene.Game.UseItemTime = CEnvir.Now.AddMilliseconds(250);
+                    Locked = true;
+
+                    CEnvir.Enqueue(new C.BundleOpen { Slot = Slot });
+                    PlayItemSound();
+                    break;
+                case ItemType.LootBox:
+                    if (!GameScene.Game.CanUseItem(Item)) return false;
+
+                    if (CEnvir.Now < GameScene.Game.UseItemTime || MapObject.User.Horse != HorseType.None) return false;
+
+                    if (GameScene.Game.LootBoxBox.Visible) return false;
+
+                    GameScene.Game.UseItemTime = CEnvir.Now.AddMilliseconds(250);
+                    Locked = true;
+
+                    CEnvir.Enqueue(new C.LootBoxOpen { Slot = Slot });
                     PlayItemSound();
                     break;
                 case ItemType.Book:
@@ -1568,7 +1634,6 @@ namespace Client.Controls
 
                     if (CEnvir.Now < GameScene.Game.UseItemTime || MapObject.User.Horse != HorseType.None) return false;
 
-                    
                     GameScene.Game.UseItemTime = CEnvir.Now.AddMilliseconds(250);
                     Locked = true;
 
@@ -1581,7 +1646,7 @@ namespace Client.Controls
                     switch (Item.Info.ItemEffect)
                     {
                         case ItemEffect.GenderChange:
-                            if (GameScene.Game.CharacterBox.Grid[(int) EquipmentSlot.Armour].Item != null)
+                            if (GameScene.Game.CharacterBox.Grid[(int)EquipmentSlot.Armour].Item != null)
                             {
                                 GameScene.Game.ReceiveChat(CEnvir.Language.CannotChangeGenderWhileWearingArmour, MessageType.System);
                                 return false;
@@ -1697,7 +1762,10 @@ namespace Client.Controls
         {
             base.OnMouseEnter();
 
-            GameScene.Game.MouseItem = Item;
+            if (!LootBoxLocked)
+            {
+                GameScene.Game.MouseItem = Item;
+            }
 
             if (Item != null)
                 Item.New = false;
@@ -1798,8 +1866,8 @@ namespace Client.Controls
                                 {
                                     if (!Item.Info.CanSell)
                                         GameScene.Game.ReceiveChat(string.Format(CEnvir.Language.UnableToSellHereCannotSold, Item.Info.ItemName), MessageType.System);
-                                    
-                                    if ((Item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage) 
+
+                                    if ((Item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage)
                                         return;
 
                                     if ((GridType != GridType.Inventory/* && GridType != GridType.CompanionInventory*/) || (Item.Flags & UserItemFlags.Locked) == UserItemFlags.Locked || (Item.Flags & UserItemFlags.Worthless) == UserItemFlags.Worthless || !Item.Info.CanSell)
@@ -2382,7 +2450,7 @@ namespace Client.Controls
             base.OnMouseDoubleClick(e);
 
             if (ReadOnly || e.Button != MouseButtons.Left) return;
-            
+
             switch (GridType)
             {
                 case GridType.Belt:
@@ -2395,10 +2463,10 @@ namespace Client.Controls
 
                     UseItem();
                     return;
-                    
+
                 case GridType.Storage:
                 case GridType.PartsStorage:
-                    
+
                     UseItem();
                     return;
                 case GridType.Equipment:
@@ -2436,7 +2504,7 @@ namespace Client.Controls
 
             }
         }
-        
+
         #endregion
 
         #region IDisposable

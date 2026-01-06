@@ -1,15 +1,11 @@
 ﻿using Client.Envir;
 using Client.Scenes;
 using Library;
-using SlimDX;
-using SlimDX.X3DAudio;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Client.Models.Particles.Rain;
+using System.Numerics;
 
 namespace Client.Models.Particles
 {

@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using Client.Controls;
+﻿using Client.Controls;
 using Client.Envir;
 using Client.Models;
 using Client.UserModels;
 using Library;
 using Library.SystemModels;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 using C = Library.Network.ClientPackets;
 
 namespace Client.Scenes.Views
@@ -114,7 +114,7 @@ namespace Client.Scenes.Views
         #region Settings
 
         public WindowSetting Settings;
-        public  WindowType Type => WindowType.CompanionBox;
+        public WindowType Type => WindowType.CompanionBox;
 
         public void LoadSettings()
         {
@@ -159,12 +159,15 @@ namespace Client.Scenes.Views
             Index = 141;
             Movable = true;
             Sort = true;
+            DropShadow = true;
 
             CloseButton = new DXButton
             {
                 Parent = this,
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
+                Hint = CEnvir.Language.CommonControlClose,
+                HintPosition = HintPosition.TopLeft
             };
             CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
@@ -359,7 +362,7 @@ namespace Client.Scenes.Views
                 Size = new Size(152, 17),
                 Location = new Point(73, 178)
             };
-            
+
             LevelLabelTitle = new DXLabel
             {
                 Parent = CompanionTab,
@@ -385,7 +388,7 @@ namespace Client.Scenes.Views
             {
                 if (library == null) return;
 
-                if (Info == null) return;
+                if (Info == null || GameScene.Game.Companion == null) return;
 
                 float percent = Math.Min(1, Math.Max(0, GameScene.Game.Companion.Experience / (float)Info.MaxExperience));
 
@@ -436,7 +439,7 @@ namespace Client.Scenes.Views
             {
                 if (library == null) return;
 
-                if (Info == null) return;
+                if (Info == null || GameScene.Game.Companion == null) return;
 
                 float percent = Math.Min(1, Math.Max(0, GameScene.Game.Companion.Hunger / (float)Info.MaxHunger));
 
@@ -688,7 +691,7 @@ namespace Client.Scenes.Views
             {
                 if (library == null) return;
 
-                if (Info == null) return;
+                if (Info == null || GameScene.Game.Companion == null) return;
 
                 float percent = Math.Min(1, Math.Max(0, BagWeight / (float)MaxBagWeight));
 
@@ -1089,6 +1092,22 @@ namespace Client.Scenes.Views
                 Info = null;
                 CompanionDisplay = null;
                 CompanionDisplayPoint = Point.Empty;
+
+                if (TabControl != null)
+                {
+                    if (!TabControl.IsDisposed)
+                        TabControl.Dispose();
+
+                    TabControl = null;
+                }
+
+                if (CompanionTab != null)
+                {
+                    if (!CompanionTab.IsDisposed)
+                        CompanionTab.Dispose();
+
+                    CompanionTab = null;
+                }
 
                 if (CloseButton != null)
                 {

@@ -1,5 +1,6 @@
 ﻿using Client.Controls;
 using Client.Envir;
+using Client.Rendering;
 using Client.Scenes.Views.Character;
 using Client.UserModels;
 using Library;
@@ -38,7 +39,7 @@ namespace Client.Scenes.Views
         public void OnStartIndexChanged(int oValue, int nValue)
         {
             UpdateTime = CEnvir.Now.AddMilliseconds(250);
-            
+
             if (nValue > oValue)
                 for (int i = 0; i < Lines.Length; i++)
                 {
@@ -61,7 +62,7 @@ namespace Client.Scenes.Views
                     if (nValue - oValue + i >= 0)
                     {
                         if (Lines[i + nValue - oValue].Rank != null)
-                        Lines[i].Rank = Lines[i + nValue - oValue].Rank;
+                            Lines[i].Rank = Lines[i + nValue - oValue].Rank;
                         else
                             Lines[i].Loading = true;
                     }
@@ -337,18 +338,21 @@ namespace Client.Scenes.Views
         #endregion
 
         public RankingDialog(bool fullRanking = false)
-        {   
+        {
             Index = fullRanking ? 211 : 210;
             LibraryFile = LibraryFile.Interface;
             Size = new Size(fullRanking ? 576 : 330, 456);
             Movable = true;
             Sort = true;
+            DropShadow = true;
 
             CloseButton = new DXButton
             {
                 Parent = this,
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
+                Hint = CEnvir.Language.CommonControlClose,
+                HintPosition = HintPosition.TopLeft
             };
             CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
@@ -837,7 +841,7 @@ namespace Client.Scenes.Views
             };
             RequiredClassBox.SelectedItemChanged += (o, e) =>
             {
-                FilterClass = (RequiredClass?) RequiredClassBox.SelectedItem ?? RequiredClass.All;
+                FilterClass = (RequiredClass?)RequiredClassBox.SelectedItem ?? RequiredClass.All;
                 Config.RankingClass = (int)FilterClass;
                 SelectedRow = null;
             };
@@ -912,7 +916,7 @@ namespace Client.Scenes.Views
                 CEnvir.Enqueue(new C.ObservableSwitch { Allow = !Observable });
             };
             ObservableBox.Location = new Point(OnlineOnlyBox.Location.X + OnlineOnlyBox.Size.Width + 5, 38);
-            
+
             LastUpdate = new DXLabel
             {
                 Parent = this,
@@ -946,12 +950,15 @@ namespace Client.Scenes.Views
                 MirImage image = EquipEffectDecider.GetEffectImageOrNull(armour, Gender);
                 if (image != null)
                 {
-                    bool oldBlend = DXManager.Blending;
-                    float oldRate = DXManager.BlendRate;
+                    bool oldBlend = RenderingPipelineManager.IsBlending();
+                    float oldRate = RenderingPipelineManager.GetBlendRate();
+                    BlendMode previousBlendMode = RenderingPipelineManager.GetBlendMode();
 
-                    DXManager.SetBlend(true, 0.8F);
+                    RenderingPipelineManager.SetBlend(true, 0.8F);
+
                     PresentTexture(image.Image, InspectPanel, new Rectangle(InspectPanel.DisplayArea.X + x + image.OffSetX, InspectPanel.DisplayArea.Y + y + image.OffSetY, image.Width, image.Height), ForeColour, this);
-                    DXManager.SetBlend(oldBlend, oldRate);
+
+                    RenderingPipelineManager.SetBlend(oldBlend, oldRate, previousBlendMode);
                 }
             }
 
@@ -993,12 +1000,15 @@ namespace Client.Scenes.Views
                     MirImage image = EquipEffectDecider.GetEffectImageOrNull(weapon, Gender);
                     if (image != null)
                     {
-                        bool oldBlend = DXManager.Blending;
-                        float oldRate = DXManager.BlendRate;
+                        bool oldBlend = RenderingPipelineManager.IsBlending();
+                        float oldRate = RenderingPipelineManager.GetBlendRate();
+                        BlendMode previousBlendMode = RenderingPipelineManager.GetBlendMode();
 
-                        DXManager.SetBlend(true, 0.8F);
-                        PresentTexture(image.Image, InspectPanel, new Rectangle(DisplayArea.X + x + image.OffSetX, DisplayArea.Y + y + image.OffSetY, image.Width, image.Height), ForeColour, this);
-                        DXManager.SetBlend(oldBlend, oldRate);
+                        RenderingPipelineManager.SetBlend(true, 0.8F);
+
+                        PresentTexture(image.Image, InspectPanel, new Rectangle(InspectPanel.DisplayArea.X + x + image.OffSetX, InspectPanel.DisplayArea.Y + y + image.OffSetY, image.Width, image.Height), ForeColour, this);
+
+                        RenderingPipelineManager.SetBlend(oldBlend, oldRate, previousBlendMode);
                     }
                 }
 
@@ -1011,12 +1021,15 @@ namespace Client.Scenes.Views
                     MirImage image = EquipEffectDecider.GetEffectImageOrNull(shield, Gender);
                     if (image != null)
                     {
-                        bool oldBlend = DXManager.Blending;
-                        float oldRate = DXManager.BlendRate;
+                        bool oldBlend = RenderingPipelineManager.IsBlending();
+                        float oldRate = RenderingPipelineManager.GetBlendRate();
+                        BlendMode previousBlendMode = RenderingPipelineManager.GetBlendMode();
 
-                        DXManager.SetBlend(true, 0.8F);
-                        PresentTexture(image.Image, InspectPanel, new Rectangle(DisplayArea.X + x + image.OffSetX, DisplayArea.Y + y + image.OffSetY, image.Width, image.Height), ForeColour, this);
-                        DXManager.SetBlend(oldBlend, oldRate);
+                        RenderingPipelineManager.SetBlend(true, 0.8F);
+
+                        PresentTexture(image.Image, InspectPanel, new Rectangle(InspectPanel.DisplayArea.X + x + image.OffSetX, InspectPanel.DisplayArea.Y + y + image.OffSetY, image.Width, image.Height), ForeColour, this);
+
+                        RenderingPipelineManager.SetBlend(oldBlend, oldRate, previousBlendMode);
                     }
                 }
             }
@@ -1167,12 +1180,15 @@ namespace Client.Scenes.Views
 
             if (image != null)
             {
-                bool oldBlend = DXManager.Blending;
-                float oldRate = DXManager.BlendRate;
+                bool oldBlend = RenderingPipelineManager.IsBlending();
+                float oldRate = RenderingPipelineManager.GetBlendRate();
+                BlendMode previousBlendMode = RenderingPipelineManager.GetBlendMode();
 
-                DXManager.SetBlend(true, 0.8F);
-                PresentTexture(image.Image, this, new Rectangle(cell.DisplayArea.X + image.OffSetX + x, cell.DisplayArea.Y + image.OffSetY + y, image.Width, image.Height), ForeColour, this);
-                DXManager.SetBlend(oldBlend, oldRate);
+                RenderingPipelineManager.SetBlend(true, 0.8F);
+
+                PresentTexture(image.Image, this, new Rectangle(cell.DisplayArea.X + x + image.OffSetX, cell.DisplayArea.Y + y + image.OffSetY, image.Width, image.Height), ForeColour, this);
+
+                RenderingPipelineManager.SetBlend(oldBlend, oldRate, previousBlendMode);
             }
         }
 
@@ -1461,7 +1477,8 @@ namespace Client.Scenes.Views
                     ChangeLabel.Text = " - ";
                     ChangeLabel.ForeColour = Color.White;
                 }
-                else {
+                else
+                {
                     ChangeLabel.Text = $"{(change > 0 ? "▲" : "▼")}{Math.Abs(Rank.RankChange)}";
                     ChangeLabel.ForeColour = change > 0 ? Color.OrangeRed : Color.DodgerBlue;
                 }

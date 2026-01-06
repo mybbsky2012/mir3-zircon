@@ -1,9 +1,9 @@
-﻿using System;
-using System.Drawing;
-using Library;
+﻿using Library;
 using Library.SystemModels;
 using MirDB;
 using Server.Envir;
+using System;
+using System.Drawing;
 
 namespace Server.DBModels
 {
@@ -24,7 +24,7 @@ namespace Server.DBModels
             }
         }
         private ItemInfo _Info;
-        
+
         public int CurrentDurability
         {
             get { return _CurrentDurability; }
@@ -159,7 +159,7 @@ namespace Server.DBModels
             }
         }
         private DateTime _ResetCoolDown;
-        
+
 
 
         public UserQuestTask UserTask;
@@ -245,7 +245,7 @@ namespace Server.DBModels
             }
         }
         private RefineInfo _Refine;
-        
+
         [Association("Auction")]
         public AuctionInfo Auction
         {
@@ -292,7 +292,7 @@ namespace Server.DBModels
             }
         }
         private UserItemFlags _Flags;
-        
+
         public TimeSpan ExpireTime
         {
             get { return _ExpireTime; }
@@ -308,8 +308,8 @@ namespace Server.DBModels
         }
         private TimeSpan _ExpireTime;
 
-        
-        
+
+
         [Association("AddedStats", true)]
         public DBBindingList<UserItemStat> AddedStats { get; set; }
 
@@ -467,7 +467,6 @@ namespace Server.DBModels
             {
                 if (addedStat.Stat != stat || addedStat.StatSource != source) continue;
 
-
                 addedStat.Amount += amount;
 
                 return;
@@ -487,7 +486,7 @@ namespace Server.DBModels
         {
             return new ClientUserItem
             {
-                Index =  Index,
+                Index = Index,
 
                 InfoIndex = Info.Index,
 
@@ -495,7 +494,7 @@ namespace Server.DBModels
                 MaxDurability = MaxDurability,
 
                 Count = Count,
-                
+
                 Slot = Slot,
 
                 Level = Level,
@@ -506,11 +505,11 @@ namespace Server.DBModels
                 SpecialRepairCoolDown = SpecialRepairCoolDown > SEnvir.Now ? SpecialRepairCoolDown - SEnvir.Now : TimeSpan.Zero,
                 ResetCoolDown = ResetCoolDown > SEnvir.Now ? ResetCoolDown - SEnvir.Now : TimeSpan.Zero,
 
-                AddedStats = new Stats(Stats),
+                AddedStats = new Stats(Stats, true),
 
                 Flags = Flags,
 
-                ExpireTime =  ExpireTime,
+                ExpireTime = ExpireTime,
             };
         }
 
@@ -602,12 +601,12 @@ namespace Server.DBModels
                         case ItemType.Ring:
                         case ItemType.Shoes:
                             return Info.RequiredAmount * 10000 / 9;
-                      /*  case ItemType.Helmet:
-                        case ItemType.Necklace:
-                        case ItemType.Bracelet:
-                        case ItemType.Ring:
-                        case ItemType.Shoes:
-                            return Info.RequiredAmount * 7000 / 9;*/
+                        /*  case ItemType.Helmet:
+                          case ItemType.Necklace:
+                          case ItemType.Bracelet:
+                          case ItemType.Ring:
+                          case ItemType.Shoes:
+                              return Info.RequiredAmount * 7000 / 9;*/
                         default:
                             return 0;
                     }
@@ -622,12 +621,12 @@ namespace Server.DBModels
                         case ItemType.Ring:
                         case ItemType.Shoes:
                             return Info.RequiredAmount * 10000 / 2;
-                      /*  case ItemType.Helmet:
-                        case ItemType.Necklace:
-                        case ItemType.Bracelet:
-                        case ItemType.Ring:
-                        case ItemType.Shoes:
-                            return Info.RequiredAmount * 10000 / 10;*/
+                        /*  case ItemType.Helmet:
+                          case ItemType.Necklace:
+                          case ItemType.Bracelet:
+                          case ItemType.Ring:
+                          case ItemType.Shoes:
+                              return Info.RequiredAmount * 10000 / 10;*/
                         default:
                             return 0;
                     }
@@ -667,16 +666,16 @@ namespace Server.DBModels
                         case ItemType.Ring:
                         case ItemType.Shoes:
                             return Math.Max(1, Info.RequiredAmount / 2 + 5);
-                      /*  case ItemType.Helmet:
-                            return Math.Max(1, (Info.RequiredAmount - 30) / 6);
-                        case ItemType.Necklace:
-                            return Math.Max(1, Info.RequiredAmount / 8);
-                        case ItemType.Bracelet:
-                            return Math.Max(1, Info.RequiredAmount / 15);
-                        case ItemType.Ring:
-                            return Math.Max(1, Info.RequiredAmount / 9);
-                        case ItemType.Shoes:
-                            return Math.Max(1, (Info.RequiredAmount - 35) / 6);*/
+                        /*  case ItemType.Helmet:
+                              return Math.Max(1, (Info.RequiredAmount - 30) / 6);
+                          case ItemType.Necklace:
+                              return Math.Max(1, Info.RequiredAmount / 8);
+                          case ItemType.Bracelet:
+                              return Math.Max(1, Info.RequiredAmount / 15);
+                          case ItemType.Ring:
+                              return Math.Max(1, Info.RequiredAmount / 9);
+                          case ItemType.Shoes:
+                              return Math.Max(1, (Info.RequiredAmount - 35) / 6);*/
                         default:
                             return 0;
                     }
@@ -691,16 +690,16 @@ namespace Server.DBModels
                         case ItemType.Ring:
                         case ItemType.Shoes:
                             return Math.Max(1, Info.RequiredAmount / 2 + 5);
-                     /*   case ItemType.Helmet:
-                            return Math.Max(1, (Info.RequiredAmount - 30) / 6);
-                        case ItemType.Necklace:
-                            return Math.Max(1, Info.RequiredAmount / 10);
-                        case ItemType.Bracelet:
-                            return Math.Max(1, Info.RequiredAmount / 15);
-                        case ItemType.Ring:
-                            return Math.Max(1, Info.RequiredAmount / 10);
-                        case ItemType.Shoes:
-                            return Math.Max(1, (Info.RequiredAmount - 35) / 6);*/
+                        /*   case ItemType.Helmet:
+                               return Math.Max(1, (Info.RequiredAmount - 30) / 6);
+                           case ItemType.Necklace:
+                               return Math.Max(1, Info.RequiredAmount / 10);
+                           case ItemType.Bracelet:
+                               return Math.Max(1, Info.RequiredAmount / 15);
+                           case ItemType.Ring:
+                               return Math.Max(1, Info.RequiredAmount / 10);
+                           case ItemType.Shoes:
+                               return Math.Max(1, (Info.RequiredAmount - 35) / 6);*/
                         default:
                             return 0;
                     }

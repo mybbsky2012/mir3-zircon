@@ -569,7 +569,7 @@ namespace Library.SystemModels
             }
         }
         private ItemInfo _ItemParameter1;
-        
+
         public MapInfo MapParameter1
         {
             get { return _MapParameter1; }
@@ -635,6 +635,7 @@ namespace Library.SystemModels
         }
         private NPCPage _Page;
 
+        [IsIdentity]
         public int ButtonID
         {
             get { return _ButtonID; }
@@ -962,7 +963,7 @@ namespace Library.SystemModels
 
         Name = 1,
         GuildName = 2,
-        
+
         FameCost = 100
     }
 }

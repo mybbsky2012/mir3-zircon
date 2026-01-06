@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Library;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
-using Library;
 
 //Cleaned
 namespace Client.Controls
@@ -62,7 +62,7 @@ namespace Client.Controls
 
         public DXLabel Label { get; private set; }
         public DXImageControl Box { get; private set; }
-        
+
         public override void OnDisplayAreaChanged(Rectangle oValue, Rectangle nValue)
         {
             base.OnDisplayAreaChanged(oValue, nValue);
@@ -70,8 +70,30 @@ namespace Client.Controls
             UpdateControl();
         }
 
+        public int LabelBoxPadding
+        {
+            get => _LabelBoxPadding;
+            set
+            {
+                if (_LabelBoxPadding == value) return;
+
+                int oldValue = _LabelBoxPadding;
+                _LabelBoxPadding = value;
+
+                OnLabelBoxPaddingChanged(oldValue, value);
+            }
+        }
+        private int _LabelBoxPadding;
+        public event EventHandler<EventArgs> LabelBoxPaddingChanged;
+        public void OnLabelBoxPaddingChanged(int oValue, int nValue)
+        {
+            LabelBoxPaddingChanged?.Invoke(this, EventArgs.Empty);
+
+            UpdateControl();
+        }
+
         #endregion
-        
+
         public DXCheckBox()
         {
             Label = new DXLabel
@@ -83,10 +105,10 @@ namespace Client.Controls
 
             Label.DisplayAreaChanged += (o, e) =>
             {
-                Size = new Size(Label.DisplayArea.Width + Box.DisplayArea.Width, Box.DisplayArea.Height);
-                Box.Location = new Point(Label.DisplayArea.Width, 1);
-            };
+                Size = new Size(Label.DisplayArea.Width + LabelBoxPadding + Box.DisplayArea.Width, Box.DisplayArea.Height);
 
+                Box.Location = new Point(Label.DisplayArea.Width + LabelBoxPadding, 1);
+            };
 
             Box = new DXImageControl
             {
@@ -98,10 +120,10 @@ namespace Client.Controls
             };
             Box.DisplayAreaChanged += (o, e) =>
             {
-                Size = new Size(Label.DisplayArea.Width + Box.DisplayArea.Width, Box.DisplayArea.Height);
-                Box.Location = new Point(Label.DisplayArea.Width, 1);
-            };
+                Size = new Size(Label.DisplayArea.Width + LabelBoxPadding + Box.DisplayArea.Width, Box.DisplayArea.Height);
 
+                Box.Location = new Point(Label.DisplayArea.Width + LabelBoxPadding, 1);
+            };
 
             Size = new Size(18, 18);
         }
@@ -113,7 +135,7 @@ namespace Client.Controls
             if (Label == null) return;
 
             Label.Location = new Point(0, 0);
-            Size = new Size(Label.DisplayArea.Width + Box.DisplayArea.Width, Box.DisplayArea.Height);
+            Size = new Size(Label.DisplayArea.Width + Box.DisplayArea.Width + LabelBoxPadding, Box.DisplayArea.Height);
             Box.Location = new Point(Label.DisplayArea.Width, 0);
         }
 

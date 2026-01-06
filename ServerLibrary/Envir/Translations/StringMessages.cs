@@ -93,6 +93,7 @@ namespace Server.Envir
         public abstract string GuildStorageSafeZone { get; set; }
         public abstract string CompanionNoRoom { get; set; }
         public abstract string StorageLimit { get; set; }
+        public abstract string NotEnoughBagSpaceAvailable { get; set; }
 
         [ConfigSection("Marriage")]
         public abstract string MarryAlreadyMarried { get; set; }
@@ -118,12 +119,14 @@ namespace Server.Envir
         [ConfigSection("Companion")]
         public abstract string CompanionAppearanceAlready { get; set; }
         public abstract string CompanionNeedTicket { get; set; }
+        public abstract string CompanionNeedItem { get; set; }
         public abstract string CompanionSkillEnabled { get; set; }
         public abstract string CompanionSkillDisabled { get; set; }
         public abstract string CompanionAppearanceLocked { get; set; }
-        public abstract string CompanionNeedGold { get; set; }
+        public abstract string CompanionNeedCurrency { get; set; }
         public abstract string CompanionBadName { get; set; }
         public abstract string CompanionRetrieveFailed { get; set; }
+        public abstract string CompanionReleaseFailed { get; set; }
 
         [ConfigSection("Quest")]
         public abstract string QuestSelectReward { get; set; }

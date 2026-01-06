@@ -38,6 +38,7 @@ namespace Client.Controls
             HasFooter = true;
             TitleLabel.Text = CEnvir.Language.CommonControlDXKeyBindWindowTitle;
             Modal = true;
+            DropShadow = true;
             CloseButton.Visible = false;
 
             SetClientSize(new Size(430, 330));
@@ -422,7 +423,7 @@ namespace Client.Controls
 
     public class KeyBindTree : DXControl
     {
-        
+
         #region Properties
 
         #region SelectedEntry
@@ -906,7 +907,7 @@ namespace Client.Controls
 
                 _KeyBindInfo = null;
                 KeyBindInfoChanged = null;
-                
+
                 if (Actionlabel != null)
                 {
                     if (!Actionlabel.IsDisposed)

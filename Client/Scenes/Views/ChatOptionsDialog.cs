@@ -26,19 +26,7 @@ namespace Client.Scenes.Views
             {
                 DXTabControl pnl = tab.Parent as DXTabControl;
 
-                if (Visible)
-                {
-                    foreach (var button in pnl.TabButtons)
-                    {
-                        button.Visible = true;
-                    }
-                }
-                else
-                {
-                    var panel = tab.Parent as DXTabControl;
-
-                    pnl.TabButtons[0].Visible = !(panel.TabButtons.Count == 1 && tab.Panel.HideTabCheckBox.Checked);
-                }
+                tab.TransparencyChanged();
             }
         }
 
@@ -155,7 +143,7 @@ namespace Client.Scenes.Views
 
             DXTabControl tabControl = new DXTabControl
             {
-            //    PassThrough = false,
+                //    PassThrough = false,
                 Size = new Size(200, 200),
                 Parent = GameScene.Game,
                 Movable = true,
@@ -164,7 +152,7 @@ namespace Client.Scenes.Views
             ChatTab tab = new ChatTab
             {
                 Parent = tabControl,
-                Panel =  panel,
+                Panel = panel,
                 Opacity = 0.5F,
                 AllowResize = true,
                 TabButton =
@@ -185,21 +173,11 @@ namespace Client.Scenes.Views
             {
                 var pnl = tab.Parent as DXTabControl;
 
-                if (GameScene.Game.ChatOptionsBox.Visible)
-                {
-                    foreach (var button in pnl.TabButtons)
-                    {
-                        button.Visible = true;
-                    }
-                }
-                else
-                {
-                    pnl.TabButtons[0].Visible = !(pnl.TabButtons.Count == 1 && tab.Panel.HideTabCheckBox.Checked);
-                }
+                tab.TransparencyChanged();
             };
 
             panel.ReverseListCheckBox.CheckedChanged += (o, e1) =>
-            {      
+            {
                 tab.UpdateItems();
             };
 
@@ -213,7 +191,7 @@ namespace Client.Scenes.Views
 
 
             panel.Text = $"Window {ListBox.Controls.Count - 1}";
-            
+
             panel.RemoveButton.MouseClick += (o1, e1) =>
             {
                 DXListBoxItem nextItem = null;
@@ -230,7 +208,7 @@ namespace Client.Scenes.Views
                     }
 
                     nextItem = control as DXListBoxItem;
-                    
+
                     if (found) break;
                 }
                 ListBox.SelectedItem = nextItem;
@@ -259,10 +237,10 @@ namespace Client.Scenes.Views
             GameScene.Game.ChatTextBox.UpdateSettings();
 
             ChatTab chatTab = AddNewTab(null);
-            
+
             chatTab.CurrentTabControl.Size = new Size(GameScene.Game.ChatTextBox.Size.Width, 150);
             chatTab.CurrentTabControl.Location = new Point(GameScene.Game.ChatTextBox.Location.X, GameScene.Game.ChatTextBox.Location.Y - 150);
-            
+
             chatTab.Panel.SystemCheckBox.Checked = false;
             chatTab.Panel.GainsCheckBox.Checked = false;
 
@@ -285,7 +263,7 @@ namespace Client.Scenes.Views
             systemTab.Panel.ObserverCheckBox.Checked = false;
             systemTab.Panel.AlertCheckBox.Checked = false;
             systemTab.Panel.HintCheckBox.Checked = false;
-            
+
             systemTab.Panel.ReverseListCheckBox.Checked = true;
             systemTab.Panel.CleanUpCheckBox.Checked = true;
             systemTab.Panel.TransparentCheckBox.Checked = true;
@@ -318,14 +296,14 @@ namespace Client.Scenes.Views
 
         #endregion
     }
-    
+
     public sealed class ChatOptionsPanel : DXControl
     {
         #region Properties
 
         public DXTextBox NameTextBox;
         public DXButton RemoveButton;
-        
+
         public DXCheckBox TransparentCheckBox;
         public DXCheckBox AlertCheckBox;
         public DXCheckBox HideTabCheckBox;
@@ -505,7 +483,7 @@ namespace Client.Scenes.Views
                 Location = new Point(NameTextBox.DisplayArea.Right + 10, 0),
             };
         }
-        
+
         #region IDisposable
 
         protected override void Dispose(bool disposing)

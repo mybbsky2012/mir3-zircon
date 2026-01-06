@@ -81,6 +81,21 @@ namespace Library.SystemModels
         }
         private RespawnInfo _NeedSpawn;
 
+        public bool NeedHole
+        {
+            get { return _NeedHole; }
+            set
+            {
+                if (_NeedHole == value) return;
+
+                var oldValue = _NeedHole;
+                _NeedHole = value;
+
+                OnChanged(oldValue, value, "NeedHole");
+            }
+        }
+        private bool _NeedHole;
+
         public InstanceInfo NeedInstance
         {
             get { return _NeedInstance; }
@@ -125,6 +140,24 @@ namespace Library.SystemModels
             }
         }
         private RequiredClass _RequiredClass;
+
+        /// <summary>
+        /// Skips valid origin cell validation, allowing for invalid movements to added. Situations such as wanting to add minimap connections for npc movements.
+        /// </summary>
+        public bool SkipValidation
+        {
+            get { return _SkipValidation; }
+            set
+            {
+                if (_SkipValidation == value) return;
+
+                var oldValue = _SkipValidation;
+                _SkipValidation = value;
+
+                OnChanged(oldValue, value, "SkipValidation");
+            }
+        }
+        private bool _SkipValidation;
 
 
         protected internal override void OnCreated()

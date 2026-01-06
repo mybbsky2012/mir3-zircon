@@ -1,10 +1,9 @@
-﻿using System;
+﻿using Client.Envir;
+using Client.Rendering;
+using Library;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
-using Client.Envir;
-using Library;
-using SlimDX;
-using SlimDX.Direct3D9;
 
 namespace Client.Controls
 {
@@ -231,20 +230,20 @@ namespace Client.Controls
             ForeColour = Color.White;
             Sound = SoundIndex.ButtonA;
             CanBePressed = true;
-            ForeColour = new Color4(0.85F, 0.85F, 0.85F).ToColor();
+            ForeColour = Color.FromArgb(217, 217, 217);
 
             Label = new DXLabel
             {
                 Location = new Point(0, -1),
                 AutoSize = false,
-                DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter,
+                DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix,
                 IsControl = false,
                 Parent = this,
             };
         }
 
         #region Methods
-        
+
         protected internal override void UpdateDisplayArea()
         {
             Rectangle area = new Rectangle(Location, Size);
@@ -258,15 +257,17 @@ namespace Client.Controls
         }
         protected override void DrawMirTexture()
         {
-            Texture texture = null;
+            RenderTexture texture = default;
+
+            float previousOpacity = RenderingPipelineManager.GetOpacity();
 
             if (Library == null)
             {
-                DXManager.SetOpacity(Opacity);
-                
-                Surface oldSurface = DXManager.CurrentSurface;
-                DXManager.SetSurface(DXManager.ScratchSurface);
-                DXManager.Device.Clear(ClearFlags.Target, 0, 0, 0);
+                RenderingPipelineManager.SetOpacity(Opacity);
+
+                RenderSurface oldSurface = RenderingPipelineManager.GetCurrentSurface();
+                RenderingPipelineManager.SetSurface(RenderingPipelineManager.GetScratchSurface());
+                RenderingPipelineManager.Clear(RenderClearFlags.Target, Color.FromArgb(0, 0, 0, 0), 0f, 0);
 
                 switch (ButtonType)
                 {
@@ -290,9 +291,11 @@ namespace Client.Controls
                         break;
                 }
 
-                DXManager.SetSurface(oldSurface);
+                RenderingPipelineManager.SetSurface(oldSurface);
 
-                texture = DXManager.ScratchTexture;
+                RenderTexture scratchHandle = RenderingPipelineManager.GetScratchTexture();
+
+                texture = scratchHandle;
             }
             else
             {
@@ -312,22 +315,29 @@ namespace Client.Controls
                 }
             }
 
-            if (texture == null) return;
+            if (!texture.IsValid) return;
 
-            bool oldBlend = DXManager.Blending;
-            float oldRate = DXManager.BlendRate;
+            bool oldBlend = RenderingPipelineManager.IsBlending();
+            float oldRate = RenderingPipelineManager.GetBlendRate();
+            BlendMode previousBlendMode = RenderingPipelineManager.GetBlendMode();
 
             if (Blend)
-                DXManager.SetBlend(true, ImageOpacity, BlendMode);
+            {
+                RenderingPipelineManager.SetBlend(true, ImageOpacity, BlendMode);
+            }
             else
-                DXManager.SetOpacity(Opacity);
+            {
+                RenderingPipelineManager.SetOpacity(Opacity);
+            }
 
             PresentTexture(texture, Parent, DisplayArea, ForeColour, this, 0, Pressed ? 1 : 0);
-            
+
             if (Blend)
-                DXManager.SetBlend(oldBlend, oldRate, BlendMode);
+            {
+                RenderingPipelineManager.SetBlend(oldBlend, oldRate, previousBlendMode);
+            }
             else
-                DXManager.SetOpacity(1F);
+                RenderingPipelineManager.SetOpacity(1F);
 
         }
 
@@ -362,9 +372,11 @@ namespace Client.Controls
         public void UpdateForeColour()
         {
             if (!IsEnabled)
-                ForeColour = new Color4(0.2F, 0.2F, 0.2F).ToColor();
+            {
+                ForeColour = Color.FromArgb(51, 51, 51);
+            }
             else
-                ForeColour = MouseControl == this || Pressed ? new Color4(1F, 1F, 1F).ToColor() : new Color4(0.85F, 0.85F, 0.85F).ToColor();
+                ForeColour = MouseControl == this || Pressed ? Color.White : Color.FromArgb(217, 217, 217);
         }
 
         private void DrawDefault()

@@ -1,8 +1,8 @@
 ﻿using Client.Controls;
 using Client.Envir;
+using Client.Rendering;
 using Client.UserModels;
 using Library;
-using SlimDX;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -16,7 +16,7 @@ namespace Client.Scenes
     public sealed class SelectScene : DXScene
     {
         #region Properties
-        
+
         public DXConfigWindow ConfigBox;
         public DXButton ConfigButton;
 
@@ -29,12 +29,33 @@ namespace Client.Scenes
 
         public SelectScene(Size size) : base(size)
         {
+            if (Config.ExtendedLogin)
+            {
+                DXImageControl extendedBackground = new DXImageControl
+                {
+                    Index = 2,
+                    LibraryFile = LibraryFile.Interface1cExtended,
+                    Parent = this
+                };
+
+                extendedBackground.Location = new Point((size.Width - extendedBackground.Size.Width) / 2, (size.Height - extendedBackground.Size.Height) / 2);
+            }
+
             DXImageControl background = new DXImageControl
             {
                 Index = 50,
                 LibraryFile = LibraryFile.Interface1c,
                 Parent = this,
+                Size = new Size(1024, 768)
             };
+
+            if (Config.ExtendedLogin)
+            {
+                background.Index = 0;
+                background.FixedSize = true;
+            }
+
+            background.Location = new Point((size.Width - background.Size.Width) / 2, (size.Height - background.Size.Height) / 2);
 
             new DXAnimatedControl
             {
@@ -90,19 +111,19 @@ namespace Client.Scenes
                 Visible = false,
                 NetworkTab = { Enabled = false, TabButton = { Visible = false } },
             };
-            ConfigBox.Location = new Point((Size.Width - ConfigBox.Size.Width)/2, (Size.Height - ConfigBox.Size.Height)/2);
+            ConfigBox.Location = new Point((Size.Width - ConfigBox.Size.Width) / 2, (Size.Height - ConfigBox.Size.Height) / 2);
 
             SelectBox = new SelectDialog
             {
                 Parent = this,
             };
-            SelectBox.Location = new Point((Size.Width/2 - SelectBox.Size.Width)/2, (Size.Height - SelectBox.Size.Height)/2);
+            SelectBox.Location = new Point((Size.Width / 2 - SelectBox.Size.Width) / 2, (Size.Height - SelectBox.Size.Height) / 2);
 
             CharacterBox = new NewCharacterDialog
             {
                 Parent = this,
             };
-            CharacterBox.Location = new Point((Size.Width - CharacterBox.Size.Width)/2, (Size.Height - CharacterBox.Size.Height)/2);
+            CharacterBox.Location = new Point((Size.Width - CharacterBox.Size.Width) / 2, (Size.Height - CharacterBox.Size.Height) / 2);
 
             foreach (DXWindow window in DXWindow.Windows)
                 window.LoadSettings();
@@ -272,7 +293,7 @@ namespace Client.Scenes
 
             if (!CharacterAnimation.Loop)
             {
-                DXManager.SetBlend(true);
+                RenderingPipelineManager.SetBlend(true);
 
                 MirImage image = CharacterAnimation.Library?.GetImage(CharacterAnimation.Index);
 
@@ -290,8 +311,7 @@ namespace Client.Scenes
                 if (image != null)
                     PresentTexture(image.Image, CharacterAnimation.Parent, new Rectangle(x + image.OffSetX, y + image.OffSetY, image.Width, image.Height), Color.White, this);
 
-
-                DXManager.SetBlend(false);
+                RenderingPipelineManager.SetBlend(false);
             }
         }
         private void CharacterAnimation_BeforeDraw(object sender, EventArgs e)
@@ -388,7 +408,7 @@ namespace Client.Scenes
         }
 
         #endregion
-        
+
         public sealed class SelectDialog : DXWindow
         {
             #region Properties
@@ -423,7 +443,7 @@ namespace Client.Scenes
                 DeleteButton.Enabled = SelectedButton != null;
                 StartButton.Enabled = CanStartGame;
 
-                ((SelectScene) Parent).UpdateCharacterDisplay();
+                ((SelectScene)Parent).UpdateCharacterDisplay();
             }
 
             #endregion
@@ -478,7 +498,7 @@ namespace Client.Scenes
                 {
                     Parent = this,
                     Label = { Text = CEnvir.Language.SelectStartButtonLabel },
-                    Location = new Point((Size.Width - 260)/4 + 10, Size.Height - 43),
+                    Location = new Point((Size.Width - 260) / 4 + 10, Size.Height - 43),
                     Size = new Size(80, DefaultHeight),
                     Enabled = false,
                 };
@@ -488,7 +508,7 @@ namespace Client.Scenes
                 {
                     Parent = this,
                     Label = { Text = CEnvir.Language.SelectCreateButtonLabel },
-                    Location = new Point((Size.Width - 260)/4*2 + 90, Size.Height - 43),
+                    Location = new Point((Size.Width - 260) / 4 * 2 + 90, Size.Height - 43),
                     Size = new Size(80, DefaultHeight),
                 };
                 CreateButton.MouseClick += CreateButton_MouseClick;
@@ -497,7 +517,7 @@ namespace Client.Scenes
                 {
                     Parent = this,
                     Label = { Text = CEnvir.Language.SelectDeleteButtonLabel },
-                    Location = new Point((Size.Width - 260)/4*3 + 170, Size.Height - 43),
+                    Location = new Point((Size.Width - 260) / 4 * 3 + 170, Size.Height - 43),
                     Size = new Size(80, DefaultHeight),
                     Enabled = false,
                 };
@@ -513,9 +533,9 @@ namespace Client.Scenes
                         Visible = i == -1,
                         Sound = SoundIndex.ButtonA,
                     };
-                    button.MouseClick += (o, e) => SelectedButton = (SelectButton) o;
+                    button.MouseClick += (o, e) => SelectedButton = (SelectButton)o;
 
-                    button.Location = new Point(20, 45 + i*(button.Size.Height + 3));
+                    button.Location = new Point(20, 45 + i * (button.Size.Height + 3));
                 }
 
             }
@@ -589,7 +609,7 @@ namespace Client.Scenes
             {
                 base.OnKeyPress(e);
 
-                switch ((Keys) e.KeyChar)
+                switch ((Keys)e.KeyChar)
                 {
                     case Keys.Enter:
                         if (StartButton.Enabled)
@@ -692,7 +712,7 @@ namespace Client.Scenes
 
                         StartButton = null;
                     }
-                    
+
                     if (CreateButton != null)
                     {
                         if (!CreateButton.IsDisposed)
@@ -813,7 +833,7 @@ namespace Client.Scenes
             }
 
             #endregion
-            
+
             #region SelectedGender
 
             public MirGender SelectedGender
@@ -890,7 +910,7 @@ namespace Client.Scenes
             }
 
             #endregion
-            
+
             #region CreateAttempted
 
             public bool CreateAttempted
@@ -915,16 +935,16 @@ namespace Client.Scenes
             }
 
             #endregion
-            
+
             public bool CanCreate => !CreateAttempted && CharacterNameValid;
-            
+
             public DXLabel SelectedClassLabel, SelectedGenderLabel, HairColourLabel, ArmourColourLabel, CharacterNameHelpLabel;
             public DXTextBox CharacterNameTextBox;
             public DXNumberBox HairNumberBox;
             public DXControl CharacterDisplay;
 
             public DXColourControl HairColour, ArmourColour;
-            
+
             public DXButton CreateButton,
                 WarriorButton,
                 WizardButton,
@@ -952,7 +972,7 @@ namespace Client.Scenes
                     Parent = this,
                     Enabled = false,
                     Label = { Text = CEnvir.Language.NewCharacterCreateButtonLabel },
-                    Location = new Point((Size.Width - 80)/2, Size.Height - 43),
+                    Location = new Point((Size.Width - 80) / 2, Size.Height - 43),
                     Size = new Size(80, DefaultHeight),
                 };
                 CreateButton.MouseClick += (o, e) => Create();
@@ -977,7 +997,7 @@ namespace Client.Scenes
                     Font = new Font(Config.FontName, CEnvir.FontSize(9F), FontStyle.Bold),
                     Text = CEnvir.Language.NewCharacterSelectClassLabel,
                 };
-                label.Location = new Point((panel.Size.Width - label.Size.Width)/2, 0);
+                label.Location = new Point((panel.Size.Width - label.Size.Width) / 2, 0);
 
 
                 WarriorButton = new DXButton
@@ -988,7 +1008,7 @@ namespace Client.Scenes
                     Parent = panel,
                 };
                 WarriorButton.MouseClick += (o, e) => SelectedClass = MirClass.Warrior;
-                int offset = (panel.Size.Width - WarriorButton.Size.Width*4)/5;
+                int offset = (panel.Size.Width - WarriorButton.Size.Width * 4) / 5;
                 WarriorButton.Location = new Point(offset, 22);
 
                 WizardButton = new DXButton
@@ -998,7 +1018,7 @@ namespace Client.Scenes
                     Location = new Point(90, 50),
                     Parent = panel,
                 };
-                WizardButton.Location = new Point(offset*2 + WarriorButton.Size.Width, 22);
+                WizardButton.Location = new Point(offset * 2 + WarriorButton.Size.Width, 22);
                 WizardButton.MouseClick += (o, e) => SelectedClass = MirClass.Wizard;
 
                 TaoistButton = new DXButton
@@ -1008,7 +1028,7 @@ namespace Client.Scenes
                     Location = new Point(130, 50),
                     Parent = panel,
                 };
-                TaoistButton.Location = new Point(offset*3 + WarriorButton.Size.Width*2, 22);
+                TaoistButton.Location = new Point(offset * 3 + WarriorButton.Size.Width * 2, 22);
                 TaoistButton.MouseClick += (o, e) => SelectedClass = MirClass.Taoist;
 
                 AssassinButton = new DXButton
@@ -1018,7 +1038,7 @@ namespace Client.Scenes
                     Location = new Point(170, 50),
                     Parent = panel,
                 };
-                AssassinButton.Location = new Point(offset*4 + WarriorButton.Size.Width*3, 22);
+                AssassinButton.Location = new Point(offset * 4 + WarriorButton.Size.Width * 3, 22);
                 AssassinButton.MouseClick += (o, e) => SelectedClass = MirClass.Assassin;
 
                 SelectedClassLabel = new DXLabel
@@ -1033,7 +1053,7 @@ namespace Client.Scenes
                     BorderColour = Color.FromArgb(198, 166, 99)
 
                 };
-                SelectedClassLabel.Location = new Point((panel.Size.Width - SelectedClassLabel.Size.Width)/2, panel.Size.Height - SelectedClassLabel.Size.Height - 5);
+                SelectedClassLabel.Location = new Point((panel.Size.Width - SelectedClassLabel.Size.Width) / 2, panel.Size.Height - SelectedClassLabel.Size.Height - 5);
 
                 #endregion
 
@@ -1056,7 +1076,7 @@ namespace Client.Scenes
                     Font = new Font(Config.FontName, CEnvir.FontSize(9F), FontStyle.Bold),
                     Text = CEnvir.Language.NewCharacterSelectGenderLabel,
                 };
-                label.Location = new Point((panel.Size.Width - label.Size.Width)/2, 0);
+                label.Location = new Point((panel.Size.Width - label.Size.Width) / 2, 0);
 
                 MaleButton = new DXButton
                 {
@@ -1091,7 +1111,7 @@ namespace Client.Scenes
                     BorderColour = Color.FromArgb(198, 166, 99)
 
                 };
-                SelectedGenderLabel.Location = new Point((panel.Size.Width - SelectedGenderLabel.Size.Width)/2, panel.Size.Height - SelectedGenderLabel.Size.Height - 5);
+                SelectedGenderLabel.Location = new Point((panel.Size.Width - SelectedGenderLabel.Size.Width) / 2, panel.Size.Height - SelectedGenderLabel.Size.Height - 5);
 
                 #endregion
 
@@ -1114,7 +1134,7 @@ namespace Client.Scenes
                     Font = new Font(Config.FontName, CEnvir.FontSize(9F), FontStyle.Bold),
                     Text = CEnvir.Language.NewCharacterCustomizationLabel,
                 };
-                label.Location = new Point((panel.Size.Width - label.Size.Width)/2, 0);
+                label.Location = new Point((panel.Size.Width - label.Size.Width) / 2, 0);
 
                 HairNumberBox = new DXNumberBox
                 {
@@ -1134,7 +1154,7 @@ namespace Client.Scenes
                     Parent = panel,
                     Text = CEnvir.Language.NewCharacterHairTypeLabel,
                 };
-                label.Location = new Point(HairNumberBox.Location.X - label.Size.Width - 5, (HairNumberBox.Size.Height - label.Size.Height)/2 + HairNumberBox.Location.Y);
+                label.Location = new Point(HairNumberBox.Location.X - label.Size.Width - 5, (HairNumberBox.Size.Height - label.Size.Height) / 2 + HairNumberBox.Location.Y);
 
                 HairColour = new DXColourControl
                 {
@@ -1148,7 +1168,7 @@ namespace Client.Scenes
                     Parent = panel,
                     Text = CEnvir.Language.NewCharacterHairColorLabel
                 };
-                HairColourLabel.Location = new Point(HairNumberBox.Location.X - HairColourLabel.Size.Width - 5, (HairColour.Size.Height - HairColourLabel.Size.Height)/2 + HairColour.Location.Y);
+                HairColourLabel.Location = new Point(HairNumberBox.Location.X - HairColourLabel.Size.Width - 5, (HairColour.Size.Height - HairColourLabel.Size.Height) / 2 + HairColour.Location.Y);
 
                 ArmourColour = new DXColourControl
                 {
@@ -1162,7 +1182,7 @@ namespace Client.Scenes
                     Parent = panel,
                     Text = CEnvir.Language.NewCharacterArmourColorLabel,
                 };
-                ArmourColourLabel.Location = new Point(HairNumberBox.Location.X - ArmourColourLabel.Size.Width - 5, (ArmourColour.Size.Height - ArmourColourLabel.Size.Height)/2 + ArmourColour.Location.Y);
+                ArmourColourLabel.Location = new Point(HairNumberBox.Location.X - ArmourColourLabel.Size.Width - 5, (ArmourColour.Size.Height - ArmourColourLabel.Size.Height) / 2 + ArmourColour.Location.Y);
 
 
                 DXControl previewPanel = new DXControl
@@ -1183,7 +1203,7 @@ namespace Client.Scenes
                     Font = new Font(Config.FontName, CEnvir.FontSize(9F), FontStyle.Bold),
                     Text = CEnvir.Language.NewCharacterPreviewLabel,
                 };
-                label.Location = new Point((panel.Size.Width - label.Size.Width)/2, 0);
+                label.Location = new Point((panel.Size.Width - label.Size.Width) / 2, 0);
 
                 #endregion
 
@@ -1204,7 +1224,7 @@ namespace Client.Scenes
                     Parent = this,
                     Text = CEnvir.Language.NewCharacterCharacterNameLabel,
                 };
-                label.Location = new Point(CharacterNameTextBox.Location.X - label.Size.Width - 5, (CharacterNameTextBox.Size.Height - label.Size.Height)/2 + CharacterNameTextBox.Location.Y);
+                label.Location = new Point(CharacterNameTextBox.Location.X - label.Size.Width - 5, (CharacterNameTextBox.Size.Height - label.Size.Height) / 2 + CharacterNameTextBox.Location.Y);
 
                 CharacterNameHelpLabel = new DXLabel
                 {
@@ -1213,7 +1233,7 @@ namespace Client.Scenes
                     Text = "[?]",
                     Hint = string.Format(CEnvir.Language.NewCharacterCharacterNameHelpHint, Globals.MinCharacterNameLength, Globals.MaxCharacterNameLength),
                 };
-                CharacterNameHelpLabel.Location = new Point(CharacterNameTextBox.Location.X + CharacterNameTextBox.Size.Width + 2, (CharacterNameTextBox.Size.Height - CharacterNameHelpLabel.Size.Height)/2 + CharacterNameTextBox.Location.Y);
+                CharacterNameHelpLabel.Location = new Point(CharacterNameTextBox.Location.X + CharacterNameTextBox.Size.Width + 2, (CharacterNameTextBox.Size.Height - CharacterNameHelpLabel.Size.Height) / 2 + CharacterNameTextBox.Location.Y);
 
 
 
@@ -1261,7 +1281,7 @@ namespace Client.Scenes
 
             private void TextBox_KeyPress(object sender, KeyPressEventArgs e)
             {
-                if (e.KeyChar != (char) Keys.Enter) return;
+                if (e.KeyChar != (char)Keys.Enter) return;
 
                 e.Handled = true;
 
@@ -1281,7 +1301,7 @@ namespace Client.Scenes
             private void PreviewPanel_AfterDraw(object sender, EventArgs e)
             {
                 //scaling shit
-                DXControl panel = (DXControl) sender;
+                DXControl panel = (DXControl)sender;
                 MirLibrary lib;
 
                 float x = panel.DisplayArea.Location.X;
@@ -1606,7 +1626,7 @@ namespace Client.Scenes
                     return;
                 }
                 Visible = true;
-                ClassIcon.Index = 27 + (int) SelectInfo.Class;
+                ClassIcon.Index = 27 + (int)SelectInfo.Class;
                 NameLabel.Text = SelectInfo.CharacterName;
                 ClassLabel.Text = SelectInfo.Class.ToString();
                 LevelLabel.Text = SelectInfo.Level.ToString();
@@ -1759,27 +1779,30 @@ namespace Client.Scenes
                 int y = s.Height;
 
                 s = InterfaceLibrary.GetSize(2);
-                InterfaceLibrary.Draw(2, location.X + x, location.Y, Color.White, new Rectangle(0, 0, Size.Width - x*2, s.Height), 1f, ImageType.Image);
-                InterfaceLibrary.Draw(2, location.X + x, location.Y + Size.Height - s.Height, Color.White, new Rectangle(0, 0, Size.Width - x*2, s.Height), 1f, ImageType.Image);
+                InterfaceLibrary.Draw(2, location.X + x, location.Y, Color.White, new Rectangle(0, 0, Size.Width - x * 2, s.Height), 1f, ImageType.Image);
+                InterfaceLibrary.Draw(2, location.X + x, location.Y + Size.Height - s.Height, Color.White, new Rectangle(0, 0, Size.Width - x * 2, s.Height), 1f, ImageType.Image);
 
                 s = InterfaceLibrary.GetSize(1);
-                InterfaceLibrary.Draw(1, location.X, location.Y + y, Color.White, new Rectangle(0, 0, s.Width, Size.Height - y*2), 1f, ImageType.Image);
-                InterfaceLibrary.Draw(1, location.X + Size.Width - s.Width, location.Y + y, Color.White, new Rectangle(0, 0, s.Width, Size.Height - y*2), 1f, ImageType.Image);
+                InterfaceLibrary.Draw(1, location.X, location.Y + y, Color.White, new Rectangle(0, 0, s.Width, Size.Height - y * 2), 1f, ImageType.Image);
+                InterfaceLibrary.Draw(1, location.X + Size.Width - s.Width, location.Y + y, Color.White, new Rectangle(0, 0, s.Width, Size.Height - y * 2), 1f, ImageType.Image);
 
             }
 
             protected internal override void UpdateBorderInformation()
             {
                 BorderInformation = null;
-                if (!Border || Size.Width == 0 || Size.Height == 0) return;
+                if (!Border || Size.Width == 0 || Size.Height == 0)
+                {
+                    return;
+                }
 
                 BorderInformation = new[]
                 {
-                    new Vector2(DisplayArea.Left, DisplayArea.Top),
-                    new Vector2(DisplayArea.Right - 1, DisplayArea.Top),
-                    new Vector2(DisplayArea.Right - 1, DisplayArea.Bottom - 1),
-                    new Vector2(DisplayArea.Left, DisplayArea.Bottom - 1),
-                    new Vector2(DisplayArea.Left, DisplayArea.Top)
+                    new LinePoint(DisplayArea.Left, DisplayArea.Top),
+                    new LinePoint(DisplayArea.Right - 1, DisplayArea.Top),
+                    new LinePoint(DisplayArea.Right - 1, DisplayArea.Bottom - 1),
+                    new LinePoint(DisplayArea.Left, DisplayArea.Bottom - 1),
+                    new LinePoint(DisplayArea.Left, DisplayArea.Top)
                 };
             }
 
@@ -1843,4 +1866,3 @@ namespace Client.Scenes
         }
     }
 }
- 

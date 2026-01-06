@@ -188,7 +188,7 @@ namespace Server.Envir
                 SEnvir.Log($"{IPAddress} Disconnected, Large Packet");
                 return;
             }
-            
+
             if (ReceiveList.Count > Config.MaxPacket)
             {
                 TryDisconnect();
@@ -1195,6 +1195,12 @@ namespace Server.Envir
 
             Player.CompanionRetrieve(p.Index);
         }
+        public void Process(C.CompanionRelease p)
+        {
+            if (Stage != GameStage.Game) return;
+
+            Player.CompanionRelease(p.Index);
+        }
 
         public void Process(C.CompanionStore p)
         {
@@ -1420,6 +1426,55 @@ namespace Server.Envir
             if (Stage != GameStage.Game) return;
 
             Player.IncreaseDiscipline();
+        }
+
+        public void Process(C.LootBoxOpen p)
+        {
+            if (Stage != GameStage.Game) return;
+
+            Player.LootBoxOpen(p);
+        }
+
+        public void Process(C.LootBoxReroll p)
+        {
+            if (Stage != GameStage.Game) return;
+
+            Player.LootBoxReroll(p);
+        }
+
+        public void Process(C.LootBoxConfirmSelection p)
+        {
+            if (Stage != GameStage.Game) return;
+
+            Player.LootBoxConfirmSelection(p);
+        }
+
+        public void Process(C.LootBoxReveal p)
+        {
+            if (Stage != GameStage.Game) return;
+
+            Player.LootBoxReveal(p);
+        }
+
+        public void Process(C.LootBoxTakeItems p)
+        {
+            if (Stage != GameStage.Game) return;
+
+            Player.LootBoxConfirm(p);
+        }
+
+        public void Process(C.BundleOpen p)
+        {
+            if (Stage != GameStage.Game) return;
+
+            Player.BundleOpen(p);
+        }
+
+        public void Process(C.BundleConfirm p)
+        {
+            if (Stage != GameStage.Game) return;
+
+            Player.BundleConfirm(p);
         }
     }
 

@@ -75,8 +75,8 @@ namespace LibraryEditor
 
             if (!ShadowFile)
             {
-                string fname = _fileName + ".wil";
-                string shadowPath = fname.Replace(".wil", "_S.wil");
+                string fname = _fileName + _MainExtention;
+                string shadowPath = fname.Replace(_MainExtention, "_S" + _MainExtention);
 
                 shadowLibrary = null;
                 if (File.Exists(shadowPath))
@@ -175,14 +175,14 @@ namespace LibraryEditor
             }
         }
 
-        public void ToMLibrary()
+        public void ToMLibrary(bool useBlackKeyTransparency = false)
         {
             string fileName = Path.ChangeExtension(_fileName, ".Zl");
 
             if (File.Exists(fileName))
                 File.Delete(fileName);
 
-            Mir3Library library = new Mir3Library(fileName)
+            Mir3Library library = new Mir3Library(fileName, useBlackKeyTransparency)
             {
                 Images = new List<Mir3Library.Mir3Image>(Images.Length),
                 Version = Mir3Library.LIBRARY_VERSION
@@ -201,9 +201,9 @@ namespace LibraryEditor
                         WeMadeImage shadowimage = shadowLibrary != null ? shadowLibrary.Images[i] : null;
 
                         if (shadowimage != null)
-                            library.Images[i] = new Mir3Library.Mir3Image(image.Image, shadowimage.Image, image.MaskImage, library.Version) { OffSetX = image.X, OffSetY = image.Y, ShadowOffSetX = shadowimage.Image == null ? image.ShadowX : shadowimage.X, ShadowOffSetY = shadowimage.Image == null ? image.ShadowY : shadowimage.Y, ShadowType = image.Image != null ? (byte)49 : (byte)0 };
+                            library.Images[i] = new Mir3Library.Mir3Image(image.Image, shadowimage.Image, image.MaskImage, library.Version, library.UseBlackKeyTransparency) { OffSetX = image.X, OffSetY = image.Y, ShadowOffSetX = shadowimage.Image == null ? image.ShadowX : shadowimage.X, ShadowOffSetY = shadowimage.Image == null ? image.ShadowY : shadowimage.Y, ShadowType = image.Image != null ? (byte)49 : (byte)0 };
                         else
-                            library.Images[i] = new Mir3Library.Mir3Image(image.Image, library.Version) { OffSetX = image.X, OffSetY = image.Y, ShadowOffSetX = image.ShadowX, ShadowOffSetY = image.ShadowY };
+                            library.Images[i] = new Mir3Library.Mir3Image(image.Image, library.Version, library.UseBlackKeyTransparency) { OffSetX = image.X, OffSetY = image.Y, ShadowOffSetX = image.ShadowX, ShadowOffSetY = image.ShadowY };
                     });
             }
             catch (System.Exception)
@@ -238,7 +238,7 @@ namespace LibraryEditor
                     //if (image.HasMask)
                     //    library.Images[i] = new MLibraryV2.MImage(image.Image, image.MaskImage) { X = image.X, Y = image.Y, ShadowX = image.ShadowX, ShadowY = image.ShadowY, Shadow = image.boHasShadow ? (byte)1 : (byte)0, MaskX = image.X, MaskY = image.Y };
                     // else
-                    lib.Images[i+offset] = new Mir3Library.Mir3Image(image.Image, lib.Version) { OffSetX = image.X, OffSetY = image.Y, ShadowOffSetX = image.ShadowX, ShadowOffSetY = image.ShadowY };
+                    lib.Images[i + offset] = new Mir3Library.Mir3Image(image.Image, lib.Version, lib.UseBlackKeyTransparency) { OffSetX = image.X, OffSetY = image.Y, ShadowOffSetX = image.ShadowX, ShadowOffSetY = image.ShadowY };
                 });
                 lib.AddBlanks(newImages);
             }
@@ -483,7 +483,7 @@ namespace LibraryEditor
                         }
                         if (((nType == 1) || (nType == 4)) & (Width % 4 > 0))
                             index += WidthBytes(bo16bit ? 16 : 8, Width) - (Width * (bo16bit ? 2 : 1));
-                    }                    
+                    }
                 }
                 Image.UnlockBits(data);
                 index = 0;

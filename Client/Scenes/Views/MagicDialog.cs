@@ -1,30 +1,25 @@
-﻿using System;
+﻿using Client.Controls;
+using Client.Envir;
+using Client.Models;
+using Client.UserModels;
+using Library;
+using Library.SystemModels;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
-using Client.Controls;
-using Client.Envir;
-using Client.Models;
-using Client.UserModels;
-using Library;
-using Library.Network.ClientPackets;
-using Library.SystemModels;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using C = Library.Network.ClientPackets;
 
 namespace Client.Scenes.Views
 {
-    public sealed class MagicDialog : DXControl
+    public sealed class MagicDialog : DXWindow
     {
         #region Properties
 
         private DXImageControl HeaderImage, BackgroundImage;
-
-        private DXLabel TitleLabel;
-        private DXButton CloseButton;
 
         private DXTabControl TabControl;
         public SortedDictionary<MagicSchool, MagicTab> SchoolTabs = new SortedDictionary<MagicSchool, MagicTab>();
@@ -71,45 +66,21 @@ namespace Client.Scenes.Views
 
         #region Settings
 
-        public WindowSetting Settings;
-        public WindowType Type => WindowType.MagicBox;
+        public override WindowType Type => WindowType.MagicBox;
 
-        public void LoadSettings()
-        {
-            if (Type == WindowType.None || !CEnvir.Loaded) return;
+        public override bool CustomSize => false;
 
-            Settings = CEnvir.WindowSettings.Binding.FirstOrDefault(x => x.Resolution == Config.GameSize && x.Window == Type);
-
-            if (Settings != null)
-            {
-                ApplySettings();
-                return;
-            }
-
-            Settings = CEnvir.WindowSettings.CreateNewObject();
-            Settings.Resolution = Config.GameSize;
-            Settings.Window = Type;
-            Settings.Size = Size;
-            Settings.Visible = Visible;
-            Settings.Location = Location;
-        }
-
-        public void ApplySettings()
-        {
-            if (Settings == null) return;
-
-            Location = Settings.Location;
-
-            Visible = Settings.Visible;
-        }
-
+        public override bool AutomaticVisibility => false;
+        
         #endregion
 
         public MagicDialog()
         {
-            Size = new Size(420, 516);
+            Size = new Size(419, 511);
             Movable = true;
             Sort = true;
+            HasFooter = false;
+            DropShadow = true;
 
             HeaderImage = new DXImageControl
             {
@@ -133,6 +104,8 @@ namespace Client.Scenes.Views
                 Parent = this,
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
+                Hint = CEnvir.Language.CommonControlClose,
+                HintPosition = HintPosition.TopLeft
             };
             CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
@@ -205,10 +178,12 @@ namespace Client.Scenes.Views
 
                 if (!SchoolTabs.TryGetValue(magic.School, out MagicTab tab))
                 {
+                    if (magic.School == MagicSchool.Discipline) continue;
+
                     SchoolTabs[magic.School] = tab = new MagicTab(magic.School);
                     tab.MouseWheel += tab.ScrollBar.DoMouseWheel;
                     tab.PassThrough = false;
-                }                   
+                }
 
                 MagicCell cell = new MagicCell
                 {
@@ -299,7 +274,7 @@ namespace Client.Scenes.Views
                     SchoolTabs.Clear();
                     SchoolTabs = null;
                 }
-                
+
                 if (Magics != null)
                 {
                     foreach (KeyValuePair<MagicInfo, MagicCell> pair in Magics)
@@ -346,7 +321,7 @@ namespace Client.Scenes.Views
             ScrollBar.VisibleSize = Size.Height;
             UpdateLocations();
         }
-        
+
         #endregion
 
         public MagicTab(MagicSchool school)
@@ -450,12 +425,14 @@ namespace Client.Scenes.Views
                 Border = false,
                 UpButton = { Index = 61, LibraryFile = LibraryFile.Interface },
                 DownButton = { Index = 62, LibraryFile = LibraryFile.Interface },
-                PositionBar = { Index = 60, LibraryFile = LibraryFile.Interface }
+                PositionBar = { Index = 60, LibraryFile = LibraryFile.Interface },
+                ShowBackgroundSlider = true,
             };
             ScrollBar.ValueChanged += (o, e) => UpdateLocations();
         }
 
         #region Methods
+
         public void UpdateLocations()
         {
             int y = -ScrollBar.Value + 7;
@@ -593,8 +570,8 @@ namespace Client.Scenes.Views
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
                 IsControl = false,
                 ForeColour = Color.Aquamarine,
-                AutoSize =  false,
-                Size = new Size(36,36),
+                AutoSize = false,
+                Size = new Size(36, 36),
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter
             };
             KeyLabel.SizeChanged += (o, e) => KeyLabel.Location = new Point(Image.Size.Width - KeyLabel.Size.Width, Image.Size.Height - KeyLabel.Size.Height);
@@ -735,7 +712,7 @@ namespace Client.Scenes.Views
                     default:
                         continue;
                 }
-                
+
                 e.Handled = true;
             }
 
@@ -799,7 +776,7 @@ namespace Client.Scenes.Views
                 }
 
             }
-            
+
             CEnvir.Enqueue(new C.MagicKey { Magic = magic.Info.Magic, Set1Key = magic.Set1Key, Set2Key = magic.Set2Key, Set3Key = magic.Set3Key, Set4Key = magic.Set4Key });
             Refresh();
             GameScene.Game.MagicBarBox.UpdateIcons();
@@ -857,7 +834,7 @@ namespace Client.Scenes.Views
 
             PresentTexture(image.Image, this, new Rectangle(ExperienceBar.DisplayArea.X + x, ExperienceBar.DisplayArea.Y + y, (int)(image.Width * percent), image.Height), Color.White, ExperienceBar);
         }
-        
+
         public void Refresh()
         {
             if (MapObject.User == null) return;
@@ -1085,5 +1062,4 @@ namespace Client.Scenes.Views
 
         #endregion
     }
-
 }

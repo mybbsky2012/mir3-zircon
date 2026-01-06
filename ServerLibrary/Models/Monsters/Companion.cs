@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Library;
+﻿using Library;
 using Library.Network;
 using Library.SystemModels;
 using Server.DBModels;
 using Server.Envir;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 using S = Library.Network.ServerPackets;
-using C = Library.Network.ClientPackets;
 
 namespace Server.Models.Monsters
 {
@@ -25,7 +22,6 @@ namespace Server.Models.Monsters
         public PlayerObject CompanionOwner;
 
         public CompanionLevelInfo LevelInfo;
-
 
         public UserItem[] Inventory;
         public UserItem[] Equipment;
@@ -122,7 +118,7 @@ namespace Server.Models.Monsters
 
             Stats[Stat.CompanionBagWeight] += LevelInfo.InventoryWeight;
             Stats[Stat.CompanionInventory] += LevelInfo.InventorySpace;
-            
+
             RefreshWeight();
         }
 
@@ -171,7 +167,6 @@ namespace Server.Models.Monsters
             Broadcast(new S.CompanionShapeUpdate { ObjectID = ObjectID, HeadShape = HeadShape, BackShape = BackShape });
         }
 
-
         public void Recall()
         {
             Cell cell = CompanionOwner.CurrentMap.GetCell(Functions.Move(CompanionOwner.CurrentLocation, CompanionOwner.Direction, -1));
@@ -179,7 +174,7 @@ namespace Server.Models.Monsters
             if (cell == null || cell.Movements != null)
                 cell = CompanionOwner.CurrentCell;
 
-            Teleport(CompanionOwner.CurrentMap, cell.Location);
+            Teleport(CompanionOwner.CurrentMap, cell.Location, false, false);
         }
 
         public override void ProcessSearch()
@@ -200,7 +195,6 @@ namespace Server.Models.Monsters
 
                 if (distance > bestDistance) continue;
 
-
                 ItemObject item = (ItemObject)ob;
 
                 if (item.Account != CompanionOwner.Character.Account || !item.MonsterDrop) continue;
@@ -213,7 +207,6 @@ namespace Server.Models.Monsters
                 ItemCheck check = new ItemCheck(item.Item, item.Item.Count - amount, item.Item.Flags, item.Item.ExpireTime);
 
                 if (!CanGainItems(true, check)) continue;
-
 
                 if (distance != bestDistance) closest.Clear();
 
@@ -232,10 +225,151 @@ namespace Server.Models.Monsters
         }
         public override void ProcessRoam()
         {
+            // If the companion has a target, roaming logic is skipped
             if (TargetItem != null) return;
 
-            MoveTo(Functions.Move(CompanionOwner.CurrentLocation, CompanionOwner.Direction, -1));
+            // Check if the companion is too far from its owner
+            if (!Functions.InRange(CurrentLocation, CompanionOwner.CurrentLocation, 7))
+                _moveToOwner = true;
+
+            if (_moveToOwner)
+            {
+                // Move one step closer to the owner, slightly behind their direction
+                MoveTo(Functions.Move(CompanionOwner.CurrentLocation, CompanionOwner.Direction, -1));
+
+                // 40% chance to perform a moving chat
+                if (SEnvir.Random.Next(100) >= 60)
+                {
+                    TryChat(CompanionAction.Moving);
+                }
+
+                // Stop moving when close enough to the owner
+                if (Functions.InRange(CurrentLocation, CompanionOwner.CurrentLocation, 1))
+                    _moveToOwner = false;
+
+                _nextIdleTime = SEnvir.Now.Add(_idleDelay);
+            }
+            else if (SEnvir.Random.Next(100) >= 60)
+            {
+                // 40% chance to perform an idle animation
+                ProcessIdle();
+            }
+            else if (SEnvir.Random.Next(100) >= 60)
+            {
+                // 40% chance to perform a chat
+                TryChat(CompanionAction.Idle);
+            }
         }
+
+        private bool _moveToOwner;
+        private DateTime _nextChatTime = SEnvir.Now.AddSeconds(10);
+        private DateTime _nextIdleTime = SEnvir.Now.AddSeconds(10);
+        private readonly TimeSpan _idleDelay = TimeSpan.FromSeconds(30);
+        private readonly TimeSpan _chatDelay = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// Handles idle behavior when the companion is not moving or attacking.
+        /// </summary>
+        private void ProcessIdle()
+        {
+            // Skip if not yet time for next idle action
+            if (SEnvir.Now < _nextIdleTime) return;
+
+            _nextIdleTime = SEnvir.Now.Add(_idleDelay);
+
+            switch(MonsterInfo.Image)
+            {
+                case MonsterImage.Companion_Pig:
+                    {
+                        int actionDelay = 600;
+                        switch(SEnvir.Random.Next(4))
+                        {
+                            case 0: //roll
+                                Broadcast(new S.ObjectIdle { ObjectID = ObjectID, Direction = Direction, Location = CurrentLocation, Type = 1 });
+                                Broadcast(new S.ObjectIdle { ObjectID = ObjectID, Direction = Direction, Location = CurrentLocation, Type = 2 });
+                                Broadcast(new S.ObjectIdle { ObjectID = ObjectID, Direction = Direction, Location = CurrentLocation, Type = 3 });
+                                actionDelay = 1700;
+                                break;
+                            case 1: //handstand
+                                Broadcast(new S.ObjectIdle { ObjectID = ObjectID, Direction = Direction, Location = CurrentLocation, Type = 4 });
+                                Broadcast(new S.ObjectIdle { ObjectID = ObjectID, Direction = Direction, Location = CurrentLocation, Type = 5 });
+                                Broadcast(new S.ObjectIdle { ObjectID = ObjectID, Direction = Direction, Location = CurrentLocation, Type = 6 });
+                                actionDelay = 1700;
+                                break;
+                            case 2: //jump
+                                Broadcast(new S.ObjectIdle { ObjectID = ObjectID, Direction = Direction, Location = CurrentLocation, Type = 7 });
+                                break;
+                            case 3: //pickup
+                                Broadcast(new S.ObjectIdle { ObjectID = ObjectID, Direction = Direction, Location = CurrentLocation, Type = 8 });
+                                break;
+                        }
+
+                        AttackTime = SEnvir.Now.AddMilliseconds(AttackDelay);
+                        ActionTime = SEnvir.Now.AddMilliseconds(actionDelay);
+                    }
+                    break;
+                default:
+                    {
+                        // Determine how many idle animations are available for this companion type
+                        int maxIdleAnimations = MonsterInfo.Image switch
+                        {
+                            MonsterImage.Companion_Sheep => 2,
+                            MonsterImage.Companion_TuskLord or
+                            MonsterImage.Companion_SkeletonLord or
+                            MonsterImage.Companion_BanyoLordGuzak or
+                            MonsterImage.Companion_Rabbit or
+                            MonsterImage.Companion_Dog => 3,
+                            _ => 4 // Default for other types
+                        };
+
+                        int idleType = SEnvir.Random.Next(1, maxIdleAnimations + 1);
+
+                        Broadcast(new S.ObjectIdle
+                        {
+                            ObjectID = ObjectID,
+                            Direction = Direction,
+                            Location = CurrentLocation,
+                            Type = idleType
+                        });
+
+                        AttackTime = SEnvir.Now.AddMilliseconds(AttackDelay);
+                        ActionTime = SEnvir.Now.AddMilliseconds(600);
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Tries to make the companion say one of its random predefined lines.
+        /// Returns true if a message was sent.
+        /// </summary>
+        public bool TryChat(CompanionAction action)
+        {            
+            // Skip if not yet time for next chat action
+            if (SEnvir.Now < _nextChatTime) return false;
+
+            _nextChatTime = SEnvir.Now.Add(_chatDelay);
+
+            var matchingSpeeches = UserCompanion.Info.CompanionSpeeches
+                .Where(x => x.Action == action);
+
+            var speechesArray = matchingSpeeches as CompanionSpeech[] ?? [.. matchingSpeeches];
+            if (speechesArray.Length == 0)
+                return false;
+
+            var randomSpeech = speechesArray[SEnvir.Random.Next(speechesArray.Length)];
+
+            Broadcast(new S.Chat
+            {
+                Text = randomSpeech.Speech,
+                Type = MessageType.Normal,
+                ObjectID = ObjectID,
+                OverheadOnly = true
+            });
+
+            return true;
+        }
+
         public override void ProcessTarget()
         {
             if (TargetItem == null) return;
@@ -245,6 +379,14 @@ namespace Server.Models.Monsters
             if (TargetItem.CurrentLocation != CurrentLocation) return;
 
             TargetItem.PickUpItem(this);
+
+            // 40% chance to perform a pickup chat
+            if (SEnvir.Random.Next(100) >= 60)
+            {
+                TryChat(CompanionAction.Pickup);
+            }
+
+            _nextIdleTime = SEnvir.Now.Add(_idleDelay);
         }
 
         public override void Activate()
@@ -268,7 +410,7 @@ namespace Server.Models.Monsters
             item.Auction = null;
             item.Companion = null;
             item.Guild = null;
-            
+
 
             item.Flags &= ~UserItemFlags.Locked;
         }
@@ -299,10 +441,16 @@ namespace Server.Models.Monsters
         {
             if (UserCompanion.Hunger > 0) return;
 
-            UserItem item = Equipment[(int) CompanionSlot.Food];
+            UserItem item = Equipment[(int)CompanionSlot.Food];
 
-            if (item == null || !CanUseItem(item.Info)) return;
+            if (item == null || !CanUseItem(item.Info))
+            {
+                TryChat(CompanionAction.Hunger);
 
+                return;
+            }
+
+            TryChat(CompanionAction.Eating);
 
             UserCompanion.Hunger = Math.Min(LevelInfo.MaxHunger, item.Info.Stats[Stat.CompanionHunger]);
 
@@ -388,7 +536,7 @@ namespace Server.Models.Monsters
                 Level13 = UserCompanion.Level13,
                 Level15 = UserCompanion.Level15
             });
-            
+
         }
         public Stats GetSkill(int level)
         {
@@ -414,7 +562,7 @@ namespace Server.Models.Monsters
 
                 if (value >= 0) continue;
 
-                lvStats[info.StatType] = SEnvir.Random.Next( info.MaxAmount) + 1;
+                lvStats[info.StatType] = SEnvir.Random.Next(info.MaxAmount) + 1;
 
                 break;
             }
@@ -426,7 +574,7 @@ namespace Server.Models.Monsters
         protected override void MoveTo(Point target)
         {
             if (!CanMove || CurrentLocation == target) return;
-            
+
             MirDirection direction = Functions.DirectionFromPoint(CurrentLocation, target);
 
             int rotation = SEnvir.Random.Next(2) == 0 ? 1 : -1;
@@ -455,7 +603,6 @@ namespace Server.Models.Monsters
             RemoveAllObjects();
             AddAllObjects();
 
-
             Broadcast(new S.ObjectMove { ObjectID = ObjectID, Direction = direction, Location = CurrentLocation, Distance = 1 });
             return true;
         }
@@ -480,7 +627,7 @@ namespace Server.Models.Monsters
                 itemType = SEnvir.ItemInfoList.Binding.First(x => x.Index == check.Item.Stats[Stat.ItemIndex]).ItemType;
                 itemRarity = SEnvir.ItemInfoList.Binding.First(x => x.Index == check.Item.Stats[Stat.ItemIndex]).Rarity;
                 itemClass = SEnvir.ItemInfoList.Binding.First(x => x.Index == check.Item.Stats[Stat.ItemIndex]).RequiredClass;
-            } 
+            }
             else
             {
                 itemType = check.Info.ItemType;
@@ -687,7 +834,6 @@ namespace Server.Models.Monsters
             foreach (UserQuest quest in changedQuests)
                 CompanionOwner.Enqueue(new S.QuestChanged { Quest = quest.ToClientInfo() });
 
-
             RefreshStats();
         }
 
@@ -717,10 +863,10 @@ namespace Server.Models.Monsters
                 Direction = Direction,
 
                 PetOwner = CompanionOwner.Name,
-                
+
                 Poison = Poison,
 
-                Buffs = Buffs.Where(x => x.Visible).Select(x => x.Type).ToList(),
+                Buffs = Buffs.Where(x => x.Visible).Select(x => new KeyValuePair<BuffType, int>(x.Type, x.Extra)).ToDictionary(),
 
                 CompanionObject = new ClientCompanionObject
                 {

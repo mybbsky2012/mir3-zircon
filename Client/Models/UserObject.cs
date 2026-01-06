@@ -1,17 +1,12 @@
-﻿using System;
+﻿using Client.Envir;
+using Client.Scenes;
+using Library;
+using Library.SystemModels;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using Client.Controls;
-using Client.Envir;
-using Client.Scenes;
-using Client.Scenes.Views;
-using Library;
-using Library.Network.ServerPackets;
-using Library.SystemModels;
 using C = Library.Network.ClientPackets;
 
 namespace Client.Models
@@ -40,7 +35,7 @@ namespace Client.Models
             set
             {
                 if (_HermitStats == value) return;
-                
+
                 _HermitStats = value;
 
                 GameScene.Game.StatsChanged();
@@ -91,10 +86,10 @@ namespace Client.Models
         }
         private decimal _Experience;
         #endregion
-        
+
         #region MaxExperience
         public decimal MaxExperience
-        { 
+        {
             get { return _MaxExperience; }
             set
             {
@@ -190,7 +185,7 @@ namespace Client.Models
 
         public int BagWeight, WearWeight, HandWeight;
         public float ShakeScreenCount;
-        public Point ShakeScreenOffset;
+        public Point _PreviousShakeScreenOffset, ShakeScreenOffset;
 
         public bool InSafeZone
         {
@@ -198,7 +193,7 @@ namespace Client.Models
             set
             {
                 if (_InSafeZone == value) return;
-                
+
                 _InSafeZone = value;
 
                 GameScene.Game.SafeZoneChanged();
@@ -209,7 +204,7 @@ namespace Client.Models
         public int HermitPoints;
 
         public List<ClientBuffInfo> Buffs = new List<ClientBuffInfo>();
-        
+
         public Dictionary<MagicInfo, ClientUserMagic> Magics = new Dictionary<MagicInfo, ClientUserMagic>();
 
         public DateTime NextActionTime, ServerTime, AttackTime, NextRunTime, NextMagicTime, BuffTime = CEnvir.Now, LotusTime, CombatTime, MoveTime;
@@ -226,7 +221,7 @@ namespace Client.Models
             set
             {
                 if (_canThrusting == value) return;
-                
+
                 _canThrusting = value;
 
                 GameScene.Game.ReceiveChat(CanThrusting ? CEnvir.Language.UseThrusting : CEnvir.Language.DoNotUseThrusting, MessageType.Hint);
@@ -260,7 +255,7 @@ namespace Client.Models
         }
         private bool _CanDestructiveSurge;
 
-        public bool CanFlamingSword, CanDragonRise, CanBladeStorm, CanDefensiveBlow;
+        public bool CanFlamingSword, CanDragonRise, CanBladeStorm, CanDefensiveBlow, CanOffensiveBlow;
 
         public bool CanFlameSplash
         {
@@ -333,6 +328,9 @@ namespace Client.Models
             HideHead = info.HideHead;
 
             GameScene.Game.DayTime = info.DayTime;
+            GameScene.Game.TimeOfDay = info.TimeOfDay;
+            GameScene.Game.TimeOfDayLabel = info.TimeOfDayLabel;
+
             GameScene.Game.GroupBox.AllowGroup = info.AllowGroup;
 
             GameScene.Game.StruckEnabled = info.StruckEnabled;
@@ -369,7 +367,7 @@ namespace Client.Models
             UpdateLibraries();
 
             SetFrame(new ObjectAction(!Dead ? MirAction.Standing : MirAction.Dead, Direction, CurrentLocation));
-            
+
             GameScene.Game.FillItems(info.Items);
 
             foreach (ClientBeltLink link in info.BeltLinks)
@@ -441,7 +439,7 @@ namespace Client.Models
                     break;
                 case MirAction.Attack:
                     action.Extra[2] = Functions.GetAttackElement(Stats);
-                    
+
                     if (GameScene.Game.Equipment[(int)EquipmentSlot.Amulet]?.Info.ItemType == ItemType.DarkStone)
                     {
                         action.Extra[2] = GameScene.Game.Equipment[(int)EquipmentSlot.Amulet].Info.Stats.GetAffinityElement();
@@ -462,14 +460,14 @@ namespace Client.Models
                                 if (Stats[Stat.Health] * pair.Value.Cost / 100 > CurrentHP || Buffs.All(x => x.Type != BuffType.Cloak))
                                     break;
                             }
-                            else 
+                            else
                                 if (pair.Value.Cost > CurrentMP) break;
 
                             attackMagic = AttackMagic;
                             break;
                         }
                     }
-                    
+
                     if (CanPowerAttack && TargetObject != null)
                     {
                         foreach (KeyValuePair<MagicInfo, ClientUserMagic> pair in Magics)
@@ -585,6 +583,10 @@ namespace Client.Models
                         attackMagic = MagicType.DragonRise;
                     else if (CanFlamingSword)
                         attackMagic = MagicType.FlamingSword;
+                    else if (CanFlamingSword)
+                        attackMagic = MagicType.FlamingSword;
+                    else if (CanOffensiveBlow && GameScene.Game.MapControl.HasTarget(Functions.Move(CurrentLocation, action.Direction)))
+                        attackMagic = MagicType.OffensiveBlow;
 
                     action.Extra[1] = attackMagic;
                     break;
@@ -615,7 +617,7 @@ namespace Client.Models
                     GameScene.Game.CanRun = true;
                     break;
                 case MirAction.Attack:
-                    attackDelay = Globals.AttackDelay - Stats[Stat.AttackSpeed]*Globals.ASpeedRate;
+                    attackDelay = Globals.AttackDelay - Stats[Stat.AttackSpeed] * Globals.ASpeedRate;
                     attackDelay = Math.Max(800, attackDelay);
                     AttackTime = CEnvir.Now + TimeSpan.FromMilliseconds(attackDelay);
 
@@ -687,12 +689,7 @@ namespace Client.Models
                     DrawColour = Color.CornflowerBlue;
             }
 
-            ShakeScreenOffset = new Point(0, (int)(Math.Sin(ShakeScreenCount) * 10));
-            if (ShakeScreenCount > 0)
-            {
-                ShakeScreenCount -= 1F;
-                GameScene.Game.MapControl.FLayer.TextureValid = false;
-            }
+            ProcessScreenShake();
 
             TimeSpan ticks = CEnvir.Now - BuffTime;
             BuffTime = CEnvir.Now;
@@ -701,6 +698,19 @@ namespace Client.Models
             {
                 if (buff.Pause || buff.RemainingTime == TimeSpan.MaxValue) continue;
                 buff.RemainingTime = Functions.Max(TimeSpan.Zero, buff.RemainingTime - ticks);
+            }
+        }
+
+        private void ProcessScreenShake()
+        {
+            _PreviousShakeScreenOffset = ShakeScreenOffset;
+            ShakeScreenOffset = new Point(0, (int)(Math.Sin(ShakeScreenCount) * 10));
+            if (_PreviousShakeScreenOffset != ShakeScreenOffset)
+            {
+                if (ShakeScreenCount > 0)
+                    ShakeScreenCount -= 1F;
+
+                GameScene.Game.MapControl.FLayer.TextureValid = false;
             }
         }
 
@@ -749,7 +759,6 @@ namespace Client.Models
             GameScene.Game.MapControl.FLayer.TextureValid = false;
         }
 
-
         public override void NameChanged()
         {
             base.NameChanged();
@@ -765,7 +774,11 @@ namespace Client.Models
         public void AddBuff(ClientBuffInfo buff)
         {
             Buffs.Add(buff);
-            VisibleBuffs.Add(buff.Type);
+
+            if (!VisibleBuffs.ContainsKey(buff.Type))
+                VisibleBuffs[buff.Type] = 0;
+
+            VisibleBuffs[buff.Type] = buff.Extra;
 
             if (buff.Type == BuffType.SuperiorMagicShield)
             {

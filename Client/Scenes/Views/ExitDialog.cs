@@ -1,9 +1,8 @@
-﻿using System.Drawing;
-using Client.Controls;
+﻿using Client.Controls;
 using Client.Envir;
 using Client.Models;
-using Client.UserModels;
 using Library;
+using System.Drawing;
 using C = Library.Network.ClientPackets;
 
 //Cleaned
@@ -35,12 +34,15 @@ namespace Client.Scenes.Views
             Index = 281;
             Sort = true;
             Modal = true;
+            DropShadow = true;
 
             CloseButton = new DXButton
             {
                 Parent = this,
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
+                Hint = CEnvir.Language.CommonControlClose,
+                HintPosition = HintPosition.TopLeft
             };
             CloseButton.Location = new Point(252 - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
@@ -126,6 +128,14 @@ namespace Client.Scenes.Views
                         ExitButton.Dispose();
 
                     ExitButton = null;
+                }
+
+                if (CloseButton != null)
+                {
+                    if (!CloseButton.IsDisposed)
+                        CloseButton.Dispose();
+
+                    CloseButton = null;
                 }
             }
 

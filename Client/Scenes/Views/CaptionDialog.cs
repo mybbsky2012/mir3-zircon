@@ -1,10 +1,10 @@
-﻿using System;
-using System.Drawing;
-using System.Windows.Forms;
-using Client.Controls;
+﻿using Client.Controls;
 using Client.Envir;
 using Client.UserModels;
 using Library;
+using System;
+using System.Drawing;
+using System.Windows.Forms;
 using C = Library.Network.ClientPackets;
 
 namespace Client.Scenes.Views
@@ -150,6 +150,14 @@ namespace Client.Scenes.Views
                         CaptionText.Dispose();
 
                     CaptionText = null;
+                }
+
+                if (ClientPanel != null)
+                {
+                    if (!ClientPanel.IsDisposed)
+                        ClientPanel.Dispose();
+
+                    ClientPanel = null;
                 }
             }
 

@@ -1,10 +1,10 @@
-﻿using System;
-using System.Drawing;
-using System.Linq;
-using Client.Controls;
+﻿using Client.Controls;
 using Client.Envir;
 using Client.UserModels;
 using Library;
+using System;
+using System.Drawing;
+using System.Linq;
 
 //Cleaned
 namespace Client.Scenes.Views
@@ -67,7 +67,6 @@ namespace Client.Scenes.Views
             HasTopBorder = false;
             TitleLabel.Visible = false;
             CloseButton.Visible = false;
-
             AllowResize = true;
 
             Links = new ClientBeltLink[Globals.MaxBeltCount];
@@ -90,7 +89,6 @@ namespace Client.Scenes.Views
 
             OnClientAreaChanged(ClientArea, ClientArea);
         }
-
 
         #region Methods
         public void UpdateLinks()

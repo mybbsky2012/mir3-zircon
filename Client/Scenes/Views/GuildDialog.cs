@@ -143,7 +143,7 @@ namespace Client.Scenes.Views
         #endregion
 
         public bool CanCreate => !CreateAttempted && GuildNameValid && GameScene.Game != null && TotalCost <= GameScene.Game.User.Gold.Amount;
-        public int TotalCost => (int) Math.Min(int.MaxValue, (GoldCheckBox.Checked ? Globals.GuildCreationCost : 0) + (MemberLimit * Globals.GuildMemberCost) + (StorageSize * Globals.GuildStorageCost));
+        public int TotalCost => (int)Math.Min(int.MaxValue, (GoldCheckBox.Checked ? Globals.GuildCreationCost : 0) + (MemberLimit * Globals.GuildMemberCost) + (StorageSize * Globals.GuildStorageCost));
 
         public DXButton CreateButton, StarterGuildButton;
 
@@ -340,12 +340,15 @@ namespace Client.Scenes.Views
             Movable = true;
             Sort = true;
             Size = new Size(456, 556);
+            DropShadow = true;
 
             CloseButton = new DXButton
             {
                 Parent = this,
                 Index = 15,
                 LibraryFile = LibraryFile.Interface,
+                Hint = CEnvir.Language.CommonControlClose,
+                HintPosition = HintPosition.TopLeft
             };
             CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
@@ -388,7 +391,7 @@ namespace Client.Scenes.Views
             CreateMemberTab();
 
             CreateStorageTab();
-            
+
             CreateWarTab();
 
             CreateStyleTab();
@@ -950,7 +953,7 @@ namespace Client.Scenes.Views
             NoticeTextBox.TextBox.KeyUp += (o, e) => UpdateNoticePosition();
             NoticeTextBox.TextBox.KeyPress += (o, e) =>
             {
-                if (e.KeyChar == (char) 1)
+                if (e.KeyChar == (char)1)
                 {
                     NoticeTextBox.TextBox.SelectAll();
                     e.Handled = true;
@@ -1546,7 +1549,7 @@ namespace Client.Scenes.Views
                 return;
             }
 
-            if (ItemTypeComboBox.SelectedItem != null && cell.Item != null && cell.Item.Info.ItemType != (ItemType) ItemTypeComboBox.SelectedItem)
+            if (ItemTypeComboBox.SelectedItem != null && cell.Item != null && cell.Item.Info.ItemType != (ItemType)ItemTypeComboBox.SelectedItem)
             {
                 cell.Enabled = false;
                 return;
@@ -1569,7 +1572,7 @@ namespace Client.Scenes.Views
 
 
         #endregion
-        
+
         #region War Tab
 
         public void CreateWarTab()
@@ -1591,7 +1594,7 @@ namespace Client.Scenes.Views
                 WarPanel.Visible = true;
                 CastlePanel.Visible = false;
             };
-         
+
             WarPanel = new DXControl
             {
                 Parent = this,
@@ -1633,7 +1636,7 @@ namespace Client.Scenes.Views
                 {
                     Parent = WarTab,
                     Castle = castle,
-                    Location =  new Point(14, (142 * count) + 7),
+                    Location = new Point(14, (142 * count) + 7),
                     Visible = true
                 };
                 count++;
@@ -1654,7 +1657,7 @@ namespace Client.Scenes.Views
                 DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter,
                 Enabled = false
             };*/
-            
+
 
         }
 
@@ -1956,6 +1959,14 @@ namespace Client.Scenes.Views
                     CreateTab = null;
                 }
 
+                if (CreatePanel != null)
+                {
+                    if (!CreatePanel.IsDisposed)
+                        CreatePanel.Dispose();
+
+                    CreatePanel = null;
+                }
+
                 if (TreasuryPanel != null)
                 {
                     if (!TreasuryPanel.IsDisposed)
@@ -2075,7 +2086,7 @@ namespace Client.Scenes.Views
 
                     DailyGrowthLabel = null;
                 }
-                
+
                 if (TotalContributionLabel != null)
                 {
                     if (!TotalContributionLabel.IsDisposed)
@@ -2286,7 +2297,7 @@ namespace Client.Scenes.Views
                 }
 
                 #endregion
-                
+
                 #region War Tab
 
                 if (WarTab != null)
@@ -2295,6 +2306,22 @@ namespace Client.Scenes.Views
                         WarTab.Dispose();
 
                     WarTab = null;
+                }
+
+                if (WarPanel != null)
+                {
+                    if (!WarPanel.IsDisposed)
+                        WarPanel.Dispose();
+
+                    WarPanel = null;
+                }
+
+                if (StartWarButton != null)
+                {
+                    if (!StartWarButton.IsDisposed)
+                        StartWarButton.Dispose();
+
+                    StartWarButton = null;
                 }
 
                 #endregion
@@ -2383,6 +2410,14 @@ namespace Client.Scenes.Views
                         CastleTab.Dispose();
 
                     CastleTab = null;
+                }
+
+                if (CastlePanel != null)
+                {
+                    if (!CastlePanel.IsDisposed)
+                        CastlePanel.Dispose();
+
+                    CastlePanel = null;
                 }
 
                 if (ToggleGates != null)
@@ -2598,7 +2633,7 @@ namespace Client.Scenes.Views
 
                     GameScene.Game.BigMapBox.Visible = true;
                     GameScene.Game.BigMapBox.Opacity = 1F;
-                    
+
                     if (!GameScene.Game.DataDictionary.TryGetValue(MemberInfo.ObjectID, out ClientObjectData data)) return;
 
                     var map = Globals.MapInfoList.Binding.FirstOrDefault(x => x.Index == data.MapIndex);
@@ -2672,7 +2707,7 @@ namespace Client.Scenes.Views
 
         #endregion
     }
-    
+
     public sealed class GuildMemberDialog : DXWindow
     {
         #region Properties
@@ -2682,7 +2717,7 @@ namespace Client.Scenes.Views
         public DXTextBox RankTextBox;
 
         public DXCheckBox LeaderBox, EditNoticeBox, AddMemberBox, StorageBox, RepairBox, MerchantBox, MarketBox, StartWarBox;
-        
+
         public DXButton ConfirmButton, KickButton;
 
         #region MemberIndex
@@ -2799,7 +2834,7 @@ namespace Client.Scenes.Views
             RankTextBox = new DXTextBox
             {
                 Parent = this,
-                Location = new Point(080, label.Location.Y), 
+                Location = new Point(080, label.Location.Y),
                 Size = new Size(120, 20),
                 MaxLength = Globals.MaxCharacterNameLength
             };
@@ -2827,7 +2862,7 @@ namespace Client.Scenes.Views
             };
             AddMemberBox.CheckedChanged += (o, e) => UpdatePermission();
             AddMemberBox.Location = new Point(094 - AddMemberBox.Size.Width, EditNoticeBox.Location.Y + 20);
-            
+
             StorageBox = new DXCheckBox
             {
                 Parent = this,
@@ -2850,7 +2885,7 @@ namespace Client.Scenes.Views
                 Label = { Text = CEnvir.Language.GuildMemberDialogRepairLabel },
             };
             RepairBox.CheckedChanged += (o, e) => UpdatePermission();
-            RepairBox.Location = new Point(0200 - RepairBox.Size.Width, EditNoticeBox.Location.Y );
+            RepairBox.Location = new Point(0200 - RepairBox.Size.Width, EditNoticeBox.Location.Y);
 
 
             MerchantBox = new DXCheckBox
@@ -2896,7 +2931,7 @@ namespace Client.Scenes.Views
             KickButton.MouseClick += (o, e) =>
             {
                 DXMessageBox box = new DXMessageBox(string.Format(CEnvir.Language.GuildMemberDialogKickButtonConfirmMsg, MemberNameLabel.Text), CEnvir.Language.GuildMemberDialogKickButtonConfirmCaption, DXMessageBoxButtons.YesNo);
-                
+
                 box.YesButton.MouseClick += (o1, e1) =>
                 {
                     CEnvir.Enqueue(new C.GuildKickMember { Index = MemberIndex });
@@ -3095,9 +3130,9 @@ namespace Client.Scenes.Views
 
             AfterDraw += GuildCastlePanel_AfterDraw;
 
-            CastleNameLabel =  new DXLabel
+            CastleNameLabel = new DXLabel
             {
-                AutoSize =  false,
+                AutoSize = false,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
                 ForeColour = Color.FromArgb(198, 166, 99),
@@ -3198,5 +3233,60 @@ namespace Client.Scenes.Views
             else
                 CastleDateLabel.Text = Functions.ToString(Castle.WarDate - CEnvir.Now, true);
         }
+
+        #region IDisposable
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                CastleChanged = null;
+                _Castle = null;
+
+                if (CastleNameLabel != null)
+                {
+                    if (!CastleNameLabel.IsDisposed)
+                        CastleNameLabel.Dispose();
+
+                    CastleNameLabel = null;
+                }
+
+                if (CastleOwnerLabel != null)
+                {
+                    if (!CastleOwnerLabel.IsDisposed)
+                        CastleOwnerLabel.Dispose();
+
+                    CastleOwnerLabel = null;
+                }
+
+                if (CastleDateLabel != null)
+                {
+                    if (!CastleDateLabel.IsDisposed)
+                        CastleDateLabel.Dispose();
+
+                    CastleDateLabel = null;
+                }
+
+                if (ItemLabel != null)
+                {
+                    if (!ItemLabel.IsDisposed)
+                        ItemLabel.Dispose();
+
+                    ItemLabel = null;
+                }
+
+                if (RequestButton != null)
+                {
+                    if (!RequestButton.IsDisposed)
+                        RequestButton.Dispose();
+
+                    RequestButton = null;
+                }
+            }
+        }
+
+        #endregion
     }
 }

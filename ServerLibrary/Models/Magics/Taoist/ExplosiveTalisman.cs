@@ -4,8 +4,6 @@ using Server.Envir;
 using System.Collections.Generic;
 using System.Drawing;
 
-using S = Library.Network.ServerPackets;
-
 namespace Server.Models.Magics
 {
     [MagicType(MagicType.ExplosiveTalisman)]
@@ -75,8 +73,7 @@ namespace Server.Models.Magics
 
             if (count > 0)
             {
-                augmentExplosiveTalisman.Cooldown = SEnvir.Now.AddMilliseconds(augmentExplosiveTalisman.Info.Delay);
-                Player.Enqueue(new S.MagicCooldown { InfoIndex = augmentExplosiveTalisman.Info.Index, Delay = augmentExplosiveTalisman.Info.Delay });
+                MagicCooldown(augmentExplosiveTalisman);
             }
 
             if (target == null)

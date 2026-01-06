@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Library;
+using System;
 using System.IO;
 using System.Security.Cryptography;
-using Library;
 
 namespace Server.Envir
 {
@@ -17,7 +17,7 @@ namespace Server.Envir
         public static int MaxPacket { get; set; } = 50;
         public static TimeSpan PacketBanTime { get; set; } = TimeSpan.FromMinutes(5);
         public static string SyncRemotePreffix { get; set; } = "http://127.0.0.1:80/Command/";
-     
+
         [ConfigSection("System")]
         public static bool CheckVersion { get; set; } = true;
         public static string VersionPath { get; set; } = @".\Zircon.dll";
@@ -131,6 +131,9 @@ namespace Server.Envir
         public static int StrengthLossRate { get; set; } = 20;
         public static bool DropVisibleOtherPlayers { get; set; } = false;
         public static bool EnableFortune { get; set; } = true;
+        public static bool AdminStartInGamemasterMode { get; set; } = true;
+        public static bool AdminStartInObserverMode { get; set; } = true;
+        public static bool AdminStartInSupermanMode { get; set; } = true;
 
         [ConfigSection("Rates")]
         public static int ExperienceRate { get; set; } = 0;
@@ -143,7 +146,7 @@ namespace Server.Envir
         public static bool FishEnablePerfectCatch { get; set; } = true;
         public static int FishNibbleChanceBase { get; set; } = 10;
         public static int FishPointsRequired { get; set; } = 50;
-        public static int FishPointSuccessRewardMin { get; set; } = 2; 
+        public static int FishPointSuccessRewardMin { get; set; } = 2;
         public static int FishPointSuccessRewardMax { get; set; } = 5;
         public static int FishPointFailureRewardMin { get; set; } = 0;
         public static int FishPointFailureRewardMax { get; set; } = 5;
@@ -154,8 +157,10 @@ namespace Server.Envir
             {
                 if (File.Exists(VersionPath))
                     using (FileStream stream = File.OpenRead(VersionPath))
-                    using (MD5 md5 = MD5.Create())
-                        ClientHash = md5.ComputeHash(stream);
+                    using (SHA256 sha256 = SHA256.Create())
+                    {
+                        ClientHash = sha256.ComputeHash(stream);
+                    }
                 else ClientHash = null;
             }
             catch (Exception ex)

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using S = Library.Network.ServerPackets;
 
 namespace Server.Models
 {
@@ -46,7 +47,7 @@ namespace Server.Models
         }
         public virtual bool HasMassacre => false;
 
-        public MagicObject(PlayerObject player, UserMagic magic) 
+        public MagicObject(PlayerObject player, UserMagic magic)
         {
             Player = player;
             Magic = magic;
@@ -70,6 +71,21 @@ namespace Server.Models
 
         public virtual bool CheckCost()
         {
+            if (Player.Superman)
+            {
+                return true;
+            }
+
+            if (Magic.Info.School == MagicSchool.Discipline)
+            {
+                if (Magic.Cost > Player.CurrentFP)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
             if (Magic.Cost > Player.CurrentMP)
             {
                 return false;
@@ -90,6 +106,11 @@ namespace Server.Models
 
         public virtual void MagicConsume()
         {
+            if (Player.Superman)
+            {
+                return;
+            }
+
             if (Magic.Info.School == MagicSchool.Discipline)
             {
                 Player.ChangeFP(-Magic.Cost);
@@ -124,7 +145,7 @@ namespace Server.Models
 
         public virtual void RefreshToggle()
         {
-            
+
         }
 
         public virtual void Toggle(bool canUse)
@@ -187,6 +208,13 @@ namespace Server.Models
         protected DateTime GetDelayFromDistance(int start, MapObject target)
         {
             var delay = SEnvir.Now.AddMilliseconds(start + Functions.Distance(Player.CurrentLocation, target.CurrentLocation) * 48);
+
+            return delay;
+        }
+
+        protected DateTime GetDelayFromDistance(int start, Cell cell)
+        {
+            var delay = SEnvir.Now.AddMilliseconds(start + Functions.Distance(Player.CurrentLocation, cell.Location) * 48);
 
             return delay;
         }
@@ -307,6 +335,20 @@ namespace Server.Models
         {
             return null;
         }
+
+        public void MagicCooldown(UserMagic magic = null, int? delayInMilliseconds = null)
+        {
+            if (Player.Superman)
+            {
+                return;
+            }
+
+            var cooldownMagic = magic ?? Magic;
+            var cooldownDelay = delayInMilliseconds ?? cooldownMagic.Info.Delay;
+
+            cooldownMagic.Cooldown = SEnvir.Now.AddMilliseconds(cooldownDelay);
+            Player.Enqueue(new S.MagicCooldown { InfoIndex = cooldownMagic.Info.Index, Delay = cooldownDelay });
+        }
     }
 
     public class MagicList : Dictionary<MagicType, MagicObject>
@@ -336,12 +378,12 @@ namespace Server.Models
         /// <summary>
         /// List of locations spell has locked on to
         /// </summary>
-        public List<Point> Locations = new ();
+        public List<Point> Locations = new();
 
         /// <summary>
         /// List of targets spell has locked on to
         /// </summary>
-        public List<uint> Targets = new ();
+        public List<uint> Targets = new();
 
         /// <summary>
         /// Targetted object for the spell. Will be used to automatically update players direction to face target
@@ -349,7 +391,7 @@ namespace Server.Models
         public MapObject Ob = null;
 
         /// <summary>
-        /// has the spell been cast, sends cooldown to the client
+        /// Has the spell been cast, sends cooldown to the client
         /// </summary>
         public bool Cast = true;
 

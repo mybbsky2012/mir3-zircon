@@ -30,6 +30,9 @@ namespace Library
         public static DBCollection<CurrencyInfo> CurrencyInfoList;
         public static DBCollection<DisciplineInfo> DisciplineInfoList;
         public static DBCollection<FameInfo> FameInfoList;
+        public static DBCollection<BundleInfo> BundleInfoList;
+        public static DBCollection<LootBoxInfo> LootBoxInfoList;
+        public static DBCollection<HelpInfo> HelpInfoList;
 
         public static Random Random = new Random();
 
@@ -98,6 +101,10 @@ namespace Library
             MarketPlaceFee = 0,
             AccessoryLevelCost = 0,
             AccessoryResetCost = 1000000,
+
+            LootBoxRerollCount = 5,
+            LootBoxRerollCost = 500,
+            LootBoxRevealCost = 200,
 
             CraftWeaponPercentCost = 1000000,
 
@@ -373,6 +380,8 @@ namespace Library
         public int HermitPoints { get; set; }
 
         public float DayTime { get; set; }
+        public TimeOfDay TimeOfDay { get; set; }
+        public string TimeOfDayLabel { get; set; }
         public bool AllowGroup { get; set; }
 
         public List<ClientFriendInfo> Friends { get; set; }
@@ -483,8 +492,8 @@ namespace Library
             NextReset = Time.Now + ResetCoolDown;
         }
 
-        public ClientUserItem()
-        { }
+        public ClientUserItem() { }
+
         public ClientUserItem(ItemInfo info, long count)
         {
             Info = info;
@@ -494,6 +503,7 @@ namespace Library
             Level = 1;
             AddedStats = new Stats();
         }
+
         public ClientUserItem(ClientUserItem item, long count)
         {
             Info = item.Info;
@@ -523,7 +533,6 @@ namespace Library
 
             AddedStats = new Stats(item.AddedStats);
         }
-
 
         public long Price(long count)
         {
@@ -823,6 +832,7 @@ namespace Library
         public Stats Stats { get; set; }
         public bool Pause { get; set; }
         public int ItemIndex { get; set; }
+        public int Extra { get; set; }
     }
 
     public class ClientRefineInfo
@@ -1140,6 +1150,34 @@ namespace Library
         public int Level { get; set; }
         public long Experience { get; set; }
         public List<ClientUserMagic> Magics { get; set; }
+    }
+
+    public class ClientBundleItemInfo
+    {
+        public int ItemIndex { get; set; }
+        public ItemInfo ItemInfo;
+        public int Amount { get; set; }
+        public int Slot { get; set; }
+
+        [CompleteObject]
+        public void OnComplete()
+        {
+            ItemInfo = Globals.ItemInfoList.Binding.First(x => x.Index == ItemIndex);
+        }
+    }
+
+    public class ClientLootBoxItemInfo
+    {
+        public int ItemIndex { get; set; }
+        public ItemInfo ItemInfo;
+        public int Amount { get; set; }
+        public int Slot { get; set; }
+
+        [CompleteObject]
+        public void OnComplete()
+        {
+            ItemInfo = Globals.ItemInfoList.Binding.FirstOrDefault(x => x.Index == ItemIndex);
+        }
     }
 }
 

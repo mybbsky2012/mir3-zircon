@@ -1,5 +1,6 @@
-﻿using Library;
-using SlimDX.DirectSound;
+﻿using Client.Rendering;
+using Library;
+using SharpDX.DirectSound;
 using System;
 using System.Collections.Generic;
 
@@ -69,6 +70,9 @@ namespace Client.Envir
             [SoundIndex.GlaiveAttack] = new DXSound(SoundPath + @"63.wav", SoundType.Player),
             [SoundIndex.ClawAttack] = new DXSound(SoundPath + @"64.wav", SoundType.Player),
 
+            [SoundIndex.MiningHit] = new DXSound(SoundPath + @"125.wav", SoundType.Player),
+            [SoundIndex.MiningStruck] = new DXSound(SoundPath + @"126.wav", SoundType.Player),
+
             [SoundIndex.MaleStruck] = new DXSound(SoundPath + @"138.wav", SoundType.Player),
             [SoundIndex.FemaleStruck] = new DXSound(SoundPath + @"139.wav", SoundType.Player),
             [SoundIndex.MaleDie] = new DXSound(SoundPath + @"144.wav", SoundType.Player),
@@ -132,15 +136,17 @@ namespace Client.Envir
             [SoundIndex.DefianceStart] = new DXSound(SoundPath + @"M106-3.wav", SoundType.Magic),
 
             [SoundIndex.ReflectDamageStart] = new DXSound(SoundPath + @"M126-0.wav", SoundType.Magic),
-            
+
             [SoundIndex.InvincibilityStart] = new DXSound(SoundPath + @"M137-2.wav", SoundType.Magic),
-            
+
             [SoundIndex.AssaultStart] = new DXSound(SoundPath + @"M109-1.wav", SoundType.Magic),
 
             [SoundIndex.SwiftBladeEnd] = new DXSound(SoundPath + @"M131-2.wav", SoundType.Magic),
-            
-            [SoundIndex.ElementalSwordStart] = new DXSound(SoundPath + @"cs252-1.wav", SoundType.Magic),
-            [SoundIndex.ElementalSwordEnd] = new DXSound(SoundPath + @"cs252-2.wav", SoundType.Magic),
+
+            [SoundIndex.SeismicSlam] = new DXSound(SoundPath + @"m140-1.wav", SoundType.Magic),
+
+            [SoundIndex.ElementalSwordsStart] = new DXSound(SoundPath + @"cs252-1.wav", SoundType.Magic),
+            [SoundIndex.ElementalSwordsEnd] = new DXSound(SoundPath + @"cs252-2.wav", SoundType.Magic),
 
             [SoundIndex.FireBallStart] = new DXSound(SoundPath + @"M1-1.wav", SoundType.Magic),
             [SoundIndex.FireBallTravel] = new DXSound(SoundPath + @"M1-2.wav", SoundType.Magic),
@@ -185,7 +191,8 @@ namespace Client.Envir
             [SoundIndex.TeleportationStart] = new DXSound(SoundPath + @"M21-1.wav", SoundType.Magic),
 
             [SoundIndex.FireWallStart] = new DXSound(SoundPath + @"M22-1.wav", SoundType.Magic),
-            [SoundIndex.FireWallEnd] = new DXSound(SoundPath + @"M22-2.wav", SoundType.Magic),
+            [SoundIndex.FireWallDurationLong] = new DXSound(SoundPath + @"M22-2.wav", SoundType.Magic) { Loop = true },
+            [SoundIndex.FireWallDuration] = new DXSound(SoundPath + @"M22-3.wav", SoundType.Magic) { Loop = true },
 
             [SoundIndex.FireStormStart] = new DXSound(SoundPath + @"M23-1.wav", SoundType.Magic),
             [SoundIndex.FireStormEnd] = new DXSound(SoundPath + @"M23-3.wav", SoundType.Magic),
@@ -197,12 +204,11 @@ namespace Client.Envir
             [SoundIndex.FrozenEarthEnd] = new DXSound(SoundPath + @"M53-3.wav", SoundType.Magic),
 
             [SoundIndex.BlowEarthStart] = new DXSound(SoundPath + @"M73-1.wav", SoundType.Magic),
-            [SoundIndex.BlowEarthTravel] = new DXSound(SoundPath + @"M73-3.wav", SoundType.Magic),
+            [SoundIndex.BlowEarthTravel] = new DXSound(SoundPath + @"M73-2.wav", SoundType.Magic),
             [SoundIndex.BlowEarthEnd] = new DXSound(SoundPath + @"M73-3.wav", SoundType.Magic),
 
-
             [SoundIndex.ExpelUndeadStart] = new DXSound(SoundPath + @"M32-1.wav", SoundType.Magic),
-            [SoundIndex.ExpelUndeadStart] = new DXSound(SoundPath + @"M32-3.wav", SoundType.Magic),
+            [SoundIndex.ExpelUndeadEnd] = new DXSound(SoundPath + @"M32-3.wav", SoundType.Magic),
             [SoundIndex.MagicShieldStart] = new DXSound(SoundPath + @"M31-1.wav", SoundType.Magic),
 
             [SoundIndex.IceStormStart] = new DXSound(SoundPath + @"M33-1.wav", SoundType.Magic),
@@ -216,7 +222,9 @@ namespace Client.Envir
 
             [SoundIndex.ChainLightningStart] = new DXSound(SoundPath + @"M111-1.wav", SoundType.Magic),
             [SoundIndex.ChainLightningEnd] = new DXSound(SoundPath + @"M111-3.wav", SoundType.Magic),
-            
+
+            [SoundIndex.TempestDuration] = new DXSound(SoundPath + @"M114-3.wav", SoundType.Magic) { Loop = true },
+
             [SoundIndex.FrostBiteStart] = new DXSound(SoundPath + @"m135-2.wav", SoundType.Magic),
 
             [SoundIndex.ParasiteTravel] = new DXSound(SoundPath + @"m139-1.wav", SoundType.Magic),
@@ -300,14 +308,14 @@ namespace Client.Envir
             [SoundIndex.SweetBrier] = new DXSound(SoundPath + @"as_168.wav", SoundType.Magic),
             [SoundIndex.SweetBrierMale] = new DXSound(SoundPath + @"as_168-m.wav", SoundType.Magic),
             [SoundIndex.SweetBrierFemale] = new DXSound(SoundPath + @"as_168-f.wav", SoundType.Magic),
-            
+
             [SoundIndex.CalamityOfFullMoon] = new DXSound(SoundPath + @"as_171.wav", SoundType.Magic),
             [SoundIndex.WaningMoon] = new DXSound(SoundPath + @"as_176.wav", SoundType.Magic),
 
             [SoundIndex.Karma] = new DXSound(SoundPath + @"as_172.wav", SoundType.Magic),
             [SoundIndex.TheNewBeginning] = new DXSound(SoundPath + @"as_174.wav", SoundType.Magic),
             [SoundIndex.Concentration] = new DXSound(SoundPath + @"M134-2.wav", SoundType.Magic),
-            
+
             [SoundIndex.SummonPuppet] = new DXSound(SoundPath + @"as_164-1.wav", SoundType.Magic),
 
             [SoundIndex.WraithGripStart] = new DXSound(SoundPath + @"as_159-1.wav", SoundType.Magic),
@@ -321,7 +329,27 @@ namespace Client.Envir
 
             [SoundIndex.CorpseExploderEnd] = new DXSound(SoundPath + @"m125-2.wav", SoundType.Magic),
 
+            [SoundIndex.Hemorrhage] = new DXSound(SoundPath + @"43621.wav", SoundType.Magic),
             [SoundIndex.ChainofFireExplode] = new DXSound(SoundPath + @"cs261-1.wav", SoundType.Magic),
+
+            [SoundIndex.HundredFist] = new DXSound(SoundPath + @"37380.wav", SoundType.Magic),
+            [SoundIndex.OffensiveBlow] = new DXSound(SoundPath + @"37400.wav", SoundType.Magic),
+            [SoundIndex.IceAuraTravel] = new DXSound(SoundPath + @"37410.wav", SoundType.Magic),
+            [SoundIndex.IceDragonTravel] = new DXSound(SoundPath + @"37440.wav", SoundType.Magic),
+            [SoundIndex.IceDragonBreak] = new DXSound(SoundPath + @"37450.wav", SoundType.Magic),
+            [SoundIndex.BindingTalisman] = new DXSound(SoundPath + @"37460.wav", SoundType.Magic),
+            [SoundIndex.BrainStorm] = new DXSound(SoundPath + @"37470.wav", SoundType.Magic),
+            [SoundIndex.FlamingDaggers] = new DXSound(SoundPath + @"37510.wav", SoundType.Magic),
+            [SoundIndex.Shredding] = new DXSound(SoundPath + @"37520.wav", SoundType.Magic),
+
+            [SoundIndex.TaecheonSword] = new DXSound(SoundPath + @"40300.wav", SoundType.Magic),
+            [SoundIndex.FireSword] = new DXSound(SoundPath + @"40310.wav", SoundType.Magic),
+            [SoundIndex.IceBreaker] = new DXSound(SoundPath + @"40320.wav", SoundType.Magic),
+            [SoundIndex.FrozenDragon] = new DXSound(SoundPath + @"40330.wav", SoundType.Magic),
+            [SoundIndex.HeavenlySky] = new DXSound(SoundPath + @"40340.wav", SoundType.Magic),
+            [SoundIndex.PoisonCloud] = new DXSound(SoundPath + @"40350.wav", SoundType.Magic),
+            [SoundIndex.FourWheels] = new DXSound(SoundPath + @"40360.wav", SoundType.Magic),
+            [SoundIndex.CrescentMoon] = new DXSound(SoundPath + @"40370.wav", SoundType.Magic),
 
             #endregion
 
@@ -893,7 +921,7 @@ namespace Client.Envir
             [SoundIndex.EscortCommanderAttack] = new DXSound(SoundPath + @"381-2.wav", SoundType.Monster),
             [SoundIndex.EscortCommanderStruck] = new DXSound(SoundPath + @"381-4.wav", SoundType.Monster),
             [SoundIndex.EscortCommanderDie] = new DXSound(SoundPath + @"381-5.wav", SoundType.Monster),
-            
+
             [SoundIndex.FieryDancerAttack] = new DXSound(SoundPath + @"383-2.wav", SoundType.Monster),
             [SoundIndex.FieryDancerStruck] = new DXSound(SoundPath + @"383-4.wav", SoundType.Monster),
             [SoundIndex.FieryDancerDie] = new DXSound(SoundPath + @"383-5.wav", SoundType.Monster),
@@ -950,7 +978,7 @@ namespace Client.Envir
             [SoundIndex.SamaFireGuardianAttack] = new DXSound(SoundPath + @"400-2.wav", SoundType.Monster),
             [SoundIndex.SamaFireGuardianStruck] = new DXSound(SoundPath + @"400-4.wav", SoundType.Monster),
             [SoundIndex.SamaFireGuardianDie] = new DXSound(SoundPath + @"400-5.wav", SoundType.Monster),
-            
+
             [SoundIndex.SamaIceGuardianAttack] = new DXSound(SoundPath + @"398-2.wav", SoundType.Monster),
             [SoundIndex.SamaIceGuardianStruck] = new DXSound(SoundPath + @"398-4.wav", SoundType.Monster),
             [SoundIndex.SamaIceGuardianDie] = new DXSound(SoundPath + @"398-5.wav", SoundType.Monster),
@@ -1044,8 +1072,12 @@ namespace Client.Envir
         }
         public static void StopAllSounds()
         {
-            for (int i = DXManager.SoundList.Count - 1; i >= 0; i--)
-                DXManager.SoundList[i].Stop();
+            List<ISoundCacheItem> sounds = new List<ISoundCacheItem>(RenderingPipelineManager.GetRegisteredSoundCaches());
+
+            for (int i = sounds.Count - 1; i >= 0; i--)
+            {
+                sounds[i].Stop();
+            }
         }
         public static void AdjustVolume()
         {
@@ -1054,8 +1086,12 @@ namespace Client.Envir
         }
         public static void UpdateFlags()
         {
-            for (int i = DXManager.SoundList.Count - 1; i >= 0; i--)
-                DXManager.SoundList[i].UpdateFlags();
+            List<ISoundCacheItem> sounds = new List<ISoundCacheItem>(RenderingPipelineManager.GetRegisteredSoundCaches());
+
+            for (int i = sounds.Count - 1; i >= 0; i--)
+            {
+                sounds[i].UpdateFlags();
+            }
         }
 
         public static int GetVolume(SoundType type)
@@ -1065,19 +1101,19 @@ namespace Client.Envir
             switch (type)
             {
                 case SoundType.System:
-                    volume = Math.Max(0, Math.Min(100, Config.SystemVolume));
+                    volume = Config.SystemVolumeMuted ? 0 : Math.Max(0, Math.Min(100, Config.SystemVolume));
                     break;
                 case SoundType.Music:
-                    volume = Math.Max(0, Math.Min(100, Config.MusicVolume));
+                    volume = Config.MusicVolumeMuted ? 0 : Math.Max(0, Math.Min(100, Config.MusicVolume));
                     break;
                 case SoundType.Player:
-                    volume = Math.Max(0, Math.Min(100, Config.PlayerVolume));
+                    volume = Config.PlayerVolumeMuted ? 0 : Math.Max(0, Math.Min(100, Config.PlayerVolume));
                     break;
                 case SoundType.Monster:
-                    volume = Math.Max(0, Math.Min(100, Config.MonsterVolume));
+                    volume = Config.MonsterVolumeMuted ? 0 : Math.Max(0, Math.Min(100, Config.MonsterVolume));
                     break;
                 case SoundType.Magic:
-                    volume = Math.Max(0, Math.Min(100, Config.MagicVolume));
+                    volume = Config.MagicVolumeMuted ? 0 : Math.Max(0, Math.Min(100, Config.MagicVolume));
                     break;
                 default:
                     volume = 0;
@@ -1092,22 +1128,26 @@ namespace Client.Envir
 
         public static void Unload()
         {
-            for (int i = DXManager.SoundList.Count - 1; i >= 0; i--)
-                DXManager.SoundList[i].DisposeSoundBuffer();
+            List<ISoundCacheItem> sounds = new List<ISoundCacheItem>(RenderingPipelineManager.GetRegisteredSoundCaches());
+
+            for (int i = sounds.Count - 1; i >= 0; i--)
+            {
+                sounds[i].DisposeSoundBuffer();
+            }
 
             if (Device != null)
             {
-                if (!Device.Disposed)
+                if (!Device.IsDisposed)
+                {
                     Device.Dispose();
+                }
 
                 Device = null;
             }
-
-
         }
     }
 
-    
+
     public enum SoundType
     {
         None,

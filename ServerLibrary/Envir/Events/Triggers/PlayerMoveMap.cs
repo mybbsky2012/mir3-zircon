@@ -1,6 +1,5 @@
 ﻿using Library.SystemModels;
 using Server.Models;
-using System.Linq;
 
 namespace Server.Envir.Events.Triggers
 {
@@ -29,12 +28,17 @@ namespace Server.Envir.Events.Triggers
 
         public bool Check(PlayerObject player, PlayerEventTrigger eventTrigger)
         {
+            if (eventTrigger.MapParameter1 == null && eventTrigger.InstanceParameter1 == null)
+            {
+                return false;
+            }
+
             if (eventTrigger.MapParameter1 != null)
             {
                 return IsValidMapCheck(player, eventTrigger);
             }
 
-            return eventTrigger.InstanceParameter1 == null || IsValidInstanceTransition(player, eventTrigger);
+            return IsValidInstanceTransition(player, eventTrigger);
         }
 
         private static bool IsValidMapCheck(PlayerObject player, PlayerEventTrigger eventTrigger)

@@ -32,6 +32,7 @@ namespace Client.Envir.Translations
         public abstract string WeaponEnergyDragonRise { get; set; }
         public abstract string WeaponEnergyBladeStorm { get; set; }
         public abstract string WeaponEnergyDefensiveBlow { get; set; }
+        public abstract string WeaponEnergyOffensiveBlow { get; set; }
         public abstract string LevelIncreased { get; set; }
         public abstract string GainedExperience { get; set; }
         public abstract string LostExperience { get; set; }
@@ -40,6 +41,7 @@ namespace Client.Envir.Translations
         public abstract string ItemGained { get; set; }
         public abstract string ItemsGained { get; set; }
         public abstract string NothingHappen { get; set; }
+        public abstract string NotEnoughCurrency { get; set; }
         public abstract string ItemStatsNewElement { get; set; }
         public abstract string ItemStatsEffected { get; set; }
         public abstract string ItemDurabilityDrop { get; set; }
@@ -95,6 +97,7 @@ namespace Client.Envir.Translations
         public abstract string BuySellNeedGold { get; set; }
         public abstract string QuestSelectReward { get; set; }
         public abstract string CompanionNeedTicket { get; set; }
+        public abstract string CompanionNeedItem { get; set; }
         public abstract string RefineNeedIronOre { get; set; }
         public abstract string RefineNeedSilverOre { get; set; }
         public abstract string RefineNeedDiamond { get; set; }
@@ -132,7 +135,16 @@ namespace Client.Envir.Translations
         public abstract string CommonControlConfigWindowSoundTabLabel { get; set; }
         public abstract string CommonControlConfigWindowGameTabLabel { get; set; }
         public abstract string CommonControlConfigWindowNetworkTabLabel { get; set; }
-        public abstract string CommonControlConfigWindowColoursTabLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabLabel { get; set; }
+        public abstract string CommonControlConfigWindowGraphicsSectionDisplayLabel { get; set; }
+        public abstract string CommonControlConfigWindowGraphicsSectionUsabilityLabel { get; set; }
+        public abstract string CommonControlConfigWindowGraphicsSectionEffectsLabel { get; set; }
+        public abstract string CommonControlConfigWindowSoundsSectionOptionsLabel { get; set; }
+        public abstract string CommonControlConfigWindowSoundsSectionVolumeLabel { get; set; }
+        public abstract string CommonControlConfigWindowGameSectionSettingsLabel { get; set; }
+        public abstract string CommonControlConfigWindowNetworkSectionSettingsLabel { get; set; }
+        public abstract string CommonControlConfigWindowUISectionSettingsLabel { get; set; }
+        public abstract string CommonControlConfigWindowUISectionColoursLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabFullScreenLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabGameSizeLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabVSyncLabel { get; set; }
@@ -141,6 +153,7 @@ namespace Client.Envir.Translations
         public abstract string CommonControlConfigWindowGraphicsTabClipMouseLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabDebugLabelLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabLanguageLabel { get; set; }
+        public abstract string CommonControlConfigWindowGraphicsTabRenderingPipelineLabel { get; set; }
         public abstract string CommonControlConfigWindowSoundTabBackgroundSoundLabel { get; set; }
         public abstract string CommonControlConfigWindowSoundTabSystemVolumeLabel { get; set; }
         public abstract string CommonControlConfigWindowSoundTabMusicVolumeLabel { get; set; }
@@ -153,19 +166,20 @@ namespace Client.Envir.Translations
         public abstract string CommonControlConfigWindowGameTabUserHealthLabel { get; set; }
         public abstract string CommonControlConfigWindowGameTabMonsterHealthLabel { get; set; }
         public abstract string CommonControlConfigWindowGameTabDamageNumbersLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabDrawParticlesLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabDisplayHelmetLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabHideChatBarLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabEscapeCloseAllLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabShiftOpenChatLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabShiftOpenChatHint { get; set; }
+        public abstract string CommonControlConfigWindowGraphicsTabDrawParticlesLabel { get; set; }
+        public abstract string CommonControlConfigWindowGraphicsTabDisplayHelmetLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabHideChatBarLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabEscapeCloseAllLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabShiftOpenChatLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabShiftOpenChatHint { get; set; }
         public abstract string CommonControlConfigWindowGameTabRightClickDeTargetLabel { get; set; }
         public abstract string CommonControlConfigWindowGameTabRightClickDeTargetHint { get; set; }
         public abstract string CommonControlConfigWindowGameTabMonsterBoxVisibleLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabLogChatLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabDrawEffectsLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabDrawWeatherLabel { get; set; }
-        public abstract string CommonControlConfigWindowGameTabKeyBindButtonLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabLogChatLabel { get; set; }
+        public abstract string CommonControlConfigWindowGraphicsTabDrawEffectsLabel { get; set; }
+        public abstract string CommonControlConfigWindowGraphicsTabDrawWeatherLabel { get; set; }
+        public abstract string CommonControlConfigWindowGameTabShowTargetOutlineLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabKeyBindButtonLabel { get; set; }
         public abstract string CommonControlConfigWindowNetworkTabUseNetworkConfigLabel { get; set; }
         public abstract string CommonControlConfigWindowNetworkTabUseIPAddressLabel { get; set; }
         public abstract string CommonControlConfigWindowNetworkTabUsePortLabel { get; set; }
@@ -220,7 +234,7 @@ namespace Client.Envir.Translations
         public abstract string LoginDialogChangePasswordButtonLabel { get; set; }
         public abstract string LoginDialogRememberCheckBoxLabel { get; set; }
         public abstract string LoginDialogForgotPasswordLabel { get; set; }
-        
+
         public abstract string NewAccountDialogTitle { get; set; }
         public abstract string NewAccountDialogCreateButtonLabel { get; set; }
         public abstract string NewAccountDialogEMailLabel { get; set; }
@@ -457,6 +471,8 @@ namespace Client.Envir.Translations
         public abstract string FortuneCheckerRowCheckButtonConfirmMessage { get; set; }
         public abstract string FortuneCheckerRowCheckButtonConfirmCaption { get; set; }
 
+        public abstract string HelpDialogTitle { get; set; }
+
         public abstract string GroupDialogTitle { get; set; }
         public abstract string GroupDialogAllowGroupButtonAllowingHint { get; set; }
         public abstract string GroupDialogAllowGroupButtonNotAllowingHint { get; set; }
@@ -508,9 +524,9 @@ namespace Client.Envir.Translations
         public abstract string GuildDialogManageTabTreasuryLabel { get; set; }
         public abstract string GuildDialogManageTabTreasuryChangeButtonLabel { get; set; }
         public abstract string GuildDialogManageTabTreasuryTaxConfirmMessage { get; set; }
-       
+
         public abstract string GuildDialogManageTabMembershipMembersIncreaseButtonLabel { get; set; }
-        
+
         public abstract string GuildDialogManageTabUpgradeStorageLabel { get; set; }
         public abstract string GuildDialogManageTabUpgradeStorageIncreaseButtonLabel { get; set; }
         public abstract string GuildDialogManageTabUpgradeStorageConfirmMessage { get; set; }
@@ -558,6 +574,7 @@ namespace Client.Envir.Translations
 
         public abstract string MenuDialogTitle { get; set; }
         public abstract string MenuDialogSettingsButtonLabel { get; set; }
+        public abstract string MenuDialogHelpButtonLabel { get; set; }
         public abstract string MenuDialogGuildButtonLabel { get; set; }
         public abstract string MenuDialogStorageButtonLabel { get; set; }
         public abstract string MenuDialogRankingButtonLabel { get; set; }
@@ -565,6 +582,7 @@ namespace Client.Envir.Translations
         public abstract string MenuDialogLeaveButtonLabel { get; set; }
 
         public abstract string MenuDialogSettingsButtonHint { get; set; }
+        public abstract string MenuDialogHelpButtonHint { get; set; }
         public abstract string MenuDialogGuildButtonHint { get; set; }
         public abstract string MenuDialogStorageButtonHint { get; set; }
         public abstract string MenuDialogRankingButtonHint { get; set; }
@@ -708,5 +726,25 @@ namespace Client.Envir.Translations
         public abstract string TradeDialogUserLabel { get; set; }
         public abstract string TradeDialogPlayerLabel { get; set; }
         public abstract string TradeDialogGoldLabel { get; set; }
+
+        public abstract string LootBoxRerollMessage { get; set; }
+        public abstract string LootBoxRerollTitle { get; set; }
+        public abstract string LootBoxItemChoiceMessage { get; set; }
+        public abstract string LootBoxItemChoiceTitle { get; set; }
+        public abstract string LootBoxTakeItemsMessage { get; set; }
+        public abstract string LootBoxTakeItemsTitle { get; set; }
+        public abstract string LootBoxShuffleMessage { get; set; }
+        public abstract string LootBoxOpenDescription { get; set; }
+        public abstract string LootBoxOpenMessage { get; set; }
+        public abstract string LootBoxOpenTitle { get; set; }
+        public abstract string LootBoxRerollCountLabel { get; set; }
+        public abstract string LootBoxRerollButtonLabel { get; set; }
+        public abstract string LootBoxConfirmChoiceButtonLabel { get; set; }
+        public abstract string LootBoxTakeItemsButtonLabel { get; set; }
+
+        public abstract string BundleTitle { get; set; }
+        public abstract string BundleConfirmRandomButtonLabel { get; set; }
+        public abstract string BundleConfirmAllButtonLabel { get; set; }
+        public abstract string BundleConfirmOneButtonLabel { get; set; }
     }
 }

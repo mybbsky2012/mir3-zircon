@@ -39,6 +39,7 @@ namespace Client.Models
         public float BlendRate = 0.7F;
         public bool UseOffSet = true;
         public bool Loop = false;
+        public int CurrentLoopCount = 0;
 
         public ParticleEmitter _particleEmitter;
 
@@ -61,7 +62,7 @@ namespace Client.Models
             set
             {
                 if (_DrawY == value) return;
-                
+
                 _DrawY = value;
                 GameScene.Game.MapControl.TextureValid = false;
             }
@@ -74,7 +75,7 @@ namespace Client.Models
             set
             {
                 if (_DrawFrame == value) return;
-                
+
                 _DrawFrame = value;
                 GameScene.Game.MapControl.TextureValid = false;
                 FrameAction?.Invoke();
@@ -88,11 +89,11 @@ namespace Client.Models
 
         public int Skip { get; set; }
         public MirDirection Direction { get; set; }
-        
+
         public Color[] LightColours;
         public int StartLight, EndLight;
 
-        public float FrameLight 
+        public float FrameLight
         {
             get
             {
@@ -128,7 +129,7 @@ namespace Client.Models
                 return temp;
             }
         }
-        
+
         public MirEffect(int startIndex, int frameCount, TimeSpan frameDelay, LibraryFile file, int startLight, int endLight, Color lightColour)
         {
             StartIndex = startIndex;
@@ -156,8 +157,7 @@ namespace Client.Models
         public virtual void Process()
         {
             if (CEnvir.Now < StartTime) return;
-            
-            
+
             if (Target != null)
             {
                 DrawX = Target.DrawX + AdditionalOffSet.X;
@@ -184,13 +184,23 @@ namespace Client.Models
             FrameIndex = frame;
             DrawFrame = FrameIndex + StartIndex + (int)Direction * Skip;
         }
-    
+
         protected virtual int GetFrame()
         {
             TimeSpan elapsed = CEnvir.Now - StartTime;
 
-            if (Loop)
+            if (!Loop)
+            {
+                CurrentLoopCount = 0;
+            }
+            else
+            {
+                // Calculate how many full loops have completed
+                CurrentLoopCount = (int)(elapsed.Ticks / TotalDuration.Ticks);
+
+                // Keep elapsed only within the current loop
                 elapsed = TimeSpan.FromTicks(elapsed.Ticks % TotalDuration.Ticks);
+            }
 
             if (Reversed)
             {
@@ -219,7 +229,7 @@ namespace Client.Models
         public virtual void Draw()
         {
             if (CEnvir.Now < StartTime || Library == null) return;
-            
+
             if (Blend)
                 Library.DrawBlend(DrawFrame, DrawX, DrawY, DrawColour, UseOffSet, BlendRate, ImageType.Image);
             else

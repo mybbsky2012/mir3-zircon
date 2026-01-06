@@ -1,10 +1,10 @@
 ﻿using Client.Envir;
 using Client.Scenes;
 using Library;
-using SlimDX;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Numerics;
 
 namespace Client.Models.Particles
 {
@@ -35,7 +35,7 @@ namespace Client.Models.Particles
                 Vector2 right = new(GameScene.Game.Size.Width, random.Next(GameScene.Game.Size.Height));
 
                 Vector2 position = spawnTop ? top : right;
-                Vector2 velocity = new (-1, 5);
+                Vector2 velocity = new(-1, 5);
 
                 float opacity = 1F;
 

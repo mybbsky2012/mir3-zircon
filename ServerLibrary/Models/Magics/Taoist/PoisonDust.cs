@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 
-using S = Library.Network.ServerPackets;
-
 namespace Server.Models.Magics
 {
     [MagicType(MagicType.PoisonDust)]
@@ -81,8 +79,7 @@ namespace Server.Models.Magics
 
             if (count > 0)
             {
-                greaterPoisonDust.Cooldown = SEnvir.Now.AddMilliseconds(greaterPoisonDust.Info.Delay);
-                Player.Enqueue(new S.MagicCooldown { InfoIndex = greaterPoisonDust.Info.Index, Delay = greaterPoisonDust.Info.Delay });
+                MagicCooldown(greaterPoisonDust);
             }
 
             if (target == null)

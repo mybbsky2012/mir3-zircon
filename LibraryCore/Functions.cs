@@ -3,9 +3,7 @@ using MirDB;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Library
 {
@@ -121,7 +119,7 @@ namespace Library
         public static MirAnimation GetAttackAnimation(MirClass @class, int weaponShape, MagicType magicType)
         {
             MirAnimation animation;
-     
+
             switch (magicType)
             {
                 case MagicType.Slaying:
@@ -132,6 +130,7 @@ namespace Library
                     break;
                 case MagicType.HalfMoon:
                 case MagicType.DestructiveSurge:
+                case MagicType.OffensiveBlow:
                     animation = MirAnimation.Combat4;
                     break;
                 case MagicType.DragonRise:
@@ -189,7 +188,6 @@ namespace Library
             {
                 case MagicType.Beckon:
                 case MagicType.MassBeckon:
-                case MagicType.ElementalSwords:
 
                 case MagicType.FireBall:
                 case MagicType.IceBolt:
@@ -203,6 +201,8 @@ namespace Library
                 case MagicType.FrozenEarth:
                 case MagicType.MeteorShower:
                 case MagicType.LightningStrike:
+                case MagicType.IceAura:
+                case MagicType.IceDragon:
 
                 case MagicType.ExplosiveTalisman:
                 case MagicType.EvilSlayer:
@@ -220,11 +220,18 @@ namespace Library
                 case MagicType.CorpseExploder:
                 case MagicType.SoulResonance:
                 case MagicType.SearingLight:
+                case MagicType.BindingTalisman:
+                case MagicType.BrainStorm:
 
                 case MagicType.Hemorrhage:
+                case MagicType.FlamingDaggers:
+                case MagicType.Shredding:
                     return MirAnimation.Combat1;
 
                 case MagicType.Interchange:
+                case MagicType.ElementalSwords:
+                case MagicType.TaecheonSword:
+                case MagicType.FireSword:
 
                 case MagicType.Repulsion:
                 case MagicType.ElectricShock:
@@ -252,6 +259,8 @@ namespace Library
                 case MagicType.SuperiorMagicShield:
                 case MagicType.IceRain:
                 case MagicType.Tornado:
+                case MagicType.IceBreaker:
+                case MagicType.FrozenDragon:
 
                 case MagicType.Heal:
                 case MagicType.PoisonDust:
@@ -271,6 +280,8 @@ namespace Library
                 case MagicType.CursedDoll:
                 case MagicType.DarkSoulPrison:
                 case MagicType.SummonDead:
+                case MagicType.HeavenlySky:
+                case MagicType.PoisonCloud:
                     return MirAnimation.Combat2;
 
                 case MagicType.ElementalHurricane:
@@ -279,6 +290,8 @@ namespace Library
                 case MagicType.PoisonousCloud:
                 case MagicType.SummonPuppet:
                 case MagicType.Containment:
+                case MagicType.FourWheels:
+                case MagicType.CrescentMoon:
                     return MirAnimation.Combat14;
 
                 case MagicType.DragonRepulse:
@@ -287,6 +300,9 @@ namespace Library
                 case MagicType.ThunderKick:
                 case MagicType.CombatKick:
                     return MirAnimation.Combat7;
+
+                case MagicType.HundredFist:
+                    return MirAnimation.Combat8;
 
                 case MagicType.Cloak:
                 case MagicType.WraithGrip:
@@ -440,6 +456,27 @@ namespace Library
 
             return source.Y < dest.Y ? MirDirection.Down : MirDirection.Up;
         }
+
+        public static bool IsStraightEightDirection(Point source, Point dest)
+        {
+            int dx = dest.X - source.X;
+            int dy = dest.Y - source.Y;
+
+            // Same point (no direction)
+            if (dx == 0 && dy == 0)
+                return false;
+
+            // Cardinal directions
+            if (dx == 0 || dy == 0)
+                return true;
+
+            // Diagonal directions
+            if (Math.Abs(dx) == Math.Abs(dy))
+                return true;
+
+            return false;
+        }
+
         public static double Distance(PointF p1, PointF p2)
         {
             double x = p2.X - p1.X;
@@ -576,6 +613,12 @@ namespace Library
             return (int)(angle / 22.5F);
         }
 
+        /// <summary>
+        /// Converts a TimeSpan into a human-readable string (e.g., "2 Hours 30 Minutes").
+        /// </summary>
+        /// <param name="time">The TimeSpan to convert.</param>
+        /// <param name="details">If true, includes smaller time units (e.g., "2 Hours 30 Minutes").</param>
+        /// <param name="small">If true, uses short labels (e.g., "2 Hrs" instead of "2 Hours").</param>
         public static string ToString(TimeSpan time, bool details, bool small = false)
         {
             string textD = null;
@@ -583,32 +626,38 @@ namespace Library
             string textM = null;
             string textS = null;
 
+            // Days
             if (time.Days >= 2) textD = $"{time.Days} {(small ? "Ds" : "Days")}";
-            else if (time.Days >= 1) textD = $"{time.Days} {(small ? "D" : "Day")}";
+            else if (time.Days == 1) textD = $"{time.Days} {(small ? "D" : "Day")}";
 
+            // Hours
             if (time.Hours >= 2) textH = $"{time.Hours} {(small ? "Hrs" : "Hours")}";
-            else if (time.Hours >= 1) textH = $"{time.Hours} {(small ? "H" : "Hour")}";
+            else if (time.Hours == 1) textH = $"{time.Hours} {(small ? "H" : "Hour")}";
 
+            // Minutes
             if (time.Minutes >= 2) textM = $"{time.Minutes} {(small ? "Mins" : "Minutes")}";
-            else if (time.Minutes >= 1) textM = $"{time.Minutes} {(small ? "Min" : "Minute")}";
+            else if (time.Minutes == 1) textM = $"{time.Minutes} {(small ? "Min" : "Minute")}";
 
+            // Seconds
             if (time.Seconds >= 2) textS = $"{time.Seconds} {(small ? "Secs" : "Seconds")}";
-            else if (time.Seconds >= 1) textS = $"{time.Seconds} {(small ? "Sec" : "Second")}";
-            else if (time.TotalSeconds > 0) textS = "less than a second";
+            else if (time.Seconds == 1) textS = $"{time.Seconds} {(small ? "Sec" : "Second")}";
+            else if (time.TotalSeconds > 0 && time.TotalSeconds < 1)
+                textS = "less than a second";
 
+            // Return the appropriate level of detail
             if (!details)
-                return textD ?? textH ?? textM ?? textS;
+                return textD ?? textH ?? textM ?? textS ?? "0 Seconds";
 
             if (textD != null)
-                return textD + " " + (textH ?? textM ?? textS);
+                return textD + " " + (textH ?? textM ?? textS ?? string.Empty);
 
             if (textH != null)
-                return textH + " " + (textM ?? textS);
+                return textH + " " + (textM ?? textS ?? string.Empty);
 
             if (textM != null)
-                return textM + " " + textS;
+                return textM + " " + (textS ?? string.Empty);
 
-            return textS ?? string.Empty;
+            return textS ?? "0 Seconds";
         }
 
         public static string RandomString(Random Random, int length)
@@ -729,6 +778,21 @@ namespace Library
             result = result.Trim();
 
             return result;
+        }
+
+        public static void Shuffle<T>(this IList<T> list, int seed)
+        {
+            var rng = new Random(seed); // Use the provided number as seed
+            int n = list.Count;
+
+            // Fisher–Yates shuffle algorithm
+            while (n > 1)
+            {
+                n--;
+                int k = rng.Next(n + 1); // Random index
+                                         // Swap elements at k and n
+                (list[k], list[n]) = (list[n], list[k]);
+            }
         }
     }
 }

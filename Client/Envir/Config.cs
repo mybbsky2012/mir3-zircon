@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Client.Rendering;
 using Library;
+using System;
+using System.Drawing;
 
 namespace Client.Envir
 {
@@ -31,7 +28,9 @@ namespace Client.Envir
         public static bool FullScreen { get; set; } = true;
         public static bool VSync { get; set; }
         public static bool LimitFPS { get; set; }
+        public static bool ExtendedLogin { get; set; }
         public static Size GameSize { get; set; } = IntroSceneSize;
+        public static string RenderingPipeline { get; set; } = RenderingPipelineIds.SharpDXD3D9;
         public static TimeSpan CacheDuration { get; set; } = TimeSpan.FromMinutes(30);
         public static string FontName { get; set; } = "MS Sans Serif";
         public static string MapPath { get; set; } = @".\Map\";
@@ -47,10 +46,15 @@ namespace Client.Envir
         public static bool SoundInBackground { get; set; } = true;
         public static int SoundOverLap { get; set; } = 5;
         public static int SystemVolume { get; set; } = 25;
+        public static bool SystemVolumeMuted { get; set; } = false;
         public static int MusicVolume { get; set; } = 25;
+        public static bool MusicVolumeMuted { get; set; } = false;
         public static int PlayerVolume { get; set; } = 25;
+        public static bool PlayerVolumeMuted { get; set; } = false;
         public static int MonsterVolume { get; set; } = 25;
+        public static bool MonsterVolumeMuted { get; set; } = false;
         public static int MagicVolume { get; set; } = 25;
+        public static bool MagicVolumeMuted { get; set; } = false;
 
         [ConfigSection("Login")]
         public static bool RememberDetails { get; set; } = false;
@@ -61,6 +65,7 @@ namespace Client.Envir
         public static bool DrawEffects { get; set; } = true;
         public static bool DrawParticles { get; set; } = false;
         public static bool DrawWeather { get; set; } = true;
+        public static bool ShowTargetOutline { get; set; } = true;
         public static bool ShowItemNames { get; set; } = true;
         public static bool ShowMonsterNames { get; set; } = true;
         public static bool ShowPlayerNames { get; set; } = true;
@@ -72,6 +77,7 @@ namespace Client.Envir
         public static bool SpecialRepair { get; set; } = true;
         public static bool RightClickDeTarget { get; set; } = true;
         public static bool HideChatBar { get; set; } = true;
+        public static bool ShowMagicBarFrames { get; set; } = true;
 
         public static bool MonsterBoxExpanded { get; set; } = true;
         public static bool MonsterBoxVisible { get; set; } = true;

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using S = Library.Network.ServerPackets;
 
 
@@ -45,7 +46,7 @@ namespace Server.Models
             }
 
             if (SEnvir.Now < TickTime) return;
-            
+
             if (TickCount-- <= 0)
             {
                 switch (Effect)
@@ -61,7 +62,6 @@ namespace Server.Models
                             MapObject ob = CurrentCell.Objects[i];
 
                             if (!monster.CanAttackTarget(ob)) continue;
-
 
                             monster.Attack(ob, 4000, Element.None);
                             monster.Attack(ob, 4000, Element.None);
@@ -81,7 +81,7 @@ namespace Server.Models
             switch (Effect)
             {
                 case SpellEffect.TrapOctagon:
-                    
+
                     for (int i = Targets.Count - 1; i >= 0; i--)
                     {
                         MapObject ob = Targets[i];
@@ -125,8 +125,6 @@ namespace Server.Models
                             SEnvir.Log($"[ERROR] {Effect} CurrentCell.Objects Null Loop.");
                             return;
                         }
-
-
                     }
                     break;
             }
@@ -141,7 +139,7 @@ namespace Server.Models
                 case SpellEffect.PoisonousCloud:
                     if (!Owner.CanHelpTarget(ob)) return;
 
-                    BuffInfo buff = ob.Buffs.FirstOrDefault(x=> x.Type == BuffType.PoisonousCloud);
+                    BuffInfo buff = ob.Buffs.FirstOrDefault(x => x.Type == BuffType.PoisonousCloud);
                     TimeSpan remaining = TickTime - SEnvir.Now;
 
                     if (buff != null)
@@ -177,8 +175,7 @@ namespace Server.Models
                     break;
                 case SpellEffect.Tempest:
                     {
-                        PlayerObject player = Owner as PlayerObject;
-                        if (player == null || !player.CanAttackTarget(ob)) return;
+                        if (Owner is not PlayerObject player || !player.CanAttackTarget(ob)) return;
 
                         int damage = player.MagicAttack(new List<MagicType> { MagicType.Tempest }, ob, true);
 
@@ -191,6 +188,20 @@ namespace Server.Models
                                 spell.TickCount--;
                             }
                         }
+                    }
+                    break;
+                case SpellEffect.IceAura:
+                    {
+                        if (Owner is not PlayerObject player || !player.CanAttackTarget(ob)) return;
+
+                        ob.ApplyPoison(new Poison
+                        {
+                            Owner = player,
+                            Value = (3 + Magic.Level) * 2,
+                            TickCount = TickCount,
+                            TickFrequency = TickFrequency,
+                            Type = PoisonType.Paralysis,
+                        });
                     }
                     break;
                 case SpellEffect.DarkSoulPrison:
@@ -243,11 +254,25 @@ namespace Server.Models
             base.OnSpawned();
 
             Owner?.SpellList.Add(this);
-            
+
             AddAllObjects();
 
             Activate();
         }
+
+        public override void OnBeforeDespawned()
+        {
+            switch (Effect)
+            {
+                case SpellEffect.FireWall:
+                    CurrentMap.Broadcast(CurrentLocation, new S.MapEffect { Location = CurrentLocation, Effect = Library.Effect.FireWallSmoke });
+                    break;
+                case SpellEffect.IceAura:
+                    CurrentMap.Broadcast(CurrentLocation, new S.MapEffect { Location = CurrentLocation, Effect = Library.Effect.IceAuraEnd });
+                    break;
+            }
+        }
+
         public override void OnDespawned()
         {
             base.OnDespawned();
@@ -258,7 +283,7 @@ namespace Server.Models
         public override void CleanUp()
         {
             base.CleanUp();
-            
+
             Owner = null;
             Magic = null;
 

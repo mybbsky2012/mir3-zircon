@@ -288,6 +288,8 @@ namespace Server.Envir
         public static DBCollection<UserFortuneInfo> UserFortuneInfoList;
         public static DBCollection<WeaponCraftStatInfo> WeaponCraftStatInfoList;
         public static DBCollection<UserDiscipline> UserDisciplineList;
+        public static DBCollection<BundleInfo> BundleInfoList;
+        public static DBCollection<LootBoxInfo> LootBoxInfoList;
 
         public static DBCollection<WorldEventTrigger> WorldEventInfoTriggerList;
         public static DBCollection<PlayerEventTrigger> PlayerEventInfoTriggerList;
@@ -324,6 +326,14 @@ namespace Server.Envir
 
         public static List<EventLog> EventLogs = [];
 
+        private static readonly Dictionary<TimeOfDay, TimeSpan> DayBoundries = new()
+        {
+            { TimeOfDay.Dawn, new TimeSpan(5, 0, 0) },
+            { TimeOfDay.Day,  new TimeSpan(8, 0, 0) },
+            { TimeOfDay.Dusk, new TimeSpan(17, 0, 0) },
+            { TimeOfDay.Night,new TimeSpan(20, 0, 0) }
+        };
+
         private static TimeOfDay _TimeOfDay;
         public static TimeOfDay TimeOfDay
         {
@@ -333,10 +343,13 @@ namespace Server.Envir
                 if (_TimeOfDay == value) return;
 
                 _TimeOfDay = value;
+
+                EventHandler.Process("TIMEOFDAY");
+
+                Broadcast(new S.TimeOfDayChanged { TimeOfDay = TimeOfDay, TimeOfDayLabel = GetDayCycleLabel() });
             }
         }
 
-        public static float PreviousDayTime { get; private set; }
         private static float _DayTime;
         public static float DayTime
         {
@@ -345,7 +358,6 @@ namespace Server.Envir
             {
                 if (_DayTime == value) return;
 
-                PreviousDayTime = _DayTime;
                 _DayTime = value;
 
                 Broadcast(new S.DayChanged { DayTime = DayTime });
@@ -477,6 +489,8 @@ namespace Server.Envir
             UserFortuneInfoList = Session.GetCollection<UserFortuneInfo>();
             WeaponCraftStatInfoList = Session.GetCollection<WeaponCraftStatInfo>();
             UserDisciplineList = Session.GetCollection<UserDiscipline>();
+            BundleInfoList = Session.GetCollection<BundleInfo>();
+            LootBoxInfoList = Session.GetCollection<LootBoxInfo>();
 
             WorldEventInfoTriggerList = Session.GetCollection<WorldEventTrigger>();
             PlayerEventInfoTriggerList = Session.GetCollection<PlayerEventTrigger>();
@@ -723,7 +737,7 @@ namespace Server.Envir
 
                 if (movement.DestinationRegion == null)
                 {
-                    Log($"[Movement] No Destinaton Region, Source: {movement.SourceRegion.ServerDescription}");
+                    Log($"[Movement] No Destination Region, Source: {movement.SourceRegion.ServerDescription}");
                     continue;
                 }
 
@@ -754,7 +768,11 @@ namespace Server.Envir
 
                     if (source == null)
                     {
-                        Log($"[Movement] Bad Origin, Source: {movement.SourceRegion.ServerDescription}, X:{sPoint.X}, Y:{sPoint.Y}");
+                        if (!movement.SkipValidation)
+                        {
+                            Log($"[Movement] Bad Origin, Source: {movement.SourceRegion.ServerDescription}, X:{sPoint.X}, Y:{sPoint.Y}");
+                        }
+
                         continue;
                     }
 
@@ -855,7 +873,7 @@ namespace Server.Envir
                 }
 
                 map.HasSafeZone = true;
-   
+
                 HashSet<Point> edges = new HashSet<Point>();
 
                 foreach (Point point in info.Region.PointList)
@@ -1179,7 +1197,7 @@ namespace Server.Envir
                         {
                             EventTimerTime = Now.AddMinutes(1);
 
-                            foreach(var timer in EventTimer.Timers)
+                            foreach (var timer in EventTimer.Timers)
                             {
                                 if (!timer.Started) continue;
 
@@ -1202,11 +1220,11 @@ namespace Server.Envir
 
                                 if (instance.Value[instanceSequence] == null) continue;
 
-                                foreach (KeyValuePair<MapInfo, Map> pair in instance.Value[instanceSequence]) 
+                                foreach (KeyValuePair<MapInfo, Map> pair in instance.Value[instanceSequence])
                                 {
                                     pair.Value.Process();
 
-                                    if (pair.Value.InstanceExpiryDateTime < SEnvir.Now)
+                                    if (pair.Value.InstanceExpiry != DateTime.MinValue && pair.Value.InstanceExpiry < Now)
                                     {
                                         expired = true;
                                     }
@@ -1531,39 +1549,157 @@ namespace Server.Envir
 
                 warInfo.Delete();
             }
-
         }
 
         public static void CalculateLights()
         {
-            DayTime = Math.Max(0.05F, Math.Abs((float)Math.Round(((Now.TimeOfDay.TotalMinutes * Config.DayCycleCount) % 1440) / 1440F * 2 - 1, 2))); //12 hour rotation
+            double realMinutes = Now.TimeOfDay.TotalMinutes;
+            double gameMinutes = (realMinutes * Config.DayCycleCount) % 1440; // 1440 minutes = 24 hours
+            TimeSpan gameTime = TimeSpan.FromMinutes(gameMinutes);
 
-            var previousTimeOfDay = TimeOfDay;
+            TimeOfDay newTimeOfDay;
+            float newLightLevel;
 
-            if (DayTime <= 0.35F)
+            if (gameTime < DayBoundries[TimeOfDay.Dawn])
             {
-                TimeOfDay = TimeOfDay.Night;
+                // 00:00–04:59 — Night
+                newTimeOfDay = TimeOfDay.Night;
+                newLightLevel = 0f;
             }
-            else if (DayTime > 0.65F)
+            else if (gameTime < DayBoundries[TimeOfDay.Day])
             {
-                TimeOfDay = TimeOfDay.Day;
+                // 05:00–07:59 — Dawn (gradually increase brightness)
+                newTimeOfDay = TimeOfDay.Dawn;
+                newLightLevel = GetInterpolatedLight(gameTime, DayBoundries[TimeOfDay.Dawn], DayBoundries[TimeOfDay.Day], increasing: true);
+            }
+            else if (gameTime < DayBoundries[TimeOfDay.Dusk])
+            {
+                // 08:00–16:59 — Day
+                newTimeOfDay = TimeOfDay.Day;
+                newLightLevel = 1f;
+            }
+            else if (gameTime < DayBoundries[TimeOfDay.Night])
+            {
+                // 17:00–19:59 — Dusk (gradually decrease brightness)
+                newTimeOfDay = TimeOfDay.Dusk;
+                newLightLevel = GetInterpolatedLight(gameTime, DayBoundries[TimeOfDay.Dusk], DayBoundries[TimeOfDay.Night], increasing: false);
             }
             else
             {
-                if (DayTime > PreviousDayTime)
+                // 20:00–23:59 — Night
+                newTimeOfDay = TimeOfDay.Night;
+                newLightLevel = 0f;
+            }
+
+            DayTime = newLightLevel;
+            TimeOfDay = newTimeOfDay;
+        }
+
+        public static string GetDayCycleLabel()
+        {
+            DateTime now = Now;
+            double realNowMin = now.TimeOfDay.TotalMinutes;
+
+            // Cycles per real day
+            int cycles = Math.Max(1, Config.DayCycleCount);
+            double scale = 1.0 / cycles; // real-minutes per game-minute
+
+            // Ordered template boundaries (GAME minutes)
+            var ordered = DayBoundries
+                .OrderBy(x => x.Key)
+                .ToList();
+
+            int n = ordered.Count;
+
+            // Game stage start times
+            double[] gStart = new double[n];
+            for (int i = 0; i < n; i++)
+                gStart[i] = ordered[i].Value.TotalMinutes;
+
+            // Game durations
+            double[] gDur = new double[n];
+            for (int i = 0; i < n; i++)
+            {
+                double end = gStart[(i + 1) % n];
+                if (end <= gStart[i]) end += 1440;   // wrap overnight
+                gDur[i] = end - gStart[i];
+            }
+
+            // Convert REAL time to GAME time (0–1440)
+            double gameNowMin = (realNowMin * cycles) % 1440;
+
+            // Find current stage in GAME time
+            int cur = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double s = gStart[i];
+                double e = gStart[i] + gDur[i];
+
+                double gm = gameNowMin;
+                if (gm < s) gm += 1440; // wrap test range
+
+                if (gm >= s && gm < e)
                 {
-                    TimeOfDay = TimeOfDay.Dawn;
-                }
-                else
-                {
-                    TimeOfDay = TimeOfDay.Dusk;
+                    cur = i;
+                    break;
                 }
             }
 
-            if (previousTimeOfDay != TimeOfDay)
+            // Compute real durations
+            double[] rDur = gDur.Select(d => d * scale).ToArray();
+
+            // How far through the current stage are we? (GAME minutes)
+            double gmAdj = gameNowMin;
+            if (gmAdj < gStart[cur]) gmAdj += 1440;
+
+            double gameElapsed = gmAdj - gStart[cur];
+            double realElapsed = gameElapsed * scale;
+
+            // REAL start/end of current stage
+            double curStart = realNowMin - realElapsed;
+            double curEnd = curStart + rDur[cur];
+
+            // NEXT and AFTER
+            int next = (cur + 1) % n;
+            int after = (cur + 2) % n;
+
+            double nextStart = curEnd;
+            double nextEnd = nextStart + rDur[next];
+
+            double afterStart = nextEnd;
+            double afterEnd = afterStart + rDur[after];
+
+            static string T(double m)
             {
-                SEnvir.EventHandler.Process("TIMEOFDAY");
+                m %= 1440; if (m < 0) m += 1440;
+                int hh = (int)(m / 60);
+                int mm = (int)(m % 60);
+                return $"{hh:00}:{mm:00}";
             }
+
+            static string Range(double s, double e)
+                => $"{T(s)}–{T(e - 1)}"; // inclusive visual end
+
+            return
+                $"[##GAME_TIME##]\r\n\r\n" +
+                $"Current: {ordered[cur].Key} ({Range(curStart, curEnd)})\r\n\r\n" +
+                $"Next: {ordered[next].Key} ({Range(nextStart, nextEnd)})\r\n\r\n" +
+                $"After: {ordered[after].Key} ({Range(afterStart, afterEnd)})";
+        }
+
+
+        /// <summary>
+        /// Calculates light level between two times.
+        /// </summary>
+        /// <param name="current">Current time in the game day.</param>
+        /// <param name="start">Start of the transition.</param>
+        /// <param name="end">End of the transition.</param>
+        /// <param name="increasing">True if light should increase, false if decrease.</param>
+        private static float GetInterpolatedLight(TimeSpan current, TimeSpan start, TimeSpan end, bool increasing)
+        {
+            double progress = (current - start).TotalMinutes / (end - start).TotalMinutes;
+            progress = Math.Clamp(progress, 0, 1); // Ensure within bounds
+            return increasing ? (float)progress : 1f - (float)progress;
         }
 
         public static void StartConquest(CastleInfo info, bool forced)
@@ -1711,6 +1847,12 @@ namespace Server.Envir
                         break;
                     case ItemType.Shoes:
                         UpgradeShoes(item);
+                        break;
+                    case ItemType.Bundle:
+                        UpgradeBundle(item);
+                        break;
+                    case ItemType.LootBox:
+                        UpgradeLootBox(item);
                         break;
                 }
                 item.StatsChanged();
@@ -2726,6 +2868,25 @@ namespace Server.Envir
 
                 item.AddStat(element, -1, StatSource.Added);
             }
+        }
+
+        public static void UpgradeBundle(UserItem item)
+        {
+            item.AddStat(Stat.Random1, Random.Next(byte.MaxValue), StatSource.Added); // Full randomise
+        }
+
+        public static void UpgradeLootBox(UserItem item)
+        {
+            var lootBoxInfo = SEnvir.LootBoxInfoList.Binding.FirstOrDefault(x => x.Index == item.Info.Shape);
+
+            if (lootBoxInfo == null) return;
+
+            item.AddStat(Stat.Random1, Random.Next(byte.MaxValue), StatSource.Added); // Full randomise
+            item.AddStat(Stat.Random2, Random.Next(byte.MaxValue), StatSource.Added); // Loot Box grid randomise
+
+            item.AddStat(Stat.Counter1, Globals.LootBoxRerollCount, StatSource.Added);
+
+            item.AddStat(Stat.Counter2, lootBoxInfo.Contents.Count <= 15 ? 2 : 1, StatSource.Added); // Step 1 = Randomise, 2 = Selection
         }
 
         public static void Login(C.Login p, SConnection con)

@@ -1,10 +1,10 @@
 ﻿using Client.Envir;
 using Client.Scenes;
 using Library;
-using SlimDX;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Numerics;
 
 namespace Client.Models.Particles
 {
@@ -12,8 +12,8 @@ namespace Client.Models.Particles
     {
         public class LightningParticle : ParticleType
         {
-            public override TimeSpan SpawnFrequency 
-            { 
+            public override TimeSpan SpawnFrequency
+            {
                 get => TimeSpan.FromMilliseconds(random.Next(1000, 5000));
             }
 
