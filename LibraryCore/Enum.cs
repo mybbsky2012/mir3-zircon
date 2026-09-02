@@ -5,44 +5,44 @@ namespace Library
 {
     public enum MirGender : byte
     {
-        Male,
-        Female
+        Male = 0,
+        Female = 1
     }
 
     public enum MirClass : byte
     {
-        Warrior,
-        Wizard,
-        Taoist,
-        Assassin,
+        Warrior = 0,
+        Wizard = 1,
+        Taoist = 2,
+        Assassin = 3,
     }
 
     public enum AttackMode : byte
     {
         [Description("Attack: Peaceful")]
-        Peace,
+        Peace = 0,
         [Description("Attack: Group")]
-        Group,
+        Group = 1,
         [Description("Attack: Guild")]
-        Guild,
+        Guild = 2,
         [Description("Attack: War, Red, Brown")]
-        WarRedBrown,
+        WarRedBrown = 3,
         [Description("Attack: All")]
-        All
+        All = 4
     }
 
     public enum PetMode : byte
     {
         [Description("Pet: Move, Attack")]
-        Both,
+        Both = 0,
         [Description("Pet: Move")]
-        Move,
+        Move = 1,
         [Description("Pet: Attack")]
-        Attack,
+        Attack = 2,
         [Description("Pet: PvP")]
-        PvP,
+        PvP = 3,
         [Description("Pet: None")]
-        None,
+        None = 4,
     }
 
     public enum MirDirection : byte
@@ -213,7 +213,13 @@ namespace Library
         AccessoryRefineCombItems,
         PartsStorage,
         Bundle,
-        LootBox
+        LootBox,
+        SocketTarget,
+        SocketGem,
+        SocketCombine1,
+        SocketCombine2,
+        SocketCombine3,
+        SocketCombineResult
     }
 
     public enum InventoryMode
@@ -252,6 +258,10 @@ namespace Library
         DeathDrops = 18,
 
         Fame = 19,
+
+        RedGem = 20,
+        BlueGem = 21,
+        CursedGem = 22,
 
         //War
         Defiance = 100,
@@ -362,6 +372,18 @@ namespace Library
         Castle = 3
     }
 
+    public enum DungeonMapRole : byte
+    {
+        Entrance = 0,
+        Lobby = 1,
+        Floor = 2,
+        SideRoom = 3,
+        Transition = 4,
+        Hub = 5,
+        Maze = 6,
+        BossFloor = 7
+    }
+
     public enum RegionType : byte
     {
         None = 0,
@@ -370,7 +392,8 @@ namespace Library
         Connection = 2,
         Spawn = 3,
         Npc = 4,
-        SpawnConnection = 5
+        SpawnConnection = 5,
+        Path = 6
     }
 
     public enum ObjectType : byte
@@ -432,7 +455,9 @@ namespace Library
         Currency = 34,
         Bundle = 35,
         [Description("Loot Box")]
-        LootBox = 36
+        LootBox = 36,
+        [Description("Gem")]
+        SocketGem = 37
     }
 
     public enum MirAction : byte
@@ -452,6 +477,7 @@ namespace Library
         Mount,
         Mining,
         Fishing,
+        Taming,
         Idle
     }
 
@@ -492,6 +518,7 @@ namespace Library
         HorseWalking,
         HorseRunning,
         HorseStruck,
+        HorseLeaping,
 
         StoneStanding,
 
@@ -505,7 +532,10 @@ namespace Library
 
         FishingCast,
         FishingWait,
-        FishingReel
+        FishingReel,
+
+        TamingCast,
+        TamingWait
     }
 
     public enum MessageAction
@@ -552,7 +582,11 @@ namespace Library
         AccessoryRefine,
 
         RollDie,
-        RollYut
+        RollYut,
+
+        Consignment,
+        Socketing,
+        SocketCombine,
     }
 
     public enum MagicSchool
@@ -823,6 +857,9 @@ namespace Library
 
         PinkFireBall = 530,
         GreenSludgeBall = 540,
+
+        DragonCharge = 700,
+        RisingStrike = 701,
     }
 
     public enum MagicProperty
@@ -936,12 +973,12 @@ namespace Library
         ZumaGuardian = 94,
         ZumaKing = 95,
         ArcherGuard = 96,
-        //NF_DemonGuardMace = 97,
-        //NF_DemonGuardSword = 98,
+        //NF_Blank97 = 97,
+        //NF_Blank98 = 98,
         Shinsu = 99, //Small
 
         Shinsu1 = 100, //Large
-        UmaMaceInfidel = 101,
+        //NF_SandGuard = 101,
         AquaLizard = 102,
         CorrosivePoisonSpitter = 103,
         SandShark = 104,
@@ -1001,9 +1038,9 @@ namespace Library
         BoneBladesman = 153,
         BoneArcher = 154,
         MutantFlea = 155,
-        //NF_PurpleFlea = 156,
+        PurpleFlea = 156,
         BlasterMutantFlea = 157,
-        //NF_BlueBlasterMutantFlea = 158,
+        BlueBlasterMutantFlea = 158,
         PoisonousMutantFlea = 159,
 
         RazorTusk = 160,
@@ -1032,20 +1069,20 @@ namespace Library
         WildBoar = 181,
         //NF_AngelGuardian = 182,
         //NF_Blank183 = 183,
-        //NF_NumaElder = 184,
+        NumaElder = 184,
         //NF_Blank185 = 185,
         //NF_Blank186 = 186,
-        //NF_NumaPriest = 187,
+        NumaCripple = 187,
         //NF_Blank188 = 188,
         //NF_BonePile189 = 189,
 
         NumaCavalry = 190,
         NumaArmoredSoldier = 191,
-        //NF_NumaAxeSoldier = 192,
+        //NF_NumaRoyalGuard = 192, //Duplicate 195
         NumaStoneThrower = 193,
         NumaHighMage = 194,
         NumaRoyalGuard = 195,
-        //NF_NumaWarlord = 196,
+        NumaWarlord = 196,
         BloodStone = 197,
         //NF_Chest = 198,
         //NF_BonePile199 = 199,
@@ -1070,7 +1107,7 @@ namespace Library
         IcySpiritSpearman = 216,
         Werewolf = 217,
         Whitefang = 218,
-        IcySpiritSolider = 219,
+        IcySpiritSoldier = 219,
 
         EscortCommander = 220,
         QueenOfDawn = 221,
@@ -1124,7 +1161,7 @@ namespace Library
         EnshrinementBox = 275,
         //NF_AssassinMale = 276,
         //NF_AssassinFemale = 277,
-        //NF_UmaMaceSoldier = 278,
+        UmaMaceInfidel = 278,
         //NF_Blank279 = 279,
 
         Salamander = 280,
@@ -1419,6 +1456,20 @@ namespace Library
         Boat
     }
 
+    public enum NPCCategory
+    {
+        None = 0,
+
+        Store = 1,
+        Equipment = 2,
+        Storage = 3,
+        Transaction = 4,
+        Teleportation = 5,
+        Helper = 6,
+        Event = 7,
+        Common = 8,
+    }
+
     public enum Effect
     {
         TeleportOut,
@@ -1544,6 +1595,8 @@ namespace Library
 
         Ranking,
         Developer,
+
+        DragonCharge,
     }
 
     public enum MarketPlaceSort
@@ -1564,6 +1617,28 @@ namespace Library
         [Description("Lowest Price")]
         LowestPrice,
         Favourite
+    }
+
+    public enum GameStoreCategory : byte
+    {
+        All,
+        Favourites,
+        NewItems,
+        Equipment,
+        Consumables,
+        Cosmetics,
+        Other
+    }
+
+    public enum GameStoreGiftResult : byte
+    {
+        Success,
+        InvalidItem,
+        NotAvailable,
+        InvalidRecipient,
+        CannotGiftSelf,
+        MailboxFull,
+        InsufficientFunds
     }
 
     public enum DungeonFinderSort
@@ -1731,6 +1806,7 @@ namespace Library
 
         FishingRod = 82,
         FishingRobe = 83,
+        TamingLasso = 84,
 
         StatExtractor = 90,
         SpiritBlade = 91,
@@ -1859,14 +1935,104 @@ namespace Library
         NotAccepted = 2,
         HaveCompleted = 3,
         HaveNotCompleted = 4,
-        Class = 5,
+        Class = 5
     }
 
     public enum QuestTaskType
     {
         KillMonster = 0,
         GainItem = 1,
-        Region = 2
+        VisitRegion = 2
+    }
+
+    public enum MilestoneGrade
+    {
+        Low = 1,
+        Medium = 2,
+        High = 3
+    }
+
+    public enum MilestoneType
+    {
+        Walk = 0,
+        Run = 1,
+        Ride = 2,
+        Harvest = 3,
+        Die = 4,
+        Level = 5, //Set
+        Marry = 6,
+        Divorce = 7,
+        Trade = 8,
+        Rebirth = 9, //Set
+        PKPoint = 10, //Set
+        Ranking = 11, //Set //Reverse
+
+        //Tracked by Item
+        ItemGain = 20,
+        ItemUse = 21,
+
+        //Tracked by Currency
+        CurrencyGain = 30,
+
+        //Tracked by Quest
+        QuestComplete = 40,
+
+        CompanionAdopt = 50,
+
+        //Tracked by Magic
+        SkillLearn = 60,
+        SkillLevel = 61, //Set
+
+        //Tracked by Monster
+        PetTame = 70,
+        PetSummon = 71,
+
+        GuildJoin = 80,
+        GuildCreate = 81,
+
+        GroupJoin = 90,
+        GroupCreate = 91,
+
+        MailSend = 100,
+
+        FriendAdd = 110, //Set
+
+        MineCast = 120,
+        MineCatch = 121, //Tracked by Item
+
+        FishingCast = 130,
+        FishingCatch = 131, //Tracked by Item
+        FishingFail = 132,
+        FishingPerfect = 134,
+
+        //Tracked by Instance
+        InstanceJoin = 140,
+
+        //Tracked by Region
+        Region = 150,
+
+        //Tracked by Item
+        ShopPurchase = 160,
+        ShopSell = 161,
+
+        //Tracked by Item
+        MarketConsign = 170,
+        MarketPurchase = 171,
+        MarketSell = 172,
+
+        //Tracked by Monster
+        MonsterKill = 180,
+        MonsterDeath = 181,
+        MonsterDamageDone = 182,
+        MonsterDamageTake = 183,
+        MonsterPetKill = 184,
+
+        //Tracked by Player
+        PlayerKill = 190,
+        PlayerDeath = 191,
+        PlayerDamageDone = 192,
+        PlayerDamageTake = 193,
+        PlayerPetKill = 194,
     }
 
     public enum MovementEffect
@@ -2009,6 +2175,13 @@ namespace Library
         None,
         Cast,
         Reel,
+        Cancel
+    }
+
+    public enum TamingState : byte
+    {
+        None,
+        Cast,
         Cancel
     }
 
@@ -2294,6 +2467,10 @@ namespace Library
         QuestTake,
         QuestComplete,
 
+
+        GemStart,
+        GemCombine,
+
         #region Magics
 
         SlayingMale,
@@ -2538,6 +2715,9 @@ namespace Library
         FourWheels,
         CrescentMoon,
 
+        DragonCharge,
+        RisingStrike,
+
         #endregion
 
         #region Monsters
@@ -2678,6 +2858,9 @@ namespace Library
         MutantFleaAttack,
         MutantFleaStruck,
         MutantFleaDie,
+
+        PurpleFleaAttack,
+        PurpleFleaDie,
 
         PoisonousMutantFleaAttack,
         PoisonousMutantFleaStruck,
@@ -2839,6 +3022,12 @@ namespace Library
         NumaEliteAttack,
         NumaEliteStruck,
         NumaEliteDie,
+
+        NumaElderStruck,
+        NumaElderDie,
+
+        NumaCrippleStruck,
+        NumaCrippleDie,
 
         SandSharkAttack,
         SandSharkStruck,
@@ -3042,6 +3231,12 @@ namespace Library
         NumaRoyalGuardStruck,
         NumaRoyalGuardDie,
 
+        NumaWarlordAttack,
+        NumaWarlordAttack2,
+        NumaWarlordAttack3,
+        NumaWarlordStruck,
+        NumaWarlordDie,
+
         NumaArmoredSoldierAttack,
         NumaArmoredSoldierStruck,
         NumaArmoredSoldierDie,
@@ -3078,9 +3273,9 @@ namespace Library
         WhitefangStruck,
         WhitefangDie,
 
-        IcySpiritSoliderAttack,
-        IcySpiritSoliderStruck,
-        IcySpiritSoliderDie,
+        IcySpiritSoldierAttack,
+        IcySpiritSoldierStruck,
+        IcySpiritSoldierDie,
 
         WildBoarAttack,
         WildBoarStruck,

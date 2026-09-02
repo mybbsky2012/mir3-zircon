@@ -1,4 +1,4 @@
-﻿using Client.Controls;
+using Client.Controls;
 using Client.Envir;
 using Client.Models;
 using Library;
@@ -52,7 +52,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.ExitDialogTitle,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -63,6 +63,7 @@ namespace Client.Scenes.Views
             {
                 Location = new Point(61, 45),
                 Size = new Size(130, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Parent = this,
                 Label = { Text = CEnvir.Language.ExitDialogToSelectButtonLabel },
             };
@@ -81,6 +82,7 @@ namespace Client.Scenes.Views
             {
                 Location = new Point(61, 55 + DefaultHeight),
                 Size = new Size(130, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Parent = this,
                 Label = { Text = CEnvir.Language.ExitDialogExitButtonLabel },
             };

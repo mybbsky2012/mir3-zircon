@@ -150,6 +150,21 @@ namespace Library.SystemModels
         }
         private bool _CanHorse;
 
+        public bool CanAutoPath
+        {
+            get { return _CanAutoPath; }
+            set
+            {
+                if (_CanAutoPath == value) return;
+
+                var oldValue = _CanAutoPath;
+                _CanAutoPath = value;
+
+                OnChanged(oldValue, value, "CanAutoPath");
+            }
+        }
+        private bool _CanAutoPath;
+
         public bool AllowTT
         {
             get { return _AllowTT; }
@@ -454,6 +469,28 @@ namespace Library.SystemModels
             }
         }
         private InstanceInfo _Instance;
+
+        [JsonIgnore]
+        [IgnoreProperty]
+        [Association("DungeonMap")]
+        public DungeonMapInfo DungeonMap
+        {
+            get => _DungeonMap;
+            set
+            {
+                if (_DungeonMap == value) return;
+
+                DungeonMapInfo oldValue = _DungeonMap;
+                _DungeonMap = value;
+
+                OnChanged(oldValue, value, nameof(DungeonMap));
+            }
+        }
+        private DungeonMapInfo _DungeonMap;
+
+        [JsonIgnore]
+        [IgnoreProperty]
+        public DungeonInfo Dungeon => DungeonMap?.Dungeon;
 
         public RequiredClass RequiredClass
         {

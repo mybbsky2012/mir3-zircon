@@ -1,4 +1,4 @@
-﻿using Client.Controls;
+using Client.Controls;
 using Client.Envir;
 using Client.Models;
 using Client.UserModels;
@@ -115,7 +115,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.MagicDialogTitle,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -143,6 +143,7 @@ namespace Client.Scenes.Views
                 pair.Value.Dispose();
 
             SchoolTabs.Clear();
+            Magics.Clear();
 
             List<MagicInfo> magics = Globals.MagicInfoList.Binding.ToList();
             magics.Sort((x1, x2) => x1.NeedLevel1.CompareTo(x2.NeedLevel1));
@@ -167,7 +168,7 @@ namespace Client.Scenes.Views
             {
                 var hasMagic = MapObject.User.Magics.TryGetValue(magic, out ClientUserMagic userMagic);
 
-                if (!hasMagic && (magic.Class != MapObject.User.Class || magic.School == MagicSchool.None || magic.School == MagicSchool.Discipline)) continue;
+                if (!hasMagic && (!magic.MatchesClass(MapObject.User.Class) || magic.School == MagicSchool.None || magic.School == MagicSchool.Discipline)) continue;
 
                 if (hasMagic && userMagic.ItemRequired)
                 {
@@ -352,6 +353,8 @@ namespace Client.Scenes.Views
                     TabButton.PressedIndex = 171;
                     break;
                 case MagicSchool.Horse:
+                    TabButton.ImageOffset = new Point(0, -4);
+                    TabButton.IntersectParent = false;
                     TabButton.Index = 172;
                     TabButton.HoverIndex = 173;
                     TabButton.PressedIndex = 173;
@@ -798,9 +801,7 @@ namespace Client.Scenes.Views
             if (!MapObject.User.Magics.TryGetValue(Info, out magic)) return;
 
             //Get percent.
-            MirImage image = ExperienceBar.Library.CreateImage(812, ImageType.Image);
-
-            if (image == null) return;
+            if (!ExperienceBar.Library.TryGetTexture(812, ImageType.Image, out MirImage image, out var texture, out var sourceRectangle)) return;
 
             int x = (ExperienceBar.Size.Width - image.Width) / 2;
             int y = (ExperienceBar.Size.Height - image.Height) / 2;
@@ -832,7 +833,7 @@ namespace Client.Scenes.Views
 
             if (percent == 0) return;
 
-            PresentTexture(image.Image, this, new Rectangle(ExperienceBar.DisplayArea.X + x, ExperienceBar.DisplayArea.Y + y, (int)(image.Width * percent), image.Height), Color.White, ExperienceBar);
+            PresentTexture(texture, sourceRectangle, this, new Rectangle(ExperienceBar.DisplayArea.X + x, ExperienceBar.DisplayArea.Y + y, (int)(image.Width * percent), image.Height), Color.White, ExperienceBar);
         }
 
         public void Refresh()
@@ -852,7 +853,7 @@ namespace Client.Scenes.Views
 
                 Image.IsEnabled = true;
                 LevelLabel.Text = $"Level: {magic.Level}";
-                LevelLabel.ForeColour = Color.FromArgb(198, 166, 99);
+                LevelLabel.ForeColour = Constants.PrimaryColour;
                 LevelLabel.Location = new Point(57, 30);
 
                 SpellKey key = SpellKey.None;
@@ -911,7 +912,7 @@ namespace Client.Scenes.Views
                     {
                         ExperienceLabel.Text = $"Experience: Max Level";
                     }
-                    ExperienceLabel.ForeColour = Color.FromArgb(198, 166, 99);
+                    ExperienceLabel.ForeColour = Constants.PrimaryColour;
                 }
             }
             else
@@ -989,6 +990,9 @@ namespace Client.Scenes.Views
                     break;
                 case MagicSchool.Assassination:
                     index = 892;
+                    break;
+                case MagicSchool.Horse:
+                    index = 815;
                     break;
                 case MagicSchool.None:
                     break;

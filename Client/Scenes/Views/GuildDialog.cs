@@ -1,4 +1,4 @@
-﻿using Client.Controls;
+using Client.Controls;
 using Client.Envir;
 using Client.Models;
 using Client.UserModels;
@@ -358,7 +358,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.GuildDialogTitle,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -509,6 +509,11 @@ namespace Client.Scenes.Views
                 GameScene.Game.NPCRepairBox.GuildCheckBox.Enabled = false;
 
                 GameScene.Game.NPCRepairBox.GuildStorageButton.Enabled = false;
+
+                GameScene.Game.ConsignmentBox.BuyGuildBox.Enabled = false;
+                GameScene.Game.ConsignmentBox.BuyGuildBox.Checked = false;
+                GameScene.Game.ConsignmentBox.ConsignGuildBox.Enabled = false;
+                GameScene.Game.ConsignmentBox.ConsignGuildBox.Checked = false;
                 return;
             }
 
@@ -533,8 +538,8 @@ namespace Client.Scenes.Views
             //Market, Buy Repair
             GameScene.Game.NPCGoodsBox.GuildCheckBox.Enabled = (GuildInfo.Permission & GuildPermission.FundsMerchant) == GuildPermission.FundsMerchant;
             GameScene.Game.NPCRepairBox.GuildCheckBox.Enabled = (GuildInfo.Permission & GuildPermission.FundsRepair) == GuildPermission.FundsRepair;
-            GameScene.Game.MarketPlaceBox.BuyGuildBox.Enabled = (GuildInfo.Permission & GuildPermission.FundsMarket) == GuildPermission.FundsMarket;
-            GameScene.Game.MarketPlaceBox.ConsignGuildBox.Enabled = (GuildInfo.Permission & GuildPermission.FundsMarket) == GuildPermission.FundsMarket;
+            GameScene.Game.ConsignmentBox.BuyGuildBox.Enabled = (GuildInfo.Permission & GuildPermission.FundsMarket) == GuildPermission.FundsMarket;
+            GameScene.Game.ConsignmentBox.ConsignGuildBox.Enabled = (GuildInfo.Permission & GuildPermission.FundsMarket) == GuildPermission.FundsMarket;
             GameScene.Game.NPCRepairBox.GuildStorageButton.Enabled = (GuildInfo.Permission & GuildPermission.Storage) == GuildPermission.Storage;
 
             if (!GameScene.Game.NPCGoodsBox.GuildCheckBox.Enabled)
@@ -543,11 +548,11 @@ namespace Client.Scenes.Views
             if (!GameScene.Game.NPCRepairBox.GuildCheckBox.Enabled)
                 GameScene.Game.NPCRepairBox.GuildCheckBox.Checked = false;
 
-            if (!GameScene.Game.NPCRepairBox.GuildCheckBox.Enabled)
-            {
-                GameScene.Game.MarketPlaceBox.BuyGuildBox.Checked = false;
-                GameScene.Game.MarketPlaceBox.ConsignGuildBox.Checked = false;
-            }
+            if (!GameScene.Game.ConsignmentBox.BuyGuildBox.Enabled)
+                GameScene.Game.ConsignmentBox.BuyGuildBox.Checked = false;
+
+            if (!GameScene.Game.ConsignmentBox.ConsignGuildBox.Enabled)
+                GameScene.Game.ConsignmentBox.ConsignGuildBox.Checked = false;
         }
 
         public void RefreshCastleControls()
@@ -622,6 +627,7 @@ namespace Client.Scenes.Views
                 Location = new Point(10, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(120, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = CEnvir.Language.GuildDialogCreateTabStarterGuildButtonLabel }
             };
             StarterGuildButton.MouseClick += StarterGuildButton_MouseClick;
@@ -631,7 +637,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.GuildDialogCreateTabStep1Label,
                 Parent = CreateTab,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -665,7 +671,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.GuildDialogCreateTabStep2Label,
                 Parent = CreateTab,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -710,7 +716,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.GuildDialogCreateTabStep3Label,
                 Parent = CreateTab,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -790,7 +796,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.GuildDialogCreateTabStep4Label,
                 Parent = CreateTab,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -859,7 +865,7 @@ namespace Client.Scenes.Views
             GuildNameValid = Globals.GuildNameRegex.IsMatch(GuildNameBox.TextBox.Text);
 
             if (string.IsNullOrEmpty(GuildNameBox.TextBox.Text))
-                GuildNameBox.BorderColour = Color.FromArgb(198, 166, 99);
+                GuildNameBox.BorderColour = Constants.PrimaryColour;
             else if (GuildNameValid)
                 GuildNameBox.BorderColour = Color.Green;
             else
@@ -873,7 +879,7 @@ namespace Client.Scenes.Views
 
         private void TotalCostBox_ValueChanged(object sender, EventArgs e)
         {
-            TotalCostBox.BorderColour = TotalCostBox.Value > GameScene.Game.User.Gold.Amount ? Color.Red : Color.FromArgb(198, 166, 99);
+            TotalCostBox.BorderColour = TotalCostBox.Value > GameScene.Game.User.Gold.Amount ? Color.Red : Constants.PrimaryColour;
         }
 
         private void MemberTextBox_ValueChanged(object sender, EventArgs e)
@@ -910,7 +916,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.GuildDialogHomeTabNoticeLabel,
                 Parent = HomeTab,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -1025,7 +1031,7 @@ namespace Client.Scenes.Views
                 Location = new Point(0, NoticeTextBox.Size.Height + 5 + NoticeTextBox.Location.Y),
                 Size = new Size(HomeTab.Size.Width, 140),
                 Border = false,
-                BorderColour = Color.FromArgb(198, 166, 99)
+                BorderColour = Constants.PrimaryColour
             };
 
             new DXLabel
@@ -1033,7 +1039,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.GuildDialogHomeTabNoticeStatsLabel,
                 Parent = panel,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -1165,6 +1171,7 @@ namespace Client.Scenes.Views
                 Location = new Point(10, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(120, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = CEnvir.Language.GuildDialogManageTabTreasuryChangeButtonLabel },
             };
             SetTaxButton.MouseClick += (o, e) =>
@@ -1287,6 +1294,7 @@ namespace Client.Scenes.Views
                 Location = new Point(10, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(110, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = CEnvir.Language.GuildDialogManageTabMembershipAddButtonLabel },
             };
             AddMemberButton.MouseClick += (o, e) =>
@@ -1312,6 +1320,7 @@ namespace Client.Scenes.Views
                 Location = new Point(AddMemberButton.DisplayArea.Right + 5, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(110, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = CEnvir.Language.GuildDialogManageTabMembershipEditDefaultButtonLabel },
             };
             EditDefaultMemberButton.MouseClick += (o, e) =>
@@ -1331,6 +1340,7 @@ namespace Client.Scenes.Views
                 Location = new Point(EditDefaultMemberButton.DisplayArea.Right + 5, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(110, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = CEnvir.Language.GuildDialogManageTabMembershipMembersIncreaseButtonLabel },
             };
             IncreaseMemberButton.MouseClick += (o, e) =>
@@ -1505,6 +1515,7 @@ namespace Client.Scenes.Views
                 Location = new Point(10, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(110, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = string.Format(CEnvir.Language.GuildDialogManageTabUpgradeStorageIncreaseButtonLabel, Globals.GuildStorageCost) },
             };
             IncreaseStorageButton.MouseClick += (o, e) =>
@@ -1610,6 +1621,7 @@ namespace Client.Scenes.Views
                 Location = new Point(10, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(110, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = CEnvir.Language.GuildDialogWarTabGuildWarStartWarButtonLabel }
             };
             StartWarButton.MouseClick += (o, e) =>
@@ -1649,7 +1661,7 @@ namespace Client.Scenes.Views
                 Text = "Desert Conquest",
                 Parent = panel,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -1699,7 +1711,7 @@ namespace Client.Scenes.Views
                 Text = "Colour",
                 Parent = StyleColourPanel,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -1740,7 +1752,7 @@ namespace Client.Scenes.Views
                 Text = "Flag",
                 Parent = StyleFlagPanel,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -1835,6 +1847,7 @@ namespace Client.Scenes.Views
                 Location = new Point(10, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(120, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = "Open/Close Gates" },
                 Enabled = false,
                 Visible = true
@@ -1850,6 +1863,7 @@ namespace Client.Scenes.Views
                 Location = new Point(220, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(100, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = "Repair Gates" },
                 Enabled = false,
                 Visible = true
@@ -1873,6 +1887,7 @@ namespace Client.Scenes.Views
                 Location = new Point(330, 10),
                 ButtonType = ButtonType.Default,
                 Size = new Size(100, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = "Repair Guards" },
                 Enabled = false,
                 Visible = true
@@ -2481,19 +2496,19 @@ namespace Client.Scenes.Views
         public void OnIsHeaderChanged(bool oValue, bool nValue)
         {
             NameLabel.Text = CEnvir.Language.GuildMemberRowNameLabel;
-            NameLabel.ForeColour = Color.FromArgb(198, 166, 99);
+            NameLabel.ForeColour = Constants.PrimaryColour;
 
             RankLabel.Text = CEnvir.Language.GuildMemberRowRankLabel;
-            RankLabel.ForeColour = Color.FromArgb(198, 166, 99);
+            RankLabel.ForeColour = Constants.PrimaryColour;
 
             TotalLabel.Text = CEnvir.Language.GuildMemberRowTotalLabel;
-            TotalLabel.ForeColour = Color.FromArgb(198, 166, 99);
+            TotalLabel.ForeColour = Constants.PrimaryColour;
 
             DailyLabel.Text = CEnvir.Language.GuildMemberRowDailyLabel;
-            DailyLabel.ForeColour = Color.FromArgb(198, 166, 99);
+            DailyLabel.ForeColour = Constants.PrimaryColour;
 
             OnlineLabel.Text = CEnvir.Language.GuildMemberRowOnlineLabel;
-            OnlineLabel.ForeColour = Color.FromArgb(198, 166, 99);
+            OnlineLabel.ForeColour = Constants.PrimaryColour;
 
             DrawTexture = false;
 
@@ -2543,7 +2558,7 @@ namespace Client.Scenes.Views
             Size = new Size(402, 20);
 
             DrawTexture = true;
-            BackColour = /*Selected ? Color.FromArgb(80, 80, 125) :*/ Color.FromArgb(25, 20, 0);
+            BackColour = /*Selected ? Constants.SelectedRowBackColour :*/ Constants.RowBackColour;
 
             NameLabel = new DXLabel
             {
@@ -3135,7 +3150,7 @@ namespace Client.Scenes.Views
                 AutoSize = false,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -3179,6 +3194,7 @@ namespace Client.Scenes.Views
                 Location = new Point(359, 85),
                 ButtonType = ButtonType.Default,
                 Size = new Size(60, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Label = { Text = CEnvir.Language.GuildCastlePanelRequestButtonLabel },
                 Enabled = false,
             };

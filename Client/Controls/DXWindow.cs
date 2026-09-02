@@ -1,5 +1,5 @@
-﻿using Client.Envir;
-using Client.Rendering;
+using Client.Envir;
+using Shared.Rendering;
 using Client.UserModels;
 using Library;
 using System;
@@ -226,12 +226,41 @@ namespace Client.Controls
 
         #endregion
 
+        public static int HeaderBarSize { get; }
+        public static int HeaderSize { get; }
+        public static int NoHeaderSize { get; }
+        public static int FooterSize { get; }
+        public static int NoFooterSize { get; }
+        public static int SlimFooterSize { get; }
+
+        static DXWindow()
+        {
+            CEnvir.LibraryList.TryGetValue(LibraryFile.Interface, out InterfaceLibrary);
+
+            if (InterfaceLibrary == null) return;
+
+            HeaderBarSize = InterfaceLibrary.GetSize(0).Height;
+
+            HeaderSize = HeaderBarSize;
+            HeaderSize += InterfaceLibrary.GetSize(3).Height;
+
+            NoHeaderSize = InterfaceLibrary.GetSize(2).Height;
+
+            FooterSize = InterfaceLibrary.GetSize(126).Height;
+            FooterSize += InterfaceLibrary.GetSize(2).Height;
+            FooterSize += InterfaceLibrary.GetSize(10).Height;
+
+            NoFooterSize = InterfaceLibrary.GetSize(2).Height;
+            SlimFooterSize = InterfaceLibrary.GetSize(126).Height;
+        }
+
         protected DXWindow()
         {
             Windows.Add(this);
 
             DrawTexture = true;
-            BackColour = Color.FromArgb(16, 8, 8);
+            CacheChildControls = true;
+            BackColour = Constants.WindowBackColour;
             HasTitle = true;
             Movable = true;
             HasTopBorder = true;
@@ -252,7 +281,7 @@ namespace Client.Controls
                 Text = "Window",
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 Visible = HasTitle,
@@ -305,6 +334,7 @@ namespace Client.Controls
 
             WindowTexture = default;
             WindowSurface = default;
+            WindowValid = false;
         }
         private void UpdateLocations()
         {

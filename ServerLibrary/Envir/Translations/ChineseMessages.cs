@@ -93,6 +93,8 @@ namespace Server.Envir.Translations
         public override string CompanionNoRoom { get; set; } = "你的宠物已经无法携带更多物品";
         public override string StorageLimit { get; set; } = "你不能再扩展存储空间了";
         public override string NotEnoughBagSpaceAvailable { get; set; } = "行李空间不足";
+        public override string CannotUseItemWithSafeZone { get; set; } = "You cannot use [{0}] with maps that have a SafeZone.";
+        public override string NoEmptyInventorySlot { get; set; } = "You do not have any empty inventory slot";
 
 
         public override string MarryAlreadyMarried { get; set; } = "你已经结婚了";
@@ -107,6 +109,8 @@ namespace Server.Envir.Translations
         public override string MarryComplete { get; set; } = "恭喜你，你现在和{0}结婚了";
         public override string MarryDivorce { get; set; } = "你和{0}离婚了";
         public override string MarryDivorced { get; set; } = "{0}和你离婚了";
+        public override string NotMarried { get; set; } = "You are not married";
+        public override string MarryNotRing { get; set; } = "Your ring is not married ring";
         public override string MarryTeleportDead { get; set; } = "你处于死亡状态，无法传送到你的配偶身边";
         public override string MarryTeleportPK { get; set; } = "你处于红名状态，无法传送到你的配偶身边";
         public override string MarryTeleportDelay { get; set; } = "你需要等待{0}才能传送到你的配偶身边";
@@ -124,6 +128,7 @@ namespace Server.Envir.Translations
         public override string CompanionAppearanceLocked { get; set; } = "新宠物{0}目前尚未解锁，你无法购买";
         public override string CompanionNeedCurrency { get; set; } = "当前金币不足无法购买宠物";
         public override string CompanionBadName { get; set; } = "该名称不符合宠物命名的规则";
+        public override string CompanionFiltersUpdated { get; set; } = "Companion filters have been updated";
         public override string CompanionRetrieveFailed { get; set; } = "无法获得{0}宠物，该宠物当前跟随{1}";
         public override string CompanionReleaseFailed { get; set; } = "Unable to release {0} because it is currently with {1}.";
         public override string QuestSelectReward { get; set; } = "你必须选择任务奖励";
@@ -177,6 +182,8 @@ namespace Server.Envir.Translations
         public override string GuildKicked { get; set; } = "你被{0}驱逐出行会";
         public override string GuildManagePermission { get; set; } = "你没有管理行会的权限";
         public override string GuildCastleRepairPermission { get; set; } = "You do not have permission to Repair Castle Defenses.";
+        public override string GuildGateClosed { get; set; } = "{0} {1} has been closed";
+        public override string GuildGateOpened { get; set; } = "{0} {1} has been opened";
         public override string GuildMemberLimit { get; set; } = "行会已达到最大成员上限";
         public override string GuildMemberCost { get; set; } = "行会没有足够的资金来扩展行会成员上限";
         public override string GuildStorageLimit { get; set; } = "行会仓库已达到最大空间上限";
@@ -229,6 +236,9 @@ namespace Server.Envir.Translations
         public override string GroupRecallMemberNotAllowed { get; set; } = "{0}当前拒绝天地合一";
         public override string GroupRecallFromMap { get; set; } = "你所在的地图无法使用天地合一";
         public override string GroupRecallMemberFromMap { get; set; } = "{0}无法从该地图天地合一传送出去";
+        public override string GroupLFGEnabled { get; set; } = "LFG has been enabled for {0} minutes.";
+        public override string GroupLFGExpired { get; set; } = "LFG has now expired.";
+        public override string GroupRequestDeclined { get; set; } = "Request to join group has been declined.";
 
 
         public override string TradeAlreadyTrading { get; set; } = "你已经在和别人交易了";
@@ -291,6 +301,16 @@ namespace Server.Envir.Translations
 
         public override string AccessoryRefineSuccess { get; set; } = "Congratulations your {0} has been refined with {1} + {2}.";
         public override string AccessoryRefineFailed { get; set; } = "The refine failed and your {0}'s have been destroyed";
+        public override string NPCSocketUnlockSuccess { get; set; } = "镶嵌孔解锁成功。";
+        public override string NPCSocketUnlockFailed { get; set; } = "镶嵌孔解锁失败。";
+        public override string NPCSocketInsertSuccess { get; set; } = "宝石镶嵌成功。";
+        public override string NPCSocketInsertFailed { get; set; } = "宝石镶嵌失败。";
+        public override string NPCSocketInsertCursed { get; set; } = "镶嵌孔受到了诅咒。";
+        public override string NPCSocketResetSuccess { get; set; } = "所有已镶嵌宝石均已清除。";
+        public override string NPCSocketResetFailed { get; set; } = "镶嵌重置失败。";
+        public override string NPCSocketCombineNoSpace { get; set; } = "背包中没有空间存放合成后的宝石。";
+        public override string NPCSocketCombineFailed { get; set; } = "宝石合成失败，其中一颗宝石已被摧毁。";
+        public override string NPCSocketCombineSuccess { get; set; } = "宝石合成成功。";
 
         public override string ChargeExpire { get; set; } = "{0}的能量已经从你的武器上消失";
         public override string ChargeFail { get; set; } = "无法积蓄{0}的能量";
@@ -304,6 +324,10 @@ namespace Server.Envir.Translations
         public override string HorseDead { get; set; } = "你处于死亡状态无法骑马";
         public override string HorseOwner { get; set; } = "你没有马可以骑";
         public override string HorseMap { get; set; } = "你所在的地图无法骑马";
+        public override string HorseTameInvalidTarget { get; set; } = "该目标无法驯服。";
+        public override string HorseTameSuccess { get; set; } = "{0} 已被驯服。";
+        public override string AutoPathNoRoute { get; set; } = "无法找到自动寻路路线。";
+        public override string AutoPathWaypointLimit { get; set; } = "无法添加更多路径点。";
         public override string InstanceNoAction { get; set; } = "Cannot perform this action whilst on an instance.";
         public override string InstanceInvalid { get; set; } = "You cannot move to instance.";
         public override string InstanceInsufficientLevel { get; set; } = "You must be between level {0} and {1} to join instance.";

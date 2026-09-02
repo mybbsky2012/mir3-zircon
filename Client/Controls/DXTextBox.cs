@@ -1,5 +1,5 @@
-﻿using Client.Envir;
-using Client.Rendering;
+using Client.Envir;
+using Shared.Rendering;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -280,7 +280,7 @@ namespace Client.Controls
 
 
             Border = true;
-            BorderColour = Color.FromArgb(198, 166, 99);
+            BorderColour = Constants.PrimaryColour;
 
 
             Font = new Font(Config.FontName, CEnvir.FontSize(10F));
@@ -336,7 +336,10 @@ namespace Client.Controls
         public virtual void OnDeactivated()
         {
             if (TextBox.Visible)
+            {
                 TextureValid = false;
+                InvalidateParentChildCache();
+            }
 
             TextBox.Visible = false;
             CEnvir.Target.ActiveControl = null;
@@ -516,6 +519,7 @@ namespace Client.Controls
         {
             #region Properties
             public DXTextBox Owner;
+            private string _SuggestionText = string.Empty;
             #endregion
 
             public MirTextBox(DXTextBox owner)
@@ -524,6 +528,15 @@ namespace Client.Controls
             }
 
             #region Methods
+
+            public void SetSuggestion(string value)
+            {
+                value ??= string.Empty;
+                if (_SuggestionText == value) return;
+
+                _SuggestionText = value;
+                Invalidate();
+            }
 
             public void NextTextBox()
             {
@@ -606,6 +619,7 @@ namespace Client.Controls
                 base.OnKeyDown(e);
 
                 if (Owner == null) return;
+                if (e.Handled) return;
 
                 CEnvir.Shift = e.Shift;
                 CEnvir.Alt = e.Alt;
@@ -646,6 +660,9 @@ namespace Client.Controls
 
                 if (Owner == null) return;
 
+                if (!string.IsNullOrEmpty(_SuggestionText))
+                    Invalidate();
+
                 CEnvir.Shift = e.Shift;
                 CEnvir.Alt = e.Alt;
                 CEnvir.Ctrl = e.Control;
@@ -680,6 +697,7 @@ namespace Client.Controls
                 if (Owner?.Parent == null) return;
 
                 if (e.KeyCode != Keys.Tab || AcceptsTab) return;
+                if (e.IsInputKey) return;
 
                 e.IsInputKey = false;
 
@@ -695,6 +713,48 @@ namespace Client.Controls
                 if (Owner == null) return;
 
                 Owner.TextureValid = false;
+                Owner.InvalidateParentChildCache();
+            }
+
+            protected override void OnMouseUp(MouseEventArgs mevent)
+            {
+                base.OnMouseUp(mevent);
+
+                if (!string.IsNullOrEmpty(_SuggestionText))
+                    Invalidate();
+            }
+
+            protected override void WndProc(ref Message m)
+            {
+                base.WndProc(ref m);
+
+                const int WM_PAINT = 0x000F;
+                if (m.Msg != WM_PAINT || string.IsNullOrEmpty(_SuggestionText) ||
+                    SelectionLength != 0 || SelectionStart != TextLength) return;
+
+                const int EM_POSFROMCHAR = 0x00D6;
+                long position = SendMessage(Handle, EM_POSFROMCHAR, TextLength, 0).ToInt64();
+                int x = (short)(position & 0xFFFF);
+                int y = (short)((position >> 16) & 0xFFFF);
+
+                if ((x < 0 || y < 0) && TextLength > 0)
+                {
+                    position = SendMessage(Handle, EM_POSFROMCHAR, TextLength - 1, 0).ToInt64();
+                    x = (short)(position & 0xFFFF);
+                    y = (short)((position >> 16) & 0xFFFF);
+
+                    if (x >= 0 && y >= 0)
+                        x += TextRenderer.MeasureText(Text.Substring(TextLength - 1), Font, Size.Empty,
+                            TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix).Width;
+                }
+
+                if (x < 0 || y < 0) return;
+
+                using (Graphics graphics = CreateGraphics())
+                {
+                    TextRenderer.DrawText(graphics, _SuggestionText, Font, new Point(x + 1, y),
+                        Color.Gray, TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix);
+                }
             }
             protected override void OnSizeChanged(EventArgs e)
             {
@@ -716,6 +776,7 @@ namespace Client.Controls
 
                 if (disposing)
                 {
+                    _SuggestionText = null;
                     Owner = null;
                 }
             }

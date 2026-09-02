@@ -1,7 +1,7 @@
 ﻿using Client.Controls;
 using Client.Envir.Translations;
 using Client.Models;
-using Client.Rendering;
+using Shared.Rendering;
 using Client.Scenes;
 using Client.Scenes.Views;
 using Client.UserModels;
@@ -13,6 +13,7 @@ using Sentry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -31,6 +32,10 @@ namespace Client.Envir
         private static DateTime _FPSTime;
         private static int FPSCounter;
         private static int FPSCount;
+        private static readonly long LimitFPSTicks = Stopwatch.Frequency / 60;
+        private static readonly long SimulationStepTicks = Stopwatch.Frequency / 60;
+        private static long _nextLimitedFrameTicks;
+        private static long _nextSimulationTicks;
 
         public static int DPSCounter;
         private static int DPSCount;
@@ -51,10 +56,13 @@ namespace Client.Envir
         public static DBCollection<WindowSetting> WindowSettings;
         public static DBCollection<CastleInfo> CastleInfoList;
         public static MirDB.Session Session;
+        public static string ClientSystemDatabaseVersion, ServerSystemDatabaseVersion;
+        public static bool ClientSystemDatabaseExists;
 
         public static ConcurrentQueue<string> ChatLog = new ConcurrentQueue<string>();
 
         public static bool Loaded;
+        public static bool DatabaseLoadAttempted;
         public static bool Loading { get; private set; }
 
         public static string BuyAddress;
@@ -151,13 +159,46 @@ namespace Client.Envir
 
         public static void GameLoop()
         {
-            UpdateGame();
+            if (RenderingPipelineManager.ApplyPendingPipelineSwitch())
+                return;
+
+            UpdateRealtime();
+            UpdateSimulation();
             RenderGame();
 
             if (Config.LimitFPS)
-                Thread.Sleep(1);
+                LimitFrameRate();
+            else
+                _nextLimitedFrameTicks = 0;
         }
-        private static void UpdateGame()
+
+        private static void LimitFrameRate()
+        {
+            long now = Stopwatch.GetTimestamp();
+
+            if (_nextLimitedFrameTicks == 0 || _nextLimitedFrameTicks < now - LimitFPSTicks)
+                _nextLimitedFrameTicks = now + LimitFPSTicks;
+
+            while (true)
+            {
+                now = Stopwatch.GetTimestamp();
+                long remainingTicks = _nextLimitedFrameTicks - now;
+
+                if (remainingTicks <= 0)
+                    break;
+
+                int remainingMilliseconds = (int)(remainingTicks * 1000 / Stopwatch.Frequency);
+
+                if (remainingMilliseconds > 1)
+                    Thread.Sleep(remainingMilliseconds - 1);
+                else
+                    Thread.Sleep(0);
+            }
+
+            _nextLimitedFrameTicks += LimitFPSTicks;
+        }
+
+        private static void UpdateRealtime()
         {
             Now = Time.Now;
             DXControl.ActiveScene?.OnMouseMove(new MouseEventArgs(MouseButtons.None, 0, MouseLocation.X, MouseLocation.Y, 0));
@@ -173,7 +214,6 @@ namespace Client.Envir
             }
 
             Connection?.Process();
-            DXControl.ActiveScene?.Process();
 
             string debugText = $"FPS: {FPSCount}";
 
@@ -223,10 +263,9 @@ namespace Client.Envir
                 connectionText = $"Ping: {Connection.Ping}, Sent: {sent}, Received: {received}";
             }
 
-            if (Config.FullScreen)
+            if (Config.FullScreen || Config.Borderless)
             {
                 DXControl.DebugLabel.Text = debugText;
-
                 DXControl.DebugLabel.IsVisible = Config.DebugLabel;
                 DXControl.PingLabel.IsVisible = Config.DebugLabel;
 
@@ -238,7 +277,7 @@ namespace Client.Envir
             }
             else
             {
-                CEnvir.Target.Text = $"{Globals.ClientName} - {debugText} - {connectionText}";
+                CEnvir.Target.Text = Config.DebugLabel ? $"{Globals.ClientName} - {debugText} - {connectionText}" : Globals.ClientName;
 
                 DXControl.PingLabel.Text = string.Empty;
                 DXControl.DebugLabel.Text = string.Empty;
@@ -295,6 +334,18 @@ namespace Client.Envir
                 DXControl.HintLabel.Text = null;
             }
         }
+        private static void UpdateSimulation()
+        {
+            long now = Stopwatch.GetTimestamp();
+
+            if (_nextSimulationTicks == 0 || _nextSimulationTicks < now - SimulationStepTicks * 4)
+                _nextSimulationTicks = now;
+
+            if (now < _nextSimulationTicks) return;
+
+            DXControl.ActiveScene?.Process();
+            _nextSimulationTicks += SimulationStepTicks;
+        }
         private static void RenderGame()
         {
             if (Target.ClientSize.Width == 0 || Target.ClientSize.Height == 0)
@@ -303,10 +354,10 @@ namespace Client.Envir
                 return;
             }
 
-            if (RenderingPipelineManager.RenderFrame(() => DXControl.ActiveScene?.Draw()))
-            {
+            static void drawScene() => DXControl.ActiveScene?.Draw();
+
+            if (RenderingPipelineManager.RenderFrame(drawScene))
                 FPSCounter++;
-            }
         }
 
         public static void ReturnToLogin()
@@ -322,6 +373,11 @@ namespace Client.Envir
 
         public static void LoadDatabase()
         {
+            DatabaseLoadAttempted = true;
+            Loaded = false;
+            ClientSystemDatabaseVersion = null;
+            ClientSystemDatabaseExists = false;
+
             Loading = true;
             Task.Run(() =>
             {
@@ -333,6 +389,11 @@ namespace Client.Envir
                         Assembly.GetAssembly(typeof(ItemInfo)),
                         Assembly.GetAssembly(typeof(WindowSetting))
                     );
+
+                    ClientSystemDatabaseVersion = Session.SystemDatabaseVersion;
+                    ClientSystemDatabaseExists = Session.SystemDatabaseExists;
+
+                    if (!ClientSystemDatabaseExists) return;
 
                     Globals.ItemInfoList = Session.GetCollection<ItemInfo>();
                     Globals.MagicInfoList = Session.GetCollection<MagicInfo>();
@@ -354,6 +415,8 @@ namespace Client.Envir
                     Globals.BundleInfoList = Session.GetCollection<BundleInfo>();
                     Globals.LootBoxInfoList = Session.GetCollection<LootBoxInfo>();
                     Globals.HelpInfoList = Session.GetCollection<HelpInfo>();
+                    Globals.MilestoneInfoList = Session.GetCollection<MilestoneInfo>();
+                    Globals.MilestoneTaskInfoList = Session.GetCollection<MilestoneInfoTask>();
 
                     KeyBinds = Session.GetCollection<KeyBindInfo>();
                     WindowSettings = Session.GetCollection<WindowSetting>();
@@ -602,7 +665,7 @@ namespace Client.Envir
                     bind.Category = "Windows";
                     bind.Key1 = Keys.Z;
                     break;
-                case KeyBindAction.MarketPlaceWindow:
+                case KeyBindAction.UNUSED:
                     bind.Category = "Windows";
                     bind.Key1 = Keys.C;
                     break;

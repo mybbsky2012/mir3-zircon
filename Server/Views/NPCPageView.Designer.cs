@@ -78,6 +78,7 @@
             GoodsGridView = new DevExpress.XtraGrid.Views.Grid.GridView();
             gridColumn15 = new DevExpress.XtraGrid.Columns.GridColumn();
             gridColumn16 = new DevExpress.XtraGrid.Columns.GridColumn();
+            gridColumn31 = new DevExpress.XtraGrid.Columns.GridColumn();
             PercentTextEdit = new DevExpress.XtraEditors.Repository.RepositoryItemTextEdit();
             NPCPageGridView = new DevExpress.XtraGrid.Views.Grid.GridView();
             colDescription = new DevExpress.XtraGrid.Columns.GridColumn();
@@ -96,6 +97,8 @@
             ribbonPage1 = new DevExpress.XtraBars.Ribbon.RibbonPage();
             ribbonPageGroup1 = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             JsonImportButton = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            ribbonPageGroup2 = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
+            InsertRowButton = new DevExpress.XtraBars.BarButtonItem();
             ((System.ComponentModel.ISupportInitialize)ChecksGridView).BeginInit();
             ((System.ComponentModel.ISupportInitialize)PageLookUpEdit).BeginInit();
             ((System.ComponentModel.ISupportInitialize)CheckTypeImageComboBox).BeginInit();
@@ -233,13 +236,13 @@
             gridLevelNode6.LevelTemplate = GoodsGridView;
             gridLevelNode6.RelationName = "Goods";
             NPCPageGridControl.LevelTree.Nodes.AddRange(new DevExpress.XtraGrid.GridLevelNode[] { gridLevelNode1, gridLevelNode2, gridLevelNode3, gridLevelNode4, gridLevelNode5, gridLevelNode6 });
-            NPCPageGridControl.Location = new System.Drawing.Point(0, 144);
+            NPCPageGridControl.Location = new System.Drawing.Point(0, 158);
             NPCPageGridControl.MainView = NPCPageGridView;
             NPCPageGridControl.MenuManager = ribbon;
             NPCPageGridControl.Name = "NPCPageGridControl";
             NPCPageGridControl.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] { DialogTypeImageComboBox, PageLookUpEdit, CheckTypeImageComboBox, ActionTypeImageComboBox, SayMemoExEdit, ItemInfoLookUpEdit, ItemTypeImageComboBox, PercentTextEdit, MapLookUpEdit, InstanceLookUpEdit, CurrencyInfoLookUpEdit, DataTypeImageComboBox, ValueTypeImageComboBox, FieldTypeImageComboBox });
             NPCPageGridControl.ShowOnlyPredefinedDetails = true;
-            NPCPageGridControl.Size = new System.Drawing.Size(641, 394);
+            NPCPageGridControl.Size = new System.Drawing.Size(641, 380);
             NPCPageGridControl.TabIndex = 2;
             NPCPageGridControl.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] { ActionsGridView, ButtonsGridView, ValuesGridView, TypesGridView, GoodsGridView, NPCPageGridView, ChecksGridView });
             // 
@@ -466,7 +469,7 @@
             // 
             // GoodsGridView
             // 
-            GoodsGridView.Columns.AddRange(new DevExpress.XtraGrid.Columns.GridColumn[] { gridColumn15, gridColumn16 });
+            GoodsGridView.Columns.AddRange(new DevExpress.XtraGrid.Columns.GridColumn[] { gridColumn15, gridColumn16, gridColumn31 });
             GoodsGridView.GridControl = NPCPageGridControl;
             GoodsGridView.Name = "GoodsGridView";
             GoodsGridView.OptionsView.EnableAppearanceEvenRow = true;
@@ -490,6 +493,13 @@
             gridColumn16.Name = "gridColumn16";
             gridColumn16.Visible = true;
             gridColumn16.VisibleIndex = 1;
+            // 
+            // gridColumn31
+            // 
+            gridColumn31.FieldName = "GoodsIndex";
+            gridColumn31.Name = "gridColumn31";
+            gridColumn31.Visible = true;
+            gridColumn31.VisibleIndex = 2;
             // 
             // PercentTextEdit
             // 
@@ -583,12 +593,12 @@
             // ribbon
             // 
             ribbon.ExpandCollapseItem.Id = 0;
-            ribbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { ribbon.ExpandCollapseItem, ribbon.SearchEditItem, SaveButton, ImportButton, ExportButton });
+            ribbon.Items.AddRange(new DevExpress.XtraBars.BarItem[] { ribbon.ExpandCollapseItem, SaveButton, ImportButton, ExportButton, InsertRowButton });
             ribbon.Location = new System.Drawing.Point(0, 0);
-            ribbon.MaxItemId = 4;
+            ribbon.MaxItemId = 5;
             ribbon.Name = "ribbon";
             ribbon.Pages.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPage[] { ribbonPage1 });
-            ribbon.Size = new System.Drawing.Size(641, 144);
+            ribbon.Size = new System.Drawing.Size(641, 158);
             // 
             // SaveButton
             // 
@@ -620,7 +630,7 @@
             // 
             // ribbonPage1
             // 
-            ribbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { ribbonPageGroup1, JsonImportButton });
+            ribbonPage1.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { ribbonPageGroup1, JsonImportButton, ribbonPageGroup2 });
             ribbonPage1.Name = "ribbonPage1";
             ribbonPage1.Text = "Home";
             // 
@@ -638,6 +648,22 @@
             JsonImportButton.ItemLinks.Add(ExportButton);
             JsonImportButton.Name = "JsonImportButton";
             JsonImportButton.Text = "Json";
+            // 
+            // ribbonPageGroup2
+            // 
+            ribbonPageGroup2.ItemLinks.Add(InsertRowButton);
+            ribbonPageGroup2.Name = "ribbonPageGroup2";
+            ribbonPageGroup2.Text = "Edit";
+            // 
+            // InsertRowButton
+            // 
+            InsertRowButton.Caption = "Insert Row";
+            InsertRowButton.Id = 4;
+            InsertRowButton.ImageOptions.Image = (System.Drawing.Image)resources.GetObject("InsertRowButton.ImageOptions.Image");
+            InsertRowButton.ImageOptions.LargeImage = (System.Drawing.Image)resources.GetObject("InsertRowButton.ImageOptions.LargeImage");
+            InsertRowButton.Name = "InsertRowButton";
+            InsertRowButton.RibbonStyle = DevExpress.XtraBars.Ribbon.RibbonItemStyles.Large;
+            InsertRowButton.ItemClick += InsertRowButton_ItemClick;
             // 
             // NPCPageView
             // 
@@ -715,6 +741,7 @@
         private DevExpress.XtraGrid.Columns.GridColumn gridColumn15;
         private DevExpress.XtraEditors.Repository.RepositoryItemLookUpEdit ItemInfoLookUpEdit;
         private DevExpress.XtraGrid.Columns.GridColumn gridColumn16;
+        private DevExpress.XtraGrid.Columns.GridColumn gridColumn31;
         private DevExpress.XtraEditors.Repository.RepositoryItemTextEdit PercentTextEdit;
         private DevExpress.XtraGrid.Columns.GridColumn gridColumn13;
         private DevExpress.XtraEditors.Repository.RepositoryItemLookUpEdit MapLookUpEdit;
@@ -740,5 +767,7 @@
         private DevExpress.XtraEditors.Repository.RepositoryItemImageComboBox ValueTypeImageComboBox;
         private DevExpress.XtraEditors.Repository.RepositoryItemImageComboBox FieldTypeImageComboBox;
         private DevExpress.XtraGrid.Columns.GridColumn gridColumn24;
+        private DevExpress.XtraBars.Ribbon.RibbonPageGroup ribbonPageGroup2;
+        private DevExpress.XtraBars.BarButtonItem InsertRowButton;
     }
 }

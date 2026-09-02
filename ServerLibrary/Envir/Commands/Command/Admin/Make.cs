@@ -1,4 +1,5 @@
 ﻿using Library;
+using Library.Network.ClientPackets;
 using Library.SystemModels;
 using Server.DBModels;
 using Server.Envir.Commands.Exceptions;
@@ -17,6 +18,13 @@ namespace Server.Envir.Commands.Command.Admin
             if (vals.Length < PARAMS_LENGTH)
                 ThrowNewInvalidParametersException();
 
+            if (vals.Length > 3)
+            {
+                player = SEnvir.GetPlayerByCharacter(vals[3]);
+                if (player == null)
+                    throw new UserCommandException(string.Format("Could not find player: {0}", vals[3]));
+            }
+
             ItemInfo item = SEnvir.GetItemInfo(vals[1]);
             if (item == null)
                 throw new UserCommandException(string.Format("Could not find item: {0}", vals[1]));
@@ -29,11 +37,18 @@ namespace Server.Envir.Commands.Command.Admin
             {
                 var currency = player.GetCurrency(item);
 
+                // Store the original amount before modification
+                long originalAmount = currency.Amount;
+
+                // Apply the increase with overflow protection
                 if (currency.Amount > long.MaxValue - value)
                     currency.Amount = long.MaxValue;
                 else
                     currency.Amount += value;
 
+                long actualIncrease = currency.Amount - originalAmount;
+
+                player.LogMilestone(MilestoneType.CurrencyGain, actualIncrease, currency: player.Character.Account.HuntGold.Info);
                 player.CurrencyChanged(currency);
                 return;
             }

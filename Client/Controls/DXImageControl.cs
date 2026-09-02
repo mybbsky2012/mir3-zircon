@@ -1,5 +1,5 @@
 ﻿using Client.Envir;
-using Client.Rendering;
+using Shared.Rendering;
 using Library;
 using System;
 using System.Drawing;
@@ -30,6 +30,7 @@ namespace Client.Controls
         public event EventHandler<EventArgs> BlendChanged;
         public virtual void OnBlendChanged(bool oValue, bool nValue)
         {
+            InvalidateParentChildCache();
             BlendChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -54,6 +55,7 @@ namespace Client.Controls
         public event EventHandler<EventArgs> BlendModeChanged;
         public virtual void OnBlendModeChanged(BlendMode oValue, BlendMode nValue)
         {
+            InvalidateParentChildCache();
             BlendModeChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -78,6 +80,7 @@ namespace Client.Controls
         public event EventHandler<EventArgs> DrawImageChanged;
         public virtual void OnDrawImageChanged(bool oValue, bool nValue)
         {
+            InvalidateParentChildCache();
             DrawImageChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -104,6 +107,7 @@ namespace Client.Controls
         {
             TextureValid = false;
             UpdateDisplayArea();
+            InvalidateParentChildCache();
             FixedSizeChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -133,6 +137,7 @@ namespace Client.Controls
         public event EventHandler<EventArgs> ImageOpacityChanged;
         public virtual void OnImageOpacityChanged(float oValue, float nValue)
         {
+            InvalidateParentChildCache();
             ImageOpacityChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -159,6 +164,7 @@ namespace Client.Controls
         {
             TextureValid = false;
             UpdateDisplayArea();
+            InvalidateParentChildCache();
             IndexChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -188,6 +194,7 @@ namespace Client.Controls
 
             TextureValid = false;
             UpdateDisplayArea();
+            InvalidateParentChildCache();
 
             LibraryFileChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -238,6 +245,7 @@ namespace Client.Controls
         public virtual void OnUseOffSetChanged(bool oValue, bool nValue)
         {
             UpdateDisplayArea();
+            InvalidateParentChildCache();
             UseOffSetChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -257,7 +265,7 @@ namespace Client.Controls
 
         #endregion
 
-        public bool IntersectParent;
+        public bool IntersectParent = true;
 
         #region Drop Shadow
 
@@ -278,6 +286,7 @@ namespace Client.Controls
         public event EventHandler<EventArgs> DropShadowChanged;
         public virtual void OnDropShadowChanged(bool oValue, bool nValue)
         {
+            InvalidateParentChildCache();
             DropShadowChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -302,6 +311,7 @@ namespace Client.Controls
         public event EventHandler<EventArgs> GrayScaleChanged;
         public virtual void OnGrayScaleChanged(bool oValue, bool nValue)
         {
+            InvalidateParentChildCache();
             GrayScaleChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -316,6 +326,14 @@ namespace Client.Controls
         }
 
         #region Methods
+        public override void OnParentChanged(DXControl oValue, DXControl nValue)
+        {
+            base.OnParentChanged(oValue, nValue);
+
+            if (nValue is DXScene)
+                CacheChildControls = true;
+        }
+
         protected override void DrawControl()
         {
             base.DrawControl();
@@ -331,9 +349,7 @@ namespace Client.Controls
             BlendMode previousBlendMode = RenderingPipelineManager.GetBlendMode();
             float previousOpacity = RenderingPipelineManager.GetOpacity();
 
-            MirImage image = Library.CreateImage(Index, ImageType.Image);
-
-            if (image?.Image == null)
+            if (!Library.TryGetTexture(Index, ImageType.Image, out MirImage image, out RenderTexture texture, out Rectangle? sourceRectangle))
             {
                 return;
             }
@@ -349,11 +365,10 @@ namespace Client.Controls
 
             Rectangle drawArea = DisplayArea;
 
-            RectangleF? shadowBounds = null;
-
-            if (image.ImageValid)
+            if (DropShadow)
             {
-                Rectangle visibleBounds = image.GetVisibleBounds();
+                RectangleF? shadowBounds = null;
+                Rectangle visibleBounds = image.GetShadowVisibleBounds();
 
                 if (visibleBounds.Width > 0 && visibleBounds.Height > 0)
                 {
@@ -363,10 +378,7 @@ namespace Client.Controls
                         visibleBounds.Width,
                         visibleBounds.Height);
                 }
-            }
 
-            if (DropShadow)
-            {
                 RenderingPipelineManager.EnableDropShadowEffect(Color.Black, 8f, 0.5f, shadowBounds);
             }
 
@@ -375,7 +387,7 @@ namespace Client.Controls
                 RenderingPipelineManager.EnableGrayscaleEffect();
             }
 
-            PresentTexture(image.Image, FixedSize ? null : Parent, drawArea, IsEnabled ? ForeColour : Color.FromArgb(75, 75, 75), this, 0, 0, 1f);
+            PresentTexture(texture, sourceRectangle, Parent, drawArea, IsEnabled ? ForeColour : Color.FromArgb(75, 75, 75), this, 0, 0, 1f, IntersectParent);
 
             if (GrayScale)
             {

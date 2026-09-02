@@ -1,12 +1,10 @@
 ﻿using Client.Controls;
 using Client.Envir;
 using Client.Models.Particles;
-using Client.Rendering;
 using Client.Scenes;
 using Client.Scenes.Views;
 using Library;
 using Library.SystemModels;
-using SharpDX.Direct3D9;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -60,8 +58,6 @@ namespace Client.Models
             }
         }
 
-        public static Texture ShadowTexture;
-
         public abstract ObjectType Race { get; }
         public virtual bool Blocking => Visible && !Dead;
         public bool Visible = true;
@@ -86,6 +82,10 @@ namespace Client.Models
         public FishingState FishingState;
         public bool FishFound;
         public Point FloatLocation;
+
+        public TamingState TamingState;
+        public MapObject TamingObject;
+        public uint TamingObjectID;
 
         public Point CurrentLocation
         {
@@ -131,6 +131,21 @@ namespace Client.Models
             }
         }
         private string _Caption;
+
+        public virtual Color CaptionOutlineColour
+        {
+            get { return _CaptionOutlineColour; }
+            set
+            {
+                if (_CaptionOutlineColour == value) return;
+
+                _CaptionOutlineColour = value;
+
+                NameChanged();
+            }
+        }
+        private Color _CaptionOutlineColour;
+
         public virtual string Title
         {
             get { return _Title; }
@@ -252,6 +267,7 @@ namespace Client.Models
 
         public int Light;
         public float Opacity = 1F;
+        protected static float ObjectShadowOpacity => GameScene.ShadowOpacity;
         public Color LightColour = Globals.NoneColour;
 
         public Dictionary<MagicEffect, List<MirEffect>> MagicEffects = new Dictionary<MagicEffect, List<MirEffect>>();
@@ -275,7 +291,18 @@ namespace Client.Models
         }
         private bool _Dead;
 
-        public virtual Stats Stats { get; set; }
+        public virtual Stats Stats
+        {
+            get => _Stats;
+            set
+            {
+                _Stats = value;
+                OnStatsChanged();
+            }
+        }
+        private Stats _Stats = new Stats();
+
+        protected virtual void OnStatsChanged() { }
 
         public bool Interupt;
         public MirAction CurrentAction;
@@ -312,6 +339,8 @@ namespace Client.Models
         public static int CellHeight => MapControl.CellHeight;
         public static int OffSetX => MapControl.OffSetX;
         public static int OffSetY => MapControl.OffSetY;
+        public static int PixelOffsetX => MapControl.PixelOffsetX;
+        public static int PixelOffsetY => MapControl.PixelOffsetY;
 
         public List<ObjectAction> ActionQueue = new List<ObjectAction>();
 
@@ -344,6 +373,8 @@ namespace Client.Models
 
             DrawX *= MapControl.CellWidth;
             DrawY *= MapControl.CellHeight;
+            DrawX += MapControl.PixelOffsetX;
+            DrawY += MapControl.PixelOffsetY;
 
             //if (this != User)
             {
@@ -670,8 +701,6 @@ namespace Client.Models
                     }
                     break;
             }
-            x -= x % 2;
-            y -= y % 2;
 
             if (CurrentFrame.Reversed)
             {
@@ -706,6 +735,9 @@ namespace Client.Models
                     break;
                 case MirAction.Fishing:
                     Interupt = CurrentAnimation == MirAnimation.FishingWait;
+                    break;
+                case MirAction.Taming:
+                    Interupt = CurrentAnimation == MirAnimation.TamingWait;
                     break;
                 default:
                     Interupt = false;
@@ -3178,6 +3210,7 @@ namespace Client.Models
             CurrentLocation = action.Location;
 
             EndMagicEffect(MagicEffect.Assault);
+            EndMagicEffect(MagicEffect.DragonCharge);
             EndMagicEffect(MagicEffect.HundredFist);
 
             List<uint> targets;
@@ -3201,6 +3234,10 @@ namespace Client.Models
                 case MirAction.Mining:
                     MiningEffect = (bool)action.Extra[0];
                     break;
+                case MirAction.Taming:
+                    TamingState = (TamingState)action.Extra[0];
+                    TamingObjectID = (uint)action.Extra[1];
+                    break;
                 case MirAction.Moving:
                     MoveDistance = (int)action.Extra[0];
                     MagicType = (MagicType)action.Extra[1];
@@ -3210,6 +3247,9 @@ namespace Client.Models
                         case MagicType.Assault:
                             DXSoundManager.Play(SoundIndex.AssaultStart);
                             CreateMagicEffect(MagicEffect.Assault);
+                            break;
+                        case MagicType.DragonCharge:
+                            CreateMagicEffect(MagicEffect.DragonCharge);
                             break;
                         case MagicType.HundredFist:
                             CreateMagicEffect(MagicEffect.HundredFist);
@@ -3660,6 +3700,19 @@ namespace Client.Models
                                 Direction = action.Direction,
                             });
                             DXSoundManager.Play(SoundIndex.SeismicSlam);
+                            break;
+
+                        #endregion
+
+                        #region Rising Strike
+
+                        case MagicType.RisingStrike:
+                            Effects.Add(new MirEffect(800, 6, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx9, 0, 0, Globals.NoneColour)
+                            {
+                                Blend = true,
+                                MapTarget = CurrentLocation,
+                            });
+                            DXSoundManager.Play(SoundIndex.RisingStrike);
                             break;
 
                         #endregion
@@ -5264,6 +5317,63 @@ namespace Client.Models
             }
         }
 
+        #region Scaling
+
+        public float Scale
+        {
+            get { return _Scale; }
+            set { _Scale = value; }
+        }
+        private float _Scale = 1F;
+
+        public void SetScale(int sizePercent)
+        {
+            Scale = (100F + Math.Min(50, Math.Max(-50, sizePercent))) / 100F;
+        }
+
+        protected RectangleF GetScaledRectangle(RectangleF rectangle)
+        {
+            float centreX = DrawX + CellWidth / 2F;
+            float centreY = DrawY + CellHeight / 2F;
+
+            return new RectangleF(
+                centreX + (rectangle.X - centreX) * Scale,
+                centreY + (rectangle.Y - centreY) * Scale,
+                rectangle.Width * Scale,
+                rectangle.Height * Scale);
+        }
+
+        protected System.Numerics.Matrix3x2 GetScaledTransform(System.Numerics.Matrix3x2 transform)
+        {
+            float centreX = DrawX + CellWidth / 2F;
+            float centreY = DrawY + CellHeight / 2F;
+
+            transform.M11 *= Scale;
+            transform.M12 *= Scale;
+            transform.M21 *= Scale;
+            transform.M22 *= Scale;
+            transform.M31 = centreX + (transform.M31 - centreX) * Scale;
+            transform.M32 = centreY + (transform.M32 - centreY) * Scale;
+
+            return transform;
+        }
+
+        internal PointF GetScaledLibraryDrawLocation(MirImage image, ImageType imageType, float drawX, float drawY)
+        {
+            float offsetX = imageType == ImageType.Shadow ? image.ShadowOffSetX : image.OffSetX;
+            float offsetY = imageType == ImageType.Shadow ? image.ShadowOffSetY : image.OffSetY;
+            float pivotX = DrawX + CellWidth / 2F;
+            float pivotY = DrawY + CellHeight / 2F;
+            float imageCentreX = drawX + offsetX + image.Width / 2F;
+            float imageCentreY = drawY + offsetY + image.Height / 2F;
+
+            return new PointF(
+                drawX + (Scale - 1F) * (imageCentreX - pivotX),
+                drawY + (Scale - 1F) * (imageCentreY - pivotY));
+        }
+
+        #endregion
+
         public virtual void Draw()
         {
 
@@ -5314,7 +5424,7 @@ namespace Client.Models
                     BackColour = Color.Empty,
                     ForeColour = NameColour,
                     Outline = true,
-                    OutlineColour = Color.Black,
+                    OutlineColour = CaptionOutlineColour,
                     Text = Caption,
                     IsControl = false,
                     IsVisible = true,
@@ -5698,6 +5808,19 @@ namespace Client.Models
                         });
                     }
                     break;
+                case MagicEffect.DragonCharge:
+                    {
+                        effects.Add(new MirEffect(600, 12, TimeSpan.FromMilliseconds(100), LibraryFile.MagicEx9, 0, 0, Globals.NoneColour)
+                        {
+                            Blend = true,
+                            Target = this,
+                            Loop = true,
+                            Direction = Direction,
+                            Skip = 20,
+                        });
+                        DXSoundManager.Play(SoundIndex.DragonCharge);
+                    }
+                    break;
                 case MagicEffect.ElementalSwords:
                     {
                         if (VisibleBuffs.ContainsKey(BuffType.ElementalSwords))
@@ -5921,7 +6044,7 @@ namespace Client.Models
                             Loop = true,
                         });
 
-                        foreach (MirChainEffect chainEffect in GameScene.Game.MapControl.Effects.OfType<MirChainEffect>().Where(x => x.Target == this))
+                        foreach (MirLineEffect chainEffect in GameScene.Game.MapControl.Effects.OfType<MirLineEffect>().Where(x => x.Target == this))
                         {
                             chainEffect.SetOwner(chain);
                             effects.Add(chainEffect);

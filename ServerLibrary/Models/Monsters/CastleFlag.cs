@@ -43,7 +43,7 @@ namespace Server.Models.Monsters
                 return false;
             }
 
-            var map = SEnvir.Maps.First(x => x.Key == castle.Map).Value;
+            var map = SEnvir.GetMap(castle.Map);
 
             if (!base.Spawn(map, new Point(flagInfo.X, flagInfo.Y)))
             {
@@ -200,7 +200,13 @@ namespace Server.Models.Monsters
             foreach (SConnection con in SEnvir.Connections)
                 con.ReceiveChat(string.Format(con.Language.ConquestCapture, Contester.GuildName, War.Castle.Name), MessageType.System);
 
-            SEnvir.Broadcast(new S.GuildCastleInfo { Index = War.Castle.Index, Owner = Contester.GuildName });
+            SEnvir.Broadcast(new S.GuildCastleInfo
+            {
+                Index = War.Castle.Index,
+                Owner = Contester.GuildName,
+                Flag = Contester.Flag,
+                Colour = Contester.Colour
+            });
 
             Contester = null;
         }

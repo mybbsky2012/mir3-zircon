@@ -104,12 +104,39 @@ namespace Library.Network.ClientPackets
 
     public sealed class Mount : Packet { }
 
+    public sealed class AutoPathStart : Packet
+    {
+        public int NPCIndex { get; set; }
+    }
+
+    public sealed class AutoPathWaypoint : Packet
+    {
+        public int MapIndex { get; set; }
+        public Point Location { get; set; }
+    }
+
+    public sealed class AutoPathCancel : Packet { }
+
+    public sealed class AutoPathMoveStarted : Packet { }
+
     public sealed class FishingCast : Packet
     {
         public FishingState State { get; set; }
         public MirDirection Direction { get; set; }
         public Point FloatLocation { get; set; }
         public bool CaughtFish { get; set; }
+    }
+
+    public sealed class Taming : Packet
+    {
+        public TamingState State { get; set; }
+        public uint ObjectID { get; set; }
+        public MirDirection Direction { get; set; }
+    }
+
+    public sealed class TamingSuccess : Packet
+    {
+        public uint ObjectID { get; set; }
     }
 
     public sealed class Attack : Packet
@@ -123,8 +150,6 @@ namespace Library.Network.ClientPackets
     {
         public MirDirection Direction { get; set; }
         public uint Target { get; set; }
-        public int DelayedTime { get; set; }
-
     }
     public sealed class Mining : Packet
     {
@@ -212,6 +237,7 @@ namespace Library.Network.ClientPackets
     public sealed class Chat : Packet
     {
         public string Text { get; set; }
+        public List<int> LinkedItemIndexes { get; set; }
     }
 
     public sealed class NPCCall : Packet
@@ -348,7 +374,25 @@ namespace Library.Network.ClientPackets
 
     public sealed class GroupResponse : Packet
     {
+        public string Name { get; set; }
         public bool Accept { get; set; }
+    }
+    public sealed class GroupRequest : Packet
+    {
+        public string Name { get; set; }
+    }
+
+    public sealed class GroupLFGUpdate : Packet
+    {
+        public bool Enabled { get; set; }
+        public string Name { get; set; }
+        public string Type { get; set; }
+        public int MaxCount { get; set; }
+    }
+
+    public sealed class GroupNotify : Packet
+    {
+        public bool Receive { get; set; }
     }
 
     public sealed class Inspect : Packet
@@ -429,6 +473,19 @@ namespace Library.Network.ClientPackets
         public int Index { get; set; }
         public long Count { get; set; }
         public bool UseHuntGold { get; set; }
+    }
+
+    public sealed class GameStoreFavouriteToggle : Packet
+    {
+        public int Index { get; set; }
+    }
+
+    public sealed class GameStoreGift : Packet
+    {
+        public int Index { get; set; }
+        public long Count { get; set; }
+        public bool UseHuntGold { get; set; }
+        public string Recipient { get; set; }
     }
 
 
@@ -708,6 +765,17 @@ namespace Library.Network.ClientPackets
         public List<CellLinkInfo> Links { get; set; }
         public RefineType RefineType { get; set; }
     }
+    public sealed class NPCSocketItem : Packet
+    {
+        public CellLinkInfo Target { get; set; }
+        public CellLinkInfo Gem { get; set; }
+    }
+    public sealed class NPCSocketCombine : Packet
+    {
+        public CellLinkInfo Gem1 { get; set; }
+        public CellLinkInfo Gem2 { get; set; }
+        public CellLinkInfo Gem3 { get; set; }
+    }
     public sealed class JoinInstance : Packet
     {
         public int Index { get; set; }
@@ -773,5 +841,21 @@ namespace Library.Network.ClientPackets
     {
         public int Slot { get; set; }
         public int Choice { get; set; }
+    }
+
+    public sealed class MilestoneNotify : Packet
+    {
+        public bool Receive { get; set; }
+    }
+
+    public sealed class MilestoneActive : Packet
+    {
+        public int Index { get; set; }
+        public bool Active { get; set; }
+    }
+
+    public sealed class MilestoneClaim : Packet
+    {
+        public int Index { get; set; }
     }
 }

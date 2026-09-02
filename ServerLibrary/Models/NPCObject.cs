@@ -124,19 +124,14 @@ namespace Server.Models
                         ob.Enqueue(changedResult);
                         break;
                     case NPCActionType.ChangeHorse:
-                        ob.Character.Account.Horse = (HorseType)action.IntParameter1;
-
-                        ob.RemoveMount();
-
-                        ob.RefreshStats();
-
-                        if (ob.Character.Account.Horse != HorseType.None) ob.Mount();
+                        ob.GiveHorse((HorseType)action.IntParameter1);
                         break;
                     case NPCActionType.GiveGold:
 
                         long gold = ob.Gold.Amount + action.IntParameter1;
 
-                        ob.Gold.Amount = (long)gold;
+                        ob.Gold.Amount = gold;
+                        ob.LogMilestone(MilestoneType.CurrencyGain, action.IntParameter1, currency: ob.Gold.Info);
                         ob.GoldChanged();
 
                         break;
@@ -217,6 +212,7 @@ namespace Server.Models
                             var amount = userCurrency.Amount + action.IntParameter1;
 
                             userCurrency.Amount = amount;
+                            ob.LogMilestone(MilestoneType.CurrencyGain, action.IntParameter1, currency: userCurrency.Info);
                             ob.CurrencyChanged(userCurrency);
                         }
                         break;

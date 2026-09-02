@@ -4,6 +4,7 @@ using Client.Scenes;
 using Client.Scenes.Views;
 using Library;
 using Library.Network;
+using Library.Network.ClientPackets;
 using Library.SystemModels;
 using System;
 using System.Collections.Generic;
@@ -144,6 +145,7 @@ namespace Client.Envir
         public void Process(G.GoodVersion p)
         {
             Encryption.SetKey(p.DatabaseKey);
+            CEnvir.ServerSystemDatabaseVersion = p.SystemDatabaseVersion;
 
             LoginScene scene = DXControl.ActiveScene as LoginScene;
 
@@ -769,7 +771,7 @@ namespace Client.Envir
                         scene.User = new UserObject(p.StartInformation);
 
                         GameScene.Game.BuffBox.BuffsChanged();
-                        GameScene.Game.RankingBox.Observable = p.StartInformation.Observable;
+                        GameScene.Game.ConfigBox.Observable = p.StartInformation.Observable;
 
                         GameScene.Game.StorageSize = p.StartInformation.StorageSize;
 
@@ -795,6 +797,10 @@ namespace Client.Envir
             GameScene.Game.MapControl.InstanceInfo = Globals.InstanceInfoList.Binding.FirstOrDefault(x => x.Index == p.InstanceIndex);
 
             MapObject.User.NameChanged();
+        }
+        public void Process(S.AutoPathChanged p)
+        {
+            GameScene.Game.SetAutoPathRoutes(p.Routes);
         }
         public void Process(S.DayChanged p)
         {
@@ -900,6 +906,7 @@ namespace Client.Envir
                 player.ShieldEffect = p.ShieldEffect;
 
                 player.Light = p.Light;
+                player.SetScale(p.SizePercent);
                 if (player == MapObject.User)
                 {
                     player.Light = Math.Max(p.Light, 3);
@@ -995,6 +1002,9 @@ namespace Client.Envir
         {
             if (MapObject.User.ObjectID == p.ObjectID && !GameScene.Game.Observer)
             {
+                if (GameScene.Game.TryQueueAutoPathMove(p.Direction, p.Location, p.Distance, p.Slow, p.MapChanged))
+                    return;
+
                 if (MapObject.User.CurrentLocation != p.Location || MapObject.User.Direction != p.Direction)
                     GameScene.Game.Displacement(p.Direction, p.Location);
 
@@ -1105,6 +1115,52 @@ namespace Client.Envir
             GameScene.Game.FishingCatchBox.Update(p);
         }
 
+        public void Process(S.ObjectTaming p)
+        {
+            MapObject actor = null;
+            MapObject target = null;
+            bool findTarget = p.State == TamingState.Cast;
+
+            foreach (MapObject mapObject in GameScene.Game.MapControl.Objects)
+            {
+                if (mapObject.ObjectID == p.ObjectID)
+                    actor = mapObject;
+
+                if (findTarget && mapObject.ObjectID == p.TamingObjectID)
+                    target = mapObject;
+
+                if (actor != null && (!findTarget || target != null))
+                    break;
+            }
+
+            if (actor == null)
+                return;
+
+            actor.TamingObject = target;
+
+            if (actor == MapObject.User)
+            {
+                MapObject.User.ServerTime = DateTime.MinValue;
+
+                GameScene.Game.MapControl.TamingState =
+                    p.State == TamingState.Cancel ? TamingState.None : p.State;
+
+                MapObject.User.TamingState = p.State;
+
+                GameScene.Game.HorseTameBox?.SetTarget(
+                    p.State == TamingState.Cast ? target as MonsterObject : null);
+            }
+            else
+            {
+                actor.ActionQueue.Add(new ObjectAction(
+                    MirAction.Taming,
+                    p.Direction,
+                    actor.CurrentLocation,
+                    p.State,
+                    p.TamingObjectID));
+            }
+        }
+
         public void Process(S.ObjectStruck p)
         {
             foreach (MapObject ob in GameScene.Game.MapControl.Objects)
@@ -1118,6 +1174,9 @@ namespace Client.Envir
 
                     if (GameScene.Game.MapControl.FishingState != FishingState.None)
                         GameScene.Game.MapControl.FishingState = FishingState.Cancel;
+
+                    if (GameScene.Game.MapControl.TamingState != TamingState.None)
+                        GameScene.Game.MapControl.TamingState = TamingState.Cancel;
 
                     GameScene.Game.CanRun = false;
 
@@ -1169,8 +1228,15 @@ namespace Client.Envir
                 {
                     ob.StanceTime = CEnvir.Now.AddSeconds(3);
 
-                    for (int i = 1; i <= p.Distance; i++)
-                        ob.ActionQueue.Add(new ObjectAction(MirAction.Moving, p.Direction, Functions.Move(p.Location, p.Direction, i - p.Distance), 1, p.Magic));
+                    if (p.Continuous)
+                    {
+                        ob.ActionQueue.Add(new ObjectAction(MirAction.Moving, p.Direction, p.Location, p.Distance, p.Magic));
+                    }
+                    else
+                    {
+                        for (int i = 1; i <= p.Distance; i++)
+                            ob.ActionQueue.Add(new ObjectAction(MirAction.Moving, p.Direction, Functions.Move(p.Location, p.Direction, i - p.Distance), 1, p.Magic));
+                    }
                 }
                 else if (ob == MapObject.User)
                 {
@@ -3384,18 +3450,35 @@ namespace Client.Envir
                 GameScene.Game.MiniMapBox.Update(data);
             }
         }
+
         public void Process(S.GroupInvite p)
         {
-
-
             DXMessageBox messageBox = new DXMessageBox($"Do you want to group with {p.Name}?", "Group Invitation", DXMessageBoxButtons.YesNo);
 
-            messageBox.YesButton.MouseClick += (o, e) => CEnvir.Enqueue(new C.GroupResponse { Accept = true });
-            messageBox.NoButton.MouseClick += (o, e) => CEnvir.Enqueue(new C.GroupResponse { Accept = false });
-            messageBox.CloseButton.MouseClick += (o, e) => CEnvir.Enqueue(new C.GroupResponse { Accept = false });
+            messageBox.YesButton.MouseClick += (o, e) => CEnvir.Enqueue(new C.GroupResponse { Accept = true, Name = p.Name });
+            messageBox.NoButton.MouseClick += (o, e) => CEnvir.Enqueue(new C.GroupResponse { Accept = false, Name = p.Name });
             messageBox.Modal = false;
             messageBox.CloseButton.Visible = false;
+        }
 
+        public void Process(S.GroupRequest p)
+        {
+            DXMessageBox messageBox = new DXMessageBox($"{p.Name} [Level {p.Level} {p.Class}] would like to join your group.", "Group Invitation Request", DXMessageBoxButtons.YesNo);
+
+            messageBox.YesButton.MouseClick += (o, e) => CEnvir.Enqueue(new C.GroupInvite { Name = p.Name });
+            messageBox.NoButton.MouseClick += (o, e) => CEnvir.Enqueue(new C.GroupResponse { Accept = false, Name = p.Name });
+            messageBox.Modal = false;
+            messageBox.CloseButton.Visible = false;
+        }
+
+        public void Process(S.GroupLFG p)
+        {
+            GameScene.Game.GroupBox.UpdateList(p.List);
+        }
+
+        public void Process(S.GroupUpdate p)
+        {
+            GameScene.Game.GroupBox.UpdateItem(p.Group);
         }
 
         public void Process(S.BuffAdd p)
@@ -3471,9 +3554,15 @@ namespace Client.Envir
             CEnvir.FillStorage(p.Items, true);
 
             int index = 0;
+            RankInfo selectedRank = null;
+            int selectedStartIndex = -1;
 
             if (GameScene.Game != null)
+            {
                 index = GameScene.Game.RankingBox.StartIndex;
+                selectedRank = GameScene.Game.RankingBox.SelectedRank;
+                selectedStartIndex = GameScene.Game.RankingBox.SelectedStartIndex;
+            }
 
             DXControl.ActiveScene.Dispose();
 
@@ -3502,7 +3591,9 @@ namespace Client.Envir
 
             GameScene.Game.BuffBox.BuffsChanged();
 
-            GameScene.Game.RankingBox.StartIndex = index;
+            GameScene.Game.RankingBox.SetScrollIndex(index);
+            GameScene.Game.RankingBox.SelectRank(selectedRank, selectedStartIndex);
+            GameScene.Game.RankingBox.InspectSelectedRank();
 
             GameScene.Game.CompanionBox.RefreshFilter();
 
@@ -3510,94 +3601,88 @@ namespace Client.Envir
         }
         public void Process(S.ObservableSwitch p)
         {
-            GameScene.Game.RankingBox.Observable = p.Allow;
+            GameScene.Game.ConfigBox.Observable = p.Allow;
         }
 
         public void Process(S.MarketPlaceHistory p)
         {
-
-            switch (p.Display)
-            {
-                case 1:
-                    GameScene.Game.MarketPlaceBox.SearchNumberSoldBox.TextBox.Text = p.SaleCount > 0 ? p.SaleCount.ToString("#,##0") : "No Records";
-                    GameScene.Game.MarketPlaceBox.SearchAveragePriceBox.TextBox.Text = p.SaleCount > 0 ? p.AveragePrice.ToString("#,##0") : "No Records";
-                    GameScene.Game.MarketPlaceBox.SearchLastPriceBox.TextBox.Text = p.SaleCount > 0 ? p.LastPrice.ToString("#,##0") : "No Records";
-                    break;
-                case 2:
-                    GameScene.Game.MarketPlaceBox.NumberSoldBox.TextBox.Text = p.SaleCount > 0 ? p.SaleCount.ToString("#,##0") : "No Records";
-                    GameScene.Game.MarketPlaceBox.AveragePriceBox.TextBox.Text = p.SaleCount > 0 ? p.AveragePrice.ToString("#,##0") : "No Records";
-                    GameScene.Game.MarketPlaceBox.LastPriceBox.TextBox.Text = p.SaleCount > 0 ? p.LastPrice.ToString("#,##0") : "No Records";
-                    break;
-
-            }
+            GameScene.Game.ConsignmentBox.SalesBox?.Apply(p.Index, p.Display, p.SaleCount, p.LastPrice, p.AveragePrice);
         }
+
         public void Process(S.MarketPlaceConsign p)
         {
-            GameScene.Game.MarketPlaceBox.ConsignItems.AddRange(p.Consignments);
-            GameScene.Game.MarketPlaceBox.RefreshConsignList();
+            GameScene.Game.ConsignmentBox.AddConsignments(p.Consignments);
         }
         public void Process(S.MarketPlaceSearch p)
         {
-            GameScene.Game.MarketPlaceBox.SearchResults = new ClientMarketPlaceInfo[p.Count];
-
-            for (int i = 0; i < p.Results.Count; i++)
-                GameScene.Game.MarketPlaceBox.SearchResults[i] = p.Results[i];
-
-            GameScene.Game.MarketPlaceBox.RefreshList();
+            GameScene.Game.ConsignmentBox.ApplySearch(p.Count, p.Results);
         }
         public void Process(S.MarketPlaceSearchCount p)
         {
-
-
-            Array.Resize(ref GameScene.Game.MarketPlaceBox.SearchResults, p.Count);
-
-            GameScene.Game.MarketPlaceBox.RefreshList();
+            GameScene.Game.ConsignmentBox.ApplySearchCount(p.Count);
         }
         public void Process(S.MarketPlaceSearchIndex p)
         {
-
-
-            if (GameScene.Game.MarketPlaceBox.SearchResults == null) return;
-
-            GameScene.Game.MarketPlaceBox.SearchResults[p.Index] = p.Result;
-
-            GameScene.Game.MarketPlaceBox.RefreshList();
+            GameScene.Game.ConsignmentBox.ApplySearchIndex(p.Index, p.Result);
         }
         public void Process(S.MarketPlaceConsignChanged p)
         {
-
-
-            ClientMarketPlaceInfo info = GameScene.Game.MarketPlaceBox.ConsignItems.FirstOrDefault(x => x.Index == p.Index);
-
-            if (info == null) return;
-
-            if (p.Count > 0)
-                info.Item.Count = p.Count;
-            else
-                GameScene.Game.MarketPlaceBox.ConsignItems.Remove(info);
-
-            GameScene.Game.MarketPlaceBox.RefreshConsignList();
+            GameScene.Game.ConsignmentBox.ApplyConsignChanged(p.Index, p.Count);
         }
         public void Process(S.MarketPlaceBuy p)
         {
-            GameScene.Game.MarketPlaceBox.BuyButton.Enabled = true;
-
-            if (!p.Success) return;
-
-            ClientMarketPlaceInfo info = GameScene.Game.MarketPlaceBox.SearchResults.FirstOrDefault(x => x != null && x.Index == p.Index);
-
-            if (info == null) return;
-
-            if (p.Count > 0)
-                info.Item.Count = p.Count;
-            else
-                info.Item = null;
-
-            GameScene.Game.MarketPlaceBox.RefreshList();
+            GameScene.Game.ConsignmentBox.ApplyBuy(p.Index, p.Count, p.Success);
         }
         public void Process(S.MarketPlaceStoreBuy p)
         {
-            GameScene.Game.MarketPlaceBox.StoreBuyButton.Enabled = true;
+
+        }
+
+        public void Process(S.GameStoreData p)
+        {
+            GameScene.Game.GameStoreBox.SetFavourites(p.Favourites);
+            GameScene.Game.GameStoreBox.TopItems.SetItems(p.TopItems);
+        }
+
+        public void Process(S.GameStoreTopItems p)
+        {
+            GameScene.Game.GameStoreBox.TopItems.SetItems(p.Items);
+        }
+
+        public void Process(S.GameStoreFavouriteChanged p)
+        {
+            GameScene.Game.GameStoreBox.SetFavourite(p.Index, p.Favourited);
+        }
+
+        public void Process(S.GameStoreGift p)
+        {
+            string message;
+            switch (p.Result)
+            {
+                case GameStoreGiftResult.Success:
+                    message = CEnvir.Language.GameStoreGiftSuccess;
+                    break;
+                case GameStoreGiftResult.NotAvailable:
+                    message = CEnvir.Language.GameStoreGiftNotAvailable;
+                    break;
+                case GameStoreGiftResult.InvalidRecipient:
+                    message = CEnvir.Language.GameStoreGiftInvalidRecipient;
+                    break;
+                case GameStoreGiftResult.CannotGiftSelf:
+                    message = CEnvir.Language.GameStoreGiftCannotGiftSelf;
+                    break;
+                case GameStoreGiftResult.MailboxFull:
+                    message = CEnvir.Language.GameStoreGiftMailboxFull;
+                    break;
+                case GameStoreGiftResult.InsufficientFunds:
+                    message = CEnvir.Language.GameStoreGiftInsufficientFunds;
+                    break;
+                default:
+                    message = CEnvir.Language.GameStoreGiftFailed;
+                    break;
+            }
+
+            GameScene.Game.ReceiveChat(message, MessageType.System);
         }
 
         public void Process(S.MailList p)
@@ -4091,9 +4176,15 @@ namespace Client.Envir
         {
             CastleInfo castle = CEnvir.CastleInfoList.Binding.First(x => x.Index == p.Index);
             GameScene.Game.CastleOwners[castle] = p.Owner;
+            GameScene.Game.CastleFlagAppearances[castle] = (p.Flag, p.Colour);
 
             foreach (MapObject ob in GameScene.Game.MapControl.Objects)
+            {
                 ob.NameChanged();
+
+                if (ob is NPCObject npc)
+                    npc.UpdateCastleFlag(castle, p.Flag, p.Colour);
+            }
 
             GameScene.Game.GuildBox.CastlePanels[castle].Update();
 
@@ -4535,6 +4626,7 @@ namespace Client.Envir
 
                 player.Name = p.Name;
                 player.Caption = p.Caption;
+                player.CaptionOutlineColour = p.CaptionOutlineColour;
                 player.Gender = p.Gender;
                 player.HairType = p.HairType;
                 player.HairColour = p.HairColour;
@@ -4987,6 +5079,43 @@ namespace Client.Envir
         public void Process(S.LootBoxClose p)
         {
             GameScene.Game.LootBoxBox.Close();
+        }
+
+        public void Process(S.UserMilestones p)
+        {
+            foreach (var milestone in p.Milestones)
+            {
+                var existingMilestone = GameScene.Game.User.Milestones.FirstOrDefault(x => x.InfoIndex == milestone.Info.Index);
+
+                if (existingMilestone != null)
+                {
+                    GameScene.Game.User.Milestones.Remove(existingMilestone);
+                }
+
+                GameScene.Game.User.Milestones.Add(milestone);
+
+                GameScene.Game.QuestBox.RefreshMilestones();
+            }
+
+            GameScene.Game.UpdateQuestAlertIcons();
+        }
+
+        public void Process(S.NPCSocketItem p)
+        {
+            GameScene.Game.NPCSocketBox.ProcessResult(p);
+        }
+
+        public void Process(S.NPCSocketCombine p)
+        {
+            GameScene.Game.NPCSocketCombineBox.ProcessResult(p);
+        }
+
+        public void Process(S.MilestoneEarned p)
+        {
+            var info = Globals.MilestoneInfoList.Binding.FirstOrDefault(x => x.Index == p.Index);
+            if (info == null) return;
+
+            GameScene.Game.MilestoneAchievedBox.Show(info);
         }
     }
 }

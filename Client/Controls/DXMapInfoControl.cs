@@ -1,5 +1,4 @@
 ﻿using Client.Envir;
-using Client.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -31,11 +30,14 @@ namespace Client.Controls
         public TimeSpan BorderAnimationDuration = TimeSpan.FromMilliseconds(750);
         public Color AnimationColour;
 
+        public bool Hollow;
+
         public bool IsBorderAnimationActive => _activeAnimations.Count > 0;
 
         public DXMapInfoControl()
         {
-            DrawTexture = true;
+            DrawTexture = false;
+            CacheInParent = false;
             PassThrough = false;
         }
 
@@ -140,6 +142,30 @@ namespace Client.Controls
             base.DrawBorder();
         }
 
+        protected override void DrawControl()
+        {
+            Rectangle area = Rectangle.Intersect(ClipArea, DisplayArea);
+            if (area.Width <= 0 || area.Height <= 0 || BackColour.A == 0) return;
+
+            float oldOpacity = RenderingPipelineManager.GetOpacity();
+            RenderingPipelineManager.SetOpacity(Opacity);
+
+            Color colour = IsEnabled ? BackColour : Color.FromArgb(75, 75, 75);
+            if (Hollow && area.Width > 2 && area.Height > 2)
+            {
+                RenderingPipelineManager.FillRectangle(new Rectangle(area.Left, area.Top, area.Width, 1), colour);
+                RenderingPipelineManager.FillRectangle(new Rectangle(area.Left, area.Bottom - 1, area.Width, 1), colour);
+                RenderingPipelineManager.FillRectangle(new Rectangle(area.Left, area.Top + 1, 1, area.Height - 2), colour);
+                RenderingPipelineManager.FillRectangle(new Rectangle(area.Right - 1, area.Top + 1, 1, area.Height - 2), colour);
+            }
+            else
+            {
+                RenderingPipelineManager.FillRectangle(area, colour);
+            }
+
+            RenderingPipelineManager.SetOpacity(oldOpacity);
+        }
+
         private bool DrawBorderAnimation()
         {
             if (_activeAnimations.Count == 0) return false;
@@ -176,7 +202,8 @@ namespace Client.Controls
 
                     RenderTexture scratchHandle = RenderingPipelineManager.GetScratchTexture();
 
-                    PresentTexture(scratchHandle, Parent, Rectangle.Inflate(DisplayArea, inflation, inflation), Color.White, this);
+                    DXControl clipControl = Parent ?? this;
+                    PresentTexture(scratchHandle, Parent, Rectangle.Inflate(DisplayArea, inflation, inflation), Color.White, clipControl);
                     drew = true;
                 }
             }
@@ -215,7 +242,7 @@ namespace Client.Controls
         {
             if (width <= 0 || height <= 0) return;
 
-            RenderingPipelineManager.ColorFill(RenderingPipelineManager.GetScratchSurface(), new Rectangle(x, y, x + width, y + height), colour);
+            RenderingPipelineManager.ColorFill(RenderingPipelineManager.GetScratchSurface(), new Rectangle(x, y, width, height), colour);
         }
 
         private Color GetLayerColour(int layer)

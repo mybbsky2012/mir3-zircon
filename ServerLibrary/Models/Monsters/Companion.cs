@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using static System.Collections.Specialized.BitVector32;
 using S = Library.Network.ServerPackets;
 
 namespace Server.Models.Monsters
@@ -766,7 +767,7 @@ namespace Server.Models.Monsters
                     item.Flags &= ~UserItemFlags.QuestItem;
 
 
-                    item.IsTemporary = true;
+                    item.SetTemporary(true);
                     item.Delete();
                     continue;
                 }
@@ -775,15 +776,16 @@ namespace Server.Models.Monsters
                 {
                     var currency = CompanionOwner.GetCurrency(item.Info);
                     currency.Amount += item.Count;
-                    item.IsTemporary = true;
+                    item.SetTemporary(true);
                     item.Delete();
+                    CompanionOwner.LogMilestone(MilestoneType.CurrencyGain, item.Count, currency: currency.Info);
                     continue;
                 }
 
                 if (item.Info.ItemEffect == ItemEffect.Experience)
                 {
                     CompanionOwner.GainExperience(item.Count, false);
-                    item.IsTemporary = true;
+                    item.SetTemporary(true);
                     item.Delete();
                     continue;
                 }
@@ -805,7 +807,7 @@ namespace Server.Models.Monsters
                         if (oldItem.Count + item.Count <= item.Info.StackSize)
                         {
                             oldItem.Count += item.Count;
-                            item.IsTemporary = true;
+                            item.SetTemporary(true);
                             item.Delete();
                             handled = true;
                             break;
@@ -826,7 +828,7 @@ namespace Server.Models.Monsters
                     Inventory[i] = item;
                     item.Slot = i;
                     item.Companion = UserCompanion;
-                    item.IsTemporary = false;
+                    item.SetTemporary(false);
                     break;
                 }
             }

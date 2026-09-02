@@ -103,6 +103,8 @@ namespace Server.Views
             MasterPasswordEdit = new DevExpress.XtraEditors.TextEdit();
             labelControl67 = new DevExpress.XtraEditors.LabelControl();
             MapPathEdit = new DevExpress.XtraEditors.ButtonEdit();
+            labelControl97 = new DevExpress.XtraEditors.LabelControl();
+            LazyLoadMapsEdit = new DevExpress.XtraEditors.CheckEdit();
             labelControl13 = new DevExpress.XtraEditors.LabelControl();
             labelControl10 = new DevExpress.XtraEditors.LabelControl();
             DBSaveDelayEdit = new DevExpress.XtraEditors.TimeSpanEdit();
@@ -178,6 +180,10 @@ namespace Server.Views
             BrownDurationEdit = new DevExpress.XtraEditors.TimeSpanEdit();
             labelControl24 = new DevExpress.XtraEditors.LabelControl();
             AllowObservationEdit = new DevExpress.XtraEditors.CheckEdit();
+            labelControlAllowWaypoints = new DevExpress.XtraEditors.LabelControl();
+            AllowWaypointsEdit = new DevExpress.XtraEditors.CheckEdit();
+            labelControlMaxWaypoints = new DevExpress.XtraEditors.LabelControl();
+            MaxWaypointsEdit = new DevExpress.XtraEditors.TextEdit();
             SkillExpEdit = new DevExpress.XtraEditors.TextEdit();
             labelControl53 = new DevExpress.XtraEditors.LabelControl();
             DayCycleCountEdit = new DevExpress.XtraEditors.TextEdit();
@@ -214,6 +220,8 @@ namespace Server.Views
             labelControl61 = new DevExpress.XtraEditors.LabelControl();
             MaxLuckEdit = new DevExpress.XtraEditors.TextEdit();
             labelControl60 = new DevExpress.XtraEditors.LabelControl();
+            MaxGemPurityEdit = new DevExpress.XtraEditors.TextEdit();
+            MaxGemPurityLabel = new DevExpress.XtraEditors.LabelControl();
             labelControl59 = new DevExpress.XtraEditors.LabelControl();
             SpecialRepairDelayEdit = new DevExpress.XtraEditors.TimeSpanEdit();
             TorchRateEdit = new DevExpress.XtraEditors.TextEdit();
@@ -280,6 +288,7 @@ namespace Server.Views
             ((System.ComponentModel.ISupportInitialize)ClientPathEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)MasterPasswordEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)MapPathEdit.Properties).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)LazyLoadMapsEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)DBSaveDelayEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VersionPathEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)CheckVersionEdit.Properties).BeginInit();
@@ -318,6 +327,8 @@ namespace Server.Views
             ((System.ComponentModel.ISupportInitialize)PKPointRateEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)BrownDurationEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)AllowObservationEdit.Properties).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)AllowWaypointsEdit.Properties).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)MaxWaypointsEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)SkillExpEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)DayCycleCountEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)MaxLevelEdit.Properties).BeginInit();
@@ -337,6 +348,7 @@ namespace Server.Views
             ((System.ComponentModel.ISupportInitialize)MaxCurseEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)LuckRateEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)MaxLuckEdit.Properties).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)MaxGemPurityEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)SpecialRepairDelayEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)TorchRateEdit.Properties).BeginInit();
             ((System.ComponentModel.ISupportInitialize)DropLayersEdit.Properties).BeginInit();
@@ -956,6 +968,8 @@ namespace Server.Views
             xtraTabPage3.Controls.Add(MasterPasswordEdit);
             xtraTabPage3.Controls.Add(labelControl67);
             xtraTabPage3.Controls.Add(MapPathEdit);
+            xtraTabPage3.Controls.Add(labelControl97);
+            xtraTabPage3.Controls.Add(LazyLoadMapsEdit);
             xtraTabPage3.Controls.Add(labelControl13);
             xtraTabPage3.Controls.Add(labelControl10);
             xtraTabPage3.Controls.Add(DBSaveDelayEdit);
@@ -1056,6 +1070,23 @@ namespace Server.Views
             MapPathEdit.Size = new System.Drawing.Size(250, 20);
             MapPathEdit.TabIndex = 30;
             MapPathEdit.ButtonClick += MapPathEdit_ButtonClick;
+            // 
+            // labelControl97
+            // 
+            labelControl97.Location = new System.Drawing.Point(18, 227);
+            labelControl97.Name = "labelControl97";
+            labelControl97.Size = new System.Drawing.Size(79, 13);
+            labelControl97.TabIndex = 77;
+            labelControl97.Text = "Lazy Load Maps:";
+            // 
+            // LazyLoadMapsEdit
+            // 
+            LazyLoadMapsEdit.Location = new System.Drawing.Point(103, 224);
+            LazyLoadMapsEdit.MenuManager = ribbon;
+            LazyLoadMapsEdit.Name = "LazyLoadMapsEdit";
+            LazyLoadMapsEdit.Properties.Caption = "";
+            LazyLoadMapsEdit.Size = new System.Drawing.Size(100, 19);
+            LazyLoadMapsEdit.TabIndex = 76;
             // 
             // labelControl13
             // 
@@ -1596,6 +1627,10 @@ namespace Server.Views
             xtraTabPage6.Controls.Add(BrownDurationEdit);
             xtraTabPage6.Controls.Add(labelControl24);
             xtraTabPage6.Controls.Add(AllowObservationEdit);
+            xtraTabPage6.Controls.Add(labelControlAllowWaypoints);
+            xtraTabPage6.Controls.Add(AllowWaypointsEdit);
+            xtraTabPage6.Controls.Add(labelControlMaxWaypoints);
+            xtraTabPage6.Controls.Add(MaxWaypointsEdit);
             xtraTabPage6.Controls.Add(SkillExpEdit);
             xtraTabPage6.Controls.Add(labelControl53);
             xtraTabPage6.Controls.Add(DayCycleCountEdit);
@@ -1822,6 +1857,44 @@ namespace Server.Views
             AllowObservationEdit.Properties.Caption = "";
             AllowObservationEdit.Size = new System.Drawing.Size(100, 19);
             AllowObservationEdit.TabIndex = 82;
+            //
+            // labelControlAllowWaypoints
+            //
+            labelControlAllowWaypoints.Location = new System.Drawing.Point(27, 228);
+            labelControlAllowWaypoints.Name = "labelControlAllowWaypoints";
+            labelControlAllowWaypoints.Size = new System.Drawing.Size(84, 13);
+            labelControlAllowWaypoints.TabIndex = 134;
+            labelControlAllowWaypoints.Text = "Allow Waypoints:";
+            //
+            // AllowWaypointsEdit
+            //
+            AllowWaypointsEdit.Location = new System.Drawing.Point(117, 225);
+            AllowWaypointsEdit.MenuManager = ribbon;
+            AllowWaypointsEdit.Name = "AllowWaypointsEdit";
+            AllowWaypointsEdit.Properties.Caption = "";
+            AllowWaypointsEdit.Size = new System.Drawing.Size(100, 19);
+            AllowWaypointsEdit.TabIndex = 133;
+            //
+            // labelControlMaxWaypoints
+            //
+            labelControlMaxWaypoints.Location = new System.Drawing.Point(32, 254);
+            labelControlMaxWaypoints.Name = "labelControlMaxWaypoints";
+            labelControlMaxWaypoints.Size = new System.Drawing.Size(79, 13);
+            labelControlMaxWaypoints.TabIndex = 136;
+            labelControlMaxWaypoints.Text = "Max Waypoints:";
+            //
+            // MaxWaypointsEdit
+            //
+            MaxWaypointsEdit.Location = new System.Drawing.Point(117, 251);
+            MaxWaypointsEdit.MenuManager = ribbon;
+            MaxWaypointsEdit.Name = "MaxWaypointsEdit";
+            MaxWaypointsEdit.Properties.Appearance.Options.UseTextOptions = true;
+            MaxWaypointsEdit.Properties.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
+            MaxWaypointsEdit.Properties.Mask.EditMask = "n0";
+            MaxWaypointsEdit.Properties.Mask.MaskType = DevExpress.XtraEditors.Mask.MaskType.Numeric;
+            MaxWaypointsEdit.Properties.Mask.UseMaskAsDisplayFormat = true;
+            MaxWaypointsEdit.Size = new System.Drawing.Size(100, 20);
+            MaxWaypointsEdit.TabIndex = 135;
             // 
             // SkillExpEdit
             // 
@@ -2061,6 +2134,8 @@ namespace Server.Views
             xtraTabPage8.Controls.Add(labelControl61);
             xtraTabPage8.Controls.Add(MaxLuckEdit);
             xtraTabPage8.Controls.Add(labelControl60);
+            xtraTabPage8.Controls.Add(MaxGemPurityEdit);
+            xtraTabPage8.Controls.Add(MaxGemPurityLabel);
             xtraTabPage8.Controls.Add(labelControl59);
             xtraTabPage8.Controls.Add(SpecialRepairDelayEdit);
             xtraTabPage8.Controls.Add(TorchRateEdit);
@@ -2074,6 +2149,27 @@ namespace Server.Views
             xtraTabPage8.Name = "xtraTabPage8";
             xtraTabPage8.Size = new System.Drawing.Size(749, 385);
             xtraTabPage8.Text = "Items";
+            //
+            // MaxGemPurityEdit
+            //
+            MaxGemPurityEdit.Location = new System.Drawing.Point(342, 23);
+            MaxGemPurityEdit.MenuManager = ribbon;
+            MaxGemPurityEdit.Name = "MaxGemPurityEdit";
+            MaxGemPurityEdit.Properties.Appearance.Options.UseTextOptions = true;
+            MaxGemPurityEdit.Properties.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
+            MaxGemPurityEdit.Properties.Mask.EditMask = "n0";
+            MaxGemPurityEdit.Properties.Mask.MaskType = DevExpress.XtraEditors.Mask.MaskType.Numeric;
+            MaxGemPurityEdit.Properties.Mask.UseMaskAsDisplayFormat = true;
+            MaxGemPurityEdit.Size = new System.Drawing.Size(100, 20);
+            MaxGemPurityEdit.TabIndex = 102;
+            //
+            // MaxGemPurityLabel
+            //
+            MaxGemPurityLabel.Location = new System.Drawing.Point(250, 26);
+            MaxGemPurityLabel.Name = "MaxGemPurityLabel";
+            MaxGemPurityLabel.Size = new System.Drawing.Size(86, 13);
+            MaxGemPurityLabel.TabIndex = 101;
+            MaxGemPurityLabel.Text = "Max Gem Purity:";
             // 
             // StrengthLossRateEdit
             // 
@@ -2457,62 +2553,62 @@ namespace Server.Views
             // 
             // labelControl92
             // 
-            labelControl92.Location = new System.Drawing.Point(21, 243);
+            labelControl92.Location = new System.Drawing.Point(333, 243);
             labelControl92.Name = "labelControl92";
             labelControl92.Size = new System.Drawing.Size(90, 13);
-            labelControl92.TabIndex = 133;
+            labelControl92.TabIndex = 137;
             labelControl92.Text = "Admin Start Modes";
             // 
             // labelControl93
             // 
-            labelControl93.Location = new System.Drawing.Point(47, 262);
+            labelControl93.Location = new System.Drawing.Point(359, 262);
             labelControl93.Name = "labelControl93";
             labelControl93.Size = new System.Drawing.Size(64, 13);
-            labelControl93.TabIndex = 134;
+            labelControl93.TabIndex = 138;
             labelControl93.Text = "Gamemaster:";
             // 
             // labelControl94
             // 
-            labelControl94.Location = new System.Drawing.Point(62, 287);
+            labelControl94.Location = new System.Drawing.Point(374, 287);
             labelControl94.Name = "labelControl94";
             labelControl94.Size = new System.Drawing.Size(49, 13);
-            labelControl94.TabIndex = 135;
+            labelControl94.TabIndex = 140;
             labelControl94.Text = "Observer:";
             // 
             // labelControl95
             // 
-            labelControl95.Location = new System.Drawing.Point(59, 313);
+            labelControl95.Location = new System.Drawing.Point(371, 313);
             labelControl95.Name = "labelControl95";
             labelControl95.Size = new System.Drawing.Size(52, 13);
-            labelControl95.TabIndex = 136;
+            labelControl95.TabIndex = 142;
             labelControl95.Text = "Superman:";
             // 
             // AdminGamemasterStartEdit
             // 
-            AdminGamemasterStartEdit.Location = new System.Drawing.Point(117, 259);
+            AdminGamemasterStartEdit.Location = new System.Drawing.Point(429, 259);
             AdminGamemasterStartEdit.MenuManager = ribbon;
             AdminGamemasterStartEdit.Name = "AdminGamemasterStartEdit";
             AdminGamemasterStartEdit.Properties.Caption = "";
             AdminGamemasterStartEdit.Size = new System.Drawing.Size(100, 19);
-            AdminGamemasterStartEdit.TabIndex = 137;
+            AdminGamemasterStartEdit.TabIndex = 139;
             // 
             // AdminObserverStartEdit
             // 
-            AdminObserverStartEdit.Location = new System.Drawing.Point(117, 284);
+            AdminObserverStartEdit.Location = new System.Drawing.Point(429, 284);
             AdminObserverStartEdit.MenuManager = ribbon;
             AdminObserverStartEdit.Name = "AdminObserverStartEdit";
             AdminObserverStartEdit.Properties.Caption = "";
             AdminObserverStartEdit.Size = new System.Drawing.Size(100, 19);
-            AdminObserverStartEdit.TabIndex = 138;
+            AdminObserverStartEdit.TabIndex = 141;
             // 
             // AdminSupermanStartEdit
             // 
-            AdminSupermanStartEdit.Location = new System.Drawing.Point(117, 310);
+            AdminSupermanStartEdit.Location = new System.Drawing.Point(429, 310);
             AdminSupermanStartEdit.MenuManager = ribbon;
             AdminSupermanStartEdit.Name = "AdminSupermanStartEdit";
             AdminSupermanStartEdit.Properties.Caption = "";
             AdminSupermanStartEdit.Size = new System.Drawing.Size(100, 19);
-            AdminSupermanStartEdit.TabIndex = 139;
+            AdminSupermanStartEdit.TabIndex = 143;
             // 
             // ConfigView
             // 
@@ -2563,6 +2659,7 @@ namespace Server.Views
             ((System.ComponentModel.ISupportInitialize)ClientPathEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)MasterPasswordEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)MapPathEdit.Properties).EndInit();
+            ((System.ComponentModel.ISupportInitialize)LazyLoadMapsEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)DBSaveDelayEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)VersionPathEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)CheckVersionEdit.Properties).EndInit();
@@ -2604,6 +2701,8 @@ namespace Server.Views
             ((System.ComponentModel.ISupportInitialize)PKPointRateEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)BrownDurationEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)AllowObservationEdit.Properties).EndInit();
+            ((System.ComponentModel.ISupportInitialize)AllowWaypointsEdit.Properties).EndInit();
+            ((System.ComponentModel.ISupportInitialize)MaxWaypointsEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)SkillExpEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)DayCycleCountEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)MaxLevelEdit.Properties).EndInit();
@@ -2625,6 +2724,7 @@ namespace Server.Views
             ((System.ComponentModel.ISupportInitialize)MaxCurseEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)LuckRateEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)MaxLuckEdit.Properties).EndInit();
+            ((System.ComponentModel.ISupportInitialize)MaxGemPurityEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)SpecialRepairDelayEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)TorchRateEdit.Properties).EndInit();
             ((System.ComponentModel.ISupportInitialize)DropLayersEdit.Properties).EndInit();
@@ -2708,6 +2808,8 @@ namespace Server.Views
         private DevExpress.XtraTab.XtraTabPage xtraTabPage7;
         private DevExpress.XtraTab.XtraTabPage xtraTabPage3;
         private DevExpress.XtraEditors.ButtonEdit MapPathEdit;
+        private DevExpress.XtraEditors.LabelControl labelControl97;
+        private DevExpress.XtraEditors.CheckEdit LazyLoadMapsEdit;
         private DevExpress.XtraEditors.LabelControl labelControl13;
         private DevExpress.XtraEditors.LabelControl labelControl10;
         private DevExpress.XtraEditors.TimeSpanEdit DBSaveDelayEdit;
@@ -2779,6 +2881,8 @@ namespace Server.Views
         private DevExpress.XtraEditors.LabelControl labelControl61;
         private DevExpress.XtraEditors.TextEdit MaxLuckEdit;
         private DevExpress.XtraEditors.LabelControl labelControl60;
+        private DevExpress.XtraEditors.TextEdit MaxGemPurityEdit;
+        private DevExpress.XtraEditors.LabelControl MaxGemPurityLabel;
         private DevExpress.XtraEditors.TextEdit StrengthLossRateEdit;
         private DevExpress.XtraEditors.LabelControl labelControl64;
         private DevExpress.XtraEditors.TextEdit StrengthAddRateEdit;
@@ -2789,6 +2893,10 @@ namespace Server.Views
         private DevExpress.XtraEditors.LabelControl labelControl67;
         private DevExpress.XtraEditors.LabelControl labelControl24;
         private DevExpress.XtraEditors.CheckEdit AllowObservationEdit;
+        private DevExpress.XtraEditors.LabelControl labelControlAllowWaypoints;
+        private DevExpress.XtraEditors.CheckEdit AllowWaypointsEdit;
+        private DevExpress.XtraEditors.LabelControl labelControlMaxWaypoints;
+        private DevExpress.XtraEditors.TextEdit MaxWaypointsEdit;
         private DevExpress.XtraEditors.LabelControl labelControl74;
         private DevExpress.XtraEditors.TimeSpanEdit HarvestDurationEdit;
         private DevExpress.XtraEditors.LabelControl labelControl75;

@@ -1,4 +1,4 @@
-﻿using Client.Controls;
+using Client.Controls;
 using Client.Envir;
 using Client.Models;
 using Client.UserModels;
@@ -177,7 +177,7 @@ namespace Client.Scenes.Views
                 Text = CEnvir.Language.CompanionDialogTitle,
                 Parent = this,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
@@ -209,6 +209,7 @@ namespace Client.Scenes.Views
                 Label = { Text = CEnvir.Language.CompanionDialogCompanionTabBonusButtonLabel },
                 Location = new Point(10, 263),
                 Size = new Size(70, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Enabled = false,
             };
             BonusButton.MouseClick += (o, e) => ChangeView("Bonus");
@@ -219,6 +220,7 @@ namespace Client.Scenes.Views
                 Label = { Text = CEnvir.Language.CompanionDialogCompanionTabFilterButtonLabel },
                 Location = new Point(90, 263),
                 Size = new Size(70, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Enabled = false,
             };
             FilterButton.MouseClick += (o, e) => ChangeView("Filter");
@@ -229,6 +231,7 @@ namespace Client.Scenes.Views
                 Label = { Text = CEnvir.Language.CompanionDialogCompanionTabBagButtonLabel },
                 Location = new Point(170, 263),
                 Size = new Size(70, DefaultHeight),
+                LabelStyle = ButtonLabelStyle.Gold,
                 Enabled = false,
             };
             BagButton.MouseClick += (o, e) => ChangeView("Bag");
@@ -301,11 +304,9 @@ namespace Client.Scenes.Views
 
                 if (percent == 0) return;
 
-                MirImage image = library.CreateImage(4375, ImageType.Image);
+                if (!library.TryGetTexture(4375, ImageType.Image, out MirImage image, out var texture, out var sourceRectangle)) return;
 
-                if (image == null) return;
-
-                PresentTexture(image.Image, this, new Rectangle(HealthBar.DisplayArea.X, HealthBar.DisplayArea.Y, (int)(image.Width * percent), image.Height), Color.White, HealthBar);
+                PresentTexture(texture, sourceRectangle, this, new Rectangle(HealthBar.DisplayArea.X, HealthBar.DisplayArea.Y, (int)(image.Width * percent), image.Height), Color.White, HealthBar);
             };
 
             HealthLabel = new DXLabel
@@ -341,7 +342,7 @@ namespace Client.Scenes.Views
                 Outline = true,
                 Font = new Font(Config.FontName, CEnvir.FontSize(9F), FontStyle.Bold),
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.Left,
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 OutlineColour = Color.Black,
                 IsControl = false,
                 Text = CEnvir.Language.CompanionDialogCompanionTabNameLabel,
@@ -369,7 +370,7 @@ namespace Client.Scenes.Views
                 Outline = true,
                 Font = new Font(Config.FontName, CEnvir.FontSize(9F), FontStyle.Bold),
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.Left,
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 OutlineColour = Color.Black,
                 IsControl = false,
                 Text = CEnvir.Language.CompanionDialogCompanionTabLevelLabel,
@@ -394,11 +395,9 @@ namespace Client.Scenes.Views
 
                 if (percent == 0) return;
 
-                MirImage image = library.CreateImage(4310, ImageType.Image);
+                if (!library.TryGetTexture(4310, ImageType.Image, out MirImage image, out var texture, out var sourceRectangle)) return;
 
-                if (image == null) return;
-
-                PresentTexture(image.Image, this, new Rectangle(ExperienceBar.DisplayArea.X, ExperienceBar.DisplayArea.Y, (int)(image.Width * percent), image.Height), Color.White, ExperienceBar);
+                PresentTexture(texture, sourceRectangle, this, new Rectangle(ExperienceBar.DisplayArea.X, ExperienceBar.DisplayArea.Y, (int)(image.Width * percent), image.Height), Color.White, ExperienceBar);
             };
 
             ExperienceLabel = new DXLabel
@@ -420,7 +419,7 @@ namespace Client.Scenes.Views
                 Outline = true,
                 Font = new Font(Config.FontName, CEnvir.FontSize(9F), FontStyle.Bold),
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.Left,
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 OutlineColour = Color.Black,
                 IsControl = false,
                 Text = CEnvir.Language.CompanionDialogCompanionTabExpLabel,
@@ -445,11 +444,9 @@ namespace Client.Scenes.Views
 
                 if (percent == 0) return;
 
-                MirImage image = library.CreateImage(4311, ImageType.Image);
+                if (!library.TryGetTexture(4311, ImageType.Image, out MirImage image, out var texture, out var sourceRectangle)) return;
 
-                if (image == null) return;
-
-                PresentTexture(image.Image, this, new Rectangle(HungerBar.DisplayArea.X, HungerBar.DisplayArea.Y, (int)(image.Width * percent), image.Height), Color.White, HungerBar);
+                PresentTexture(texture, sourceRectangle, this, new Rectangle(HungerBar.DisplayArea.X, HungerBar.DisplayArea.Y, (int)(image.Width * percent), image.Height), Color.White, HungerBar);
             };
 
             HungerLabel = new DXLabel
@@ -471,7 +468,7 @@ namespace Client.Scenes.Views
                 Outline = true,
                 Font = new Font(Config.FontName, CEnvir.FontSize(9F), FontStyle.Bold),
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.Left,
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 OutlineColour = Color.Black,
                 IsControl = false,
                 Text = CEnvir.Language.CompanionDialogCompanionTabHungerLabel,
@@ -599,7 +596,7 @@ namespace Client.Scenes.Views
                 Parent = FilterControl,
                 Outline = true,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 OutlineColour = Color.Black,
                 IsControl = false,
                 Text = "Class",
@@ -613,7 +610,7 @@ namespace Client.Scenes.Views
                 Parent = FilterControl,
                 Outline = true,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 OutlineColour = Color.Black,
                 IsControl = false,
                 Text = "Rarity Type",
@@ -627,7 +624,7 @@ namespace Client.Scenes.Views
                 Parent = FilterControl,
                 Outline = true,
                 Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Color.FromArgb(198, 166, 99),
+                ForeColour = Constants.PrimaryColour,
                 OutlineColour = Color.Black,
                 IsControl = false,
                 Text = "Item Type",
@@ -697,11 +694,9 @@ namespace Client.Scenes.Views
 
                 if (percent == 0) return;
 
-                MirImage image = library.CreateImage(4312, ImageType.Image);
+                if (!library.TryGetTexture(4312, ImageType.Image, out MirImage image, out var texture, out var sourceRectangle)) return;
 
-                if (image == null) return;
-
-                PresentTexture(image.Image, this, new Rectangle(WeightBar.DisplayArea.X, WeightBar.DisplayArea.Y, (int)(image.Width * percent), image.Height), Color.White, WeightBar);
+                PresentTexture(texture, sourceRectangle, this, new Rectangle(WeightBar.DisplayArea.X, WeightBar.DisplayArea.Y, (int)(image.Width * percent), image.Height), Color.White, WeightBar);
             };
 
             WeightLabel = new DXLabel

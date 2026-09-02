@@ -16,15 +16,14 @@ namespace Client.Models
         #region Stats
         public override Stats Stats
         {
-            get { return _Stats; }
+            get { return base.Stats; }
             set
             {
-                _Stats = value;
+                base.Stats = value;
 
                 GameScene.Game.StatsChanged();
             }
         }
-        private Stats _Stats = new Stats();
         #endregion
 
         #region Hermit Stats
@@ -206,6 +205,7 @@ namespace Client.Models
         public List<ClientBuffInfo> Buffs = new List<ClientBuffInfo>();
 
         public Dictionary<MagicInfo, ClientUserMagic> Magics = new Dictionary<MagicInfo, ClientUserMagic>();
+        public List<ClientUserMilestone> Milestones = new List<ClientUserMilestone>();
 
         public DateTime NextActionTime, ServerTime, AttackTime, NextRunTime, NextMagicTime, BuffTime = CEnvir.Now, LotusTime, CombatTime, MoveTime;
         public MagicType AttackMagic;
@@ -270,7 +270,6 @@ namespace Client.Models
         }
         private bool _CanFlameSplash;
 
-
         public UserObject(StartInformation info)
         {
             CharacterIndex = info.Index;
@@ -279,6 +278,7 @@ namespace Client.Models
 
             Name = info.Name;
             Caption = info.Caption;
+            CaptionOutlineColour = info.CaptionOutlineColour;
             NameColour = info.NameColour;
 
             Class = info.Class;
@@ -336,6 +336,8 @@ namespace Client.Models
             GameScene.Game.StruckEnabled = info.StruckEnabled;
             GameScene.Game.HermitEnabled = info.HermitEnabled;
 
+            Globals.MaxGemPurity = info.MaxGemPurity;
+
             HermitPoints = info.HermitPoints;
 
             foreach (ClientUserMagic magic in info.Magics)
@@ -344,21 +346,14 @@ namespace Client.Models
             foreach (ClientBuffInfo buff in info.Buffs)
                 AddBuff(buff);
 
+            foreach (ClientUserMilestone title in info.Milestones)
+                Milestones.Add(title);
+
             foreach (ClientUserCurrency currency in info.Currencies)
-            {
-                Currencies.Add(new ClientUserCurrency
-                {
-                    CurrencyIndex = currency.CurrencyIndex,
-                    Info = Globals.CurrencyInfoList.Binding.First(x => x.Index == currency.CurrencyIndex),
-                    Amount = currency.Amount
-                });
-            }
+                Currencies.Add(currency);
 
             if (info.Discipline != null)
-            {
                 Discipline = info.Discipline;
-                Discipline.DisciplineInfo = Globals.DisciplineInfoList.Binding.First(x => x.Index == info.Discipline.InfoIndex);
-            }
 
             FiltersClass = info.FiltersClass;
             FiltersRarity = info.FiltersRarity;
@@ -400,6 +395,7 @@ namespace Client.Models
 
             GameScene.Game.MapControl.UpdateMapLocation();
             GameScene.Game.MapControl.FLayer.TextureValid = false;
+            GameScene.Game.UpdateAutoPathProgress();
         }
 
         public override void SetAction(ObjectAction action)
@@ -427,6 +423,27 @@ namespace Client.Models
             foreach (TimeSpan delay in CurrentFrame.Delays)
                 NextActionTime += delay;
         }
+
+        public bool TryStartAutoPathMove(MirDirection direction, Point location, int distance, TimeSpan slow)
+        {
+            if (!GameScene.Game.MoveFrame || CEnvir.Now < NextActionTime || CEnvir.Now < MoveTime || ActionQueue.Count > 0) return false;
+
+            ServerTime = DateTime.MinValue;
+            SetAction(new ObjectAction(MirAction.Moving, direction, location, distance, MagicType.None));
+            NextActionTime += slow;
+            CEnvir.Enqueue(new C.AutoPathMoveStarted());
+            GameScene.Game.CanRun = true;
+            return true;
+        }
+
+        public void ApplyAutoPathMapTransition(MirDirection direction, Point location, TimeSpan slow)
+        {
+            GameScene.Game.Displacement(direction, location, true);
+            NextActionTime += slow;
+            CEnvir.Enqueue(new C.AutoPathMoveStarted());
+            GameScene.Game.CanRun = true;
+        }
+
         public void AttemptAction(ObjectAction action)
         {
             if (CEnvir.Now < NextActionTime || ActionQueue.Count > 0) return;
@@ -635,7 +652,7 @@ namespace Client.Models
                     if (BagWeight > Stats[Stat.BagWeight] || (Poison & PoisonType.Neutralize) == PoisonType.Neutralize)
                         AttackTime += TimeSpan.FromMilliseconds(attackDelay);
 
-                    CEnvir.Enqueue(new C.RangeAttack { Direction = action.Direction, Target = (uint)action.Extra[0], DelayedTime = (int)action.Extra[2] });
+                    CEnvir.Enqueue(new C.RangeAttack { Direction = action.Direction, Target = (uint)action.Extra[0] });
                     GameScene.Game.CanRun = false;
                     break;
                 case MirAction.Spell:
@@ -648,14 +665,16 @@ namespace Client.Models
                     GameScene.Game.CanRun = false;
                     break;
                 case MirAction.Fishing:
-                    AttackTime = CEnvir.Now + TimeSpan.FromMilliseconds(Globals.AttackDelay);
+                    {
+                        AttackTime = CEnvir.Now + TimeSpan.FromMilliseconds(Globals.AttackDelay);
 
-                    var state = (FishingState)action.Extra[0];
-                    var floatLocation = (Point)action.Extra[1];
-                    var caughtFish = GameScene.Game.FishingCatchBox.CaughtFish;
+                        var state = (FishingState)action.Extra[0];
+                        var floatLocation = (Point)action.Extra[1];
+                        var caughtFish = GameScene.Game.FishingCatchBox.CaughtFish;
 
-                    CEnvir.Enqueue(new C.FishingCast { State = state, Direction = action.Direction, FloatLocation = floatLocation, CaughtFish = caughtFish });
-                    GameScene.Game.CanRun = false;
+                        CEnvir.Enqueue(new C.FishingCast { State = state, Direction = action.Direction, FloatLocation = floatLocation, CaughtFish = caughtFish });
+                        GameScene.Game.CanRun = false;
+                    }
                     break;
                 case MirAction.Mining:
                     attackDelay = Globals.AttackDelay - Stats[Stat.AttackSpeed] * Globals.ASpeedRate;
@@ -670,6 +689,16 @@ namespace Client.Models
 
                     CEnvir.Enqueue(new C.Mining { Direction = action.Direction });
                     GameScene.Game.CanRun = false;
+                    break;
+                case MirAction.Taming:
+                    {
+                        var state = (TamingState)action.Extra[0];
+                        var tamingObjectID = (uint)action.Extra[1];
+
+                        AttackTime = CEnvir.Now + TimeSpan.FromMilliseconds(Globals.AttackDelay);
+                        CEnvir.Enqueue(new C.Taming { State = state, Direction = action.Direction, ObjectID = tamingObjectID });
+                        GameScene.Game.CanRun = false;
+                    }
                     break;
                 default:
                     GameScene.Game.CanRun = false;

@@ -189,7 +189,7 @@ namespace Server.Models
             {
                 if (region.RegionType != RegionType.Area) continue;
 
-                var points = region.GetPoints(Width);
+                IEnumerable<Point> points = region.PointList ?? (IEnumerable<Point>)region.GetPoints(Width);
 
                 foreach (Point sPoint in points)
                 {
@@ -201,10 +201,7 @@ namespace Server.Models
                         continue;
                     }
 
-                    if (source.Regions == null)
-                        source.Regions = new List<MapRegion>();
-
-                    source.Regions.Add(region);
+                    source.AddRegion(region);
                 }
             }
         }
@@ -421,7 +418,15 @@ namespace Server.Models
                 }
             }
 
-            for (int i = AliveCount; i < Info.Count; i++)
+            int spawnCount = Info.Count;
+
+            if (!Info.Monster.IsBoss && CurrentMap.Info.Dungeon != null)
+            {
+                decimal spawnMultiplier = CurrentMap.Info.Dungeon.SpawnMultiplier;
+                spawnCount = (int)Math.Ceiling(Math.Clamp(Info.Count * spawnMultiplier, 0M, int.MaxValue));
+            }
+
+            for (int i = AliveCount; i < spawnCount; i++)
             {
                 MonsterObject mob = MonsterObject.GetMonster(Info.Monster);
 
@@ -469,6 +474,8 @@ namespace Server.Models
 
     public class Cell
     {
+        private static readonly List<MapRegion> EmptyRegions = new List<MapRegion>(0);
+
         public Point Location;
 
         public Map Map;
@@ -478,13 +485,21 @@ namespace Server.Models
 
         public List<MovementInfo> Movements;
 
-        public List<MapRegion> Regions = [];
+        public List<MapRegion> Regions = EmptyRegions;
 
         public List<QuestTask> QuestTasks;
 
         public Cell(Point location)
         {
             Location = location;
+        }
+
+        public void AddRegion(MapRegion region)
+        {
+            if (ReferenceEquals(Regions, EmptyRegions))
+                Regions = new List<MapRegion>();
+
+            Regions.Add(region);
         }
 
 
@@ -546,6 +561,8 @@ namespace Server.Models
 
                         UserQuestTask userTask = userQuest.Tasks.FirstOrDefault(x => x.Task == task);
 
+                        if (userTask?.Completed == true) continue;
+
                         if (userTask == null)
                         {
                             userTask = SEnvir.UserQuestTaskList.CreateNewObject();
@@ -553,12 +570,22 @@ namespace Server.Models
                             userTask.Quest = userQuest;
                         }
 
-                        if (userTask.Completed) continue;
-
                         userTask.Amount = 1;
 
                         player.Enqueue(new S.QuestChanged { Quest = userQuest.ToClientInfo() });
                     }
+                }
+            }
+
+            if (ob.Race == ObjectType.Player)
+            {
+                PlayerObject player = (PlayerObject)ob;
+
+                foreach (var region in Regions.Except(player.CurrentCell.Regions))
+                {
+                    if (region.RegionType != RegionType.None && region.RegionType != RegionType.Area) continue;
+
+                    player.LogMilestone(MilestoneType.Region, 1, region: region);
                 }
             }
 
@@ -595,7 +622,9 @@ namespace Server.Models
 
                 if (map == null) break;
 
-                Cell cell = map.GetCell(movement.DestinationRegion.PointList[SEnvir.Random.Next(movement.DestinationRegion.PointList.Count)]);
+                Point destination = movement.DestinationRegion.PointList[SEnvir.Random.Next(movement.DestinationRegion.PointList.Count)];
+
+                Cell cell = map.GetCell(destination);
 
                 if (cell == null) continue;
 

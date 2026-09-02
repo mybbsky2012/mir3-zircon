@@ -1,5 +1,5 @@
-﻿using Client.Envir;
-using Client.Rendering;
+using Client.Envir;
+using Shared.Rendering;
 using Library;
 using System;
 using System.Collections.Generic;
@@ -489,6 +489,44 @@ namespace Client.Controls
             return visible;
         }
 
+        protected override void DrawChildControls()
+        {
+            DrawTabChild(LeftTabButton);
+            DrawTabChild(RightTabButton);
+
+            foreach (DXButton button in TabButtons)
+                DrawTabChild(button);
+
+            bool selectedTabDrawn = false;
+
+            foreach (DXControl control in Controls)
+            {
+                if (control == SelectedTab)
+                {
+                    DrawTabChild(SelectedTab);
+                    selectedTabDrawn = true;
+                    continue;
+                }
+
+                if (control is DXTab) continue;
+                if (control == LeftTabButton || control == RightTabButton) continue;
+                if (control is DXButton button && TabButtons.Contains(button)) continue;
+
+                DrawTabChild(control);
+            }
+
+            if (!selectedTabDrawn)
+                DrawTabChild(SelectedTab);
+        }
+
+        private static void DrawTabChild(DXControl control)
+        {
+            if (control == null || !control.IsVisible || control.DisplayArea.Width <= 0 || control.DisplayArea.Height <= 0)
+                return;
+
+            control.Draw();
+        }
+
         #endregion
 
         #region IDisposable
@@ -766,9 +804,9 @@ namespace Client.Controls
         public DXTab()
         {
             Location = new Point(0, TabHeight - 1);
-            BackColour = BackColour = Color.FromArgb(16, 8, 8);
+            BackColour = BackColour = Constants.WindowBackColour;
             DrawTexture = true;
-            BorderColour = Color.FromArgb(198, 166, 99);
+            BorderColour = Constants.PrimaryColour;
             PassThrough = true;
             Visible = false;
 
@@ -1004,7 +1042,16 @@ namespace Client.Controls
         #region IDisposable
         protected override void Dispose(bool disposing)
         {
-            (Parent as DXTabControl)?.SetNewTab();
+            DXTabControl tabControl = Parent as DXTabControl ?? CurrentTabControl;
+
+            if (disposing && tabControl != null && !tabControl.IsDisposed && TabButton != null)
+            {
+                if (tabControl.SelectedTab == this)
+                    tabControl.SelectedTab = null;
+
+                tabControl.UnregisterTabButton(TabButton);
+                tabControl.TabButtons.Remove(TabButton);
+            }
 
             base.Dispose(disposing);
 
@@ -1030,6 +1077,12 @@ namespace Client.Controls
                 SelectedChanged = null;
                 DrawOtherBorderChanged = null;
                 CurrentTabControlChanged = null;
+
+                if (tabControl != null && !tabControl.IsDisposed)
+                {
+                    tabControl.SetNewTab();
+                    tabControl.TabsChanged();
+                }
             }
         }
         #endregion

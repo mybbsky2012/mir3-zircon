@@ -22,6 +22,7 @@ namespace Server.Views
             RequiredClassImageComboBox.Items.AddEnum<RequiredClass>();
             RequirementImageComboBox.Items.AddEnum<NPCRequirementType>();
             MapIconImageComboBox.Items.AddEnum<MapIcon>();
+            CategoryImageComboBox.Items.AddEnum<NPCCategory>();
 
             DaysOfWeekImageComboBox.Items.AddEnum<DaysOfWeek>();
         }
@@ -46,6 +47,11 @@ namespace Server.Views
         private void ExportButton_ItemClick(object sender, ItemClickEventArgs e)
         {
             JsonExporter.Export<NPCInfo>(NPCInfoGridView);
+        }
+
+        private void InsertRowButton_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            SMain.InsertRowAfterFocusedObject<NPCInfo>(NPCInfoGridView);
         }
     }
 }
