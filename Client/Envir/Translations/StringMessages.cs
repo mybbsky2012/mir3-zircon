@@ -131,6 +131,8 @@ namespace Client.Envir.Translations
         public abstract string CommonControlApply { get; set; }
         public abstract string CommonControlCancel { get; set; }
         public abstract string CommonControlClose { get; set; }
+        public abstract string CommonControlNoneSelected { get; set; }
+        public abstract string CommonControlSelectedCount { get; set; }
         public abstract string CommonControlMiniMapSizeHint { get; set; }
         public abstract string CommonControlMiniMapTransparencyHint { get; set; }
         public abstract string CommonControlMiniMapBigMapHint { get; set; }
@@ -165,11 +167,14 @@ namespace Client.Envir.Translations
         public abstract string CommonControlConfigWindowGameSectionSettingsLabel { get; set; }
         public abstract string CommonControlConfigWindowNetworkSectionSettingsLabel { get; set; }
         public abstract string CommonControlConfigWindowUISectionSettingsLabel { get; set; }
+        public abstract string CommonControlConfigWindowUISectionScalingLabel { get; set; }
         public abstract string CommonControlConfigWindowUISectionColoursLabel { get; set; }
         public abstract string CommonControlConfigWindowUISectionTargetColoursLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabFullScreenLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabBorderlessLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabGameSizeLabel { get; set; }
+        public abstract string CommonControlConfigWindowScaleLabel { get; set; }
+        public abstract string CommonControlConfigWindowScaleAutomatic { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabDefaultMonitorLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabVSyncLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabLimitFPSLabel { get; set; }
@@ -185,6 +190,10 @@ namespace Client.Envir.Translations
         public abstract string CommonControlConfigWindowSoundTabMonsterVolumeLabel { get; set; }
         public abstract string CommonControlConfigWindowSoundTabMagicVolumeLabel { get; set; }
         public abstract string CommonControlConfigWindowGameTabItemNameLabel { get; set; }
+        public abstract string GroundLootDenseLabel { get; set; }
+        public abstract string GroundLootDenseHint { get; set; }
+        public abstract string GroundLootCount { get; set; }
+        public abstract string GroundLootPage { get; set; }
         public abstract string CommonControlConfigWindowGameTabMonsterNameLabel { get; set; }
         public abstract string CommonControlConfigWindowGameTabPlayerNameLabel { get; set; }
         public abstract string CommonControlConfigWindowGameTabNPCNameLabel { get; set; }
@@ -193,6 +202,7 @@ namespace Client.Envir.Translations
         public abstract string CommonControlConfigWindowGameTabDamageNumbersLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabDrawParticlesLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabDisplayHelmetLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabUIScaleLabel { get; set; }
         public abstract string CommonControlConfigWindowUITabHideChatBarLabel { get; set; }
         public abstract string CommonControlConfigWindowUITabEscapeCloseAllLabel { get; set; }
         public abstract string CommonControlConfigWindowUITabShiftOpenChatLabel { get; set; }
@@ -203,9 +213,12 @@ namespace Client.Envir.Translations
         public abstract string CommonControlConfigWindowUITabLogChatLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabDrawEffectsLabel { get; set; }
         public abstract string CommonControlConfigWindowGraphicsTabDrawWeatherLabel { get; set; }
+        public abstract string CommonControlConfigWindowGraphicsTabColourGradingLabel { get; set; }
         public abstract string CommonControlConfigWindowGameTabShowTargetOutlineLabel { get; set; }
         public abstract string CommonControlConfigWindowGameTabObservableLabel { get; set; }
         public abstract string CommonControlConfigWindowUITabKeyBindButtonLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabFontSizeModifierLabel { get; set; }
+        public abstract string CommonControlConfigWindowUITabFontSizeModifierHint { get; set; }
         public abstract string CommonControlConfigWindowNetworkTabUseNetworkConfigLabel { get; set; }
         public abstract string CommonControlConfigWindowNetworkTabUseIPAddressLabel { get; set; }
         public abstract string CommonControlConfigWindowNetworkTabUsePortLabel { get; set; }
@@ -517,6 +530,24 @@ namespace Client.Envir.Translations
         public abstract string GroupDialogAddButtonConfirmCaption { get; set; }
         public abstract string GroupDialogAddButtonHint { get; set; }
         public abstract string GroupDialogRemoveButtonHint { get; set; }
+        public abstract string GroupLootTitle { get; set; }
+        public abstract string GroupLootSettingsTitle { get; set; }
+        public abstract string GroupLootSettingsHint { get; set; }
+        public abstract string GroupLootMode { get; set; }
+        public abstract string GroupLootBagEnabled { get; set; }
+        public abstract string GroupLootFilters { get; set; }
+        public abstract string GroupLootItemTypes { get; set; }
+        public abstract string GroupLootRarities { get; set; }
+        public abstract string GroupLootNeedRestrictions { get; set; }
+        public abstract string GroupLootAllowManualTaking { get; set; }
+        public abstract string GroupLootShare { get; set; }
+        public abstract string GroupLootNeed { get; set; }
+        public abstract string GroupLootGreed { get; set; }
+        public abstract string GroupLootPass { get; set; }
+        public abstract string GroupLootVoteTitle { get; set; }
+        public abstract string GroupLootVoteTime { get; set; }
+        public abstract string GroupLootWon { get; set; }
+        public abstract string GroupLootNoWinner { get; set; }
 
         public abstract string GuildDialogTitle { get; set; }
         public abstract string GuildDialogCreateTabLabel { get; set; }
@@ -599,6 +630,7 @@ namespace Client.Envir.Translations
         public abstract string GuildRepairGuardsConfirmMsg { get; set; }
         public abstract string GuildRepairGuardsConfirmCaption { get; set; }
 
+        public abstract string HorseTameDialogTitle { get; set; }
         public abstract string InventoryDialogTitle { get; set; }
         public abstract string InventoryDialogPrimaryCurrencyTitle { get; set; }
         public abstract string InventoryDialogSecondaryCurrencyTitle { get; set; }
@@ -824,5 +856,41 @@ namespace Client.Envir.Translations
         public abstract string SocketDialogStartButtonLabel { get; set; }
         public abstract string SocketCombineDialogTitle { get; set; }
         public abstract string SocketCombineDialogStartButtonLabel { get; set; }
+
+        public abstract string CharacterCraftingTabLabel { get; set; }
+        public abstract string CharacterCraftingMaterialsLabel { get; set; }
+        public abstract string CraftingLevelLabel { get; set; }
+        public abstract string CraftingMaxLevelLabel { get; set; }
+        public abstract string CraftingExperienceLabel { get; set; }
+        public abstract string CraftingFavouriteLabel { get; set; }
+        public abstract string CraftingCraftButtonLabel { get; set; }
+        public abstract string CraftingOpenRecipesButtonLabel { get; set; }
+        public abstract string CraftingRecipesTitle { get; set; }
+        public abstract string CraftingRecipeListLabel { get; set; }
+        public abstract string CraftingProgressTitle { get; set; }
+        public abstract string CraftingResultLabel { get; set; }
+        public abstract string CraftingRequiredMaterialsLabel { get; set; }
+        public abstract string CraftingRequiredLevelTitleLabel { get; set; }
+        public abstract string CraftingRequiredGoldTitleLabel { get; set; }
+        public abstract string CraftingExperienceRewardTitleLabel { get; set; }
+        public abstract string CraftingOnlyCraftableLabel { get; set; }
+        public abstract string CraftingFavouriteButtonLabel { get; set; }
+        public abstract string CraftingWeaponCategory { get; set; }
+        public abstract string CraftingArmourCategory { get; set; }
+        public abstract string CraftingAccessoriesCategory { get; set; }
+        public abstract string CraftingConsumableCategory { get; set; }
+        public abstract string CraftingIngredientsCategory { get; set; }
+        public abstract string CraftingRequiredLevelLabel { get; set; }
+        public abstract string CraftingRequiredGoldLabel { get; set; }
+        public abstract string CraftingExperienceRewardLabel { get; set; }
+        public abstract string CraftingSuccessRateLabel { get; set; }
+        public abstract string CraftingSuccessRateBonusLabel { get; set; }
+        public abstract string CraftingDurationLabel { get; set; }
+        public abstract string CraftingDesignLabel { get; set; }
+        public abstract string CraftingInProgressLabel { get; set; }
+        public abstract string CraftingSuccessLabel { get; set; }
+        public abstract string CraftingFailedLabel { get; set; }
+        public abstract string CraftingCancelledLabel { get; set; }
+        public abstract string CraftingRetryButtonLabel { get; set; }
     }
 }

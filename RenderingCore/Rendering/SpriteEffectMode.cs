@@ -6,6 +6,8 @@ namespace Shared.Rendering
         Grayscale = 1,
         Outline = 2,
         DropShadow = 3,
-        SolidShadowFill = 4
+        SolidShadowFill = 4,
+        ColourGrade = 5,
+        PremultipliedCache = 6
     }
 }

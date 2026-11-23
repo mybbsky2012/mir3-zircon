@@ -13,10 +13,12 @@ namespace Client.Scenes.Views
 {
     public sealed class GroupDialog : DXImageControl
     {
+        private const int GroupBagVisibleFlag = 1;
+
         #region Properties
 
         public DXLabel TitleLabel;
-        public DXButton CloseButton, AddButton, RemoveButton, LFGButton, OptionsButton;
+        public DXButton CloseButton, AddButton, RemoveButton, LFGButton, BagButton;
         public DXCheckBox AllowGroupBox;
 
         public DXLabel LFGNameLabel, LFGStatusLabel;
@@ -139,8 +141,22 @@ namespace Client.Scenes.Views
 
         public override void OnIsVisibleChanged(bool oValue, bool nValue)
         {
+            RefreshGroupLootAvailability();
+
             if (IsVisible)
                 BringToFront();
+
+            if (GameScene.Game?.GroupBagBox != null)
+            {
+                bool showGroupBag = nValue && GameScene.Game.GroupLootEnabled && GroupBagVisibilityPreferred;
+                GameScene.Game.GroupBagBox.Visible = showGroupBag;
+                if (showGroupBag)
+                {
+                    AnchorGroupBag();
+                    GameScene.Game.GroupBagBox.BringToFront();
+                    BringToFront();
+                }
+            }
 
             if (Settings != null)
                 Settings.Visible = nValue;
@@ -161,6 +177,67 @@ namespace Client.Scenes.Views
 
             if (Settings != null && IsMoving)
                 Settings.Location = nValue;
+
+            AnchorGroupBag();
+        }
+
+        public void AnchorGroupBag()
+        {
+            if (GameScene.Game?.GroupBagBox == null) return;
+
+            GroupBagDialog bag = GameScene.Game.GroupBagBox;
+            int right = Location.X + Size.Width + 4;
+            int x = right + bag.Size.Width <= SceneLayoutSize.Width ? right : Location.X - bag.Size.Width - 4;
+            x = Math.Max(0, Math.Min(x, SceneLayoutSize.Width - bag.Size.Width));
+            int y = Math.Max(0, Math.Min(Location.Y, SceneLayoutSize.Height - bag.Size.Height));
+            bag.Location = new Point(x, y);
+        }
+
+        public void MoveFromGroupBag(Point delta)
+        {
+            int x = Math.Max(0, Math.Min(Location.X + delta.X, SceneLayoutSize.Width - Size.Width));
+            int y = Math.Max(0, Math.Min(Location.Y + delta.Y, SceneLayoutSize.Height - Size.Height));
+            Location = new Point(x, y);
+            AnchorGroupBag();
+        }
+
+        public void RefreshGroupLootAvailability()
+        {
+            bool enabled = GameScene.Game?.GroupLootEnabled == true;
+
+            if (BagButton != null)
+                BagButton.Enabled = enabled;
+
+            if (!enabled && GameScene.Game?.GroupBagBox != null)
+                GameScene.Game.GroupBagBox.Visible = false;
+        }
+
+        private bool GroupBagVisibilityPreferred => Settings != null && (Settings.Extra & GroupBagVisibleFlag) != 0;
+
+        public bool ShouldShowGroupBag => GameScene.Game?.GroupLootEnabled == true && IsVisible && GroupBagVisibilityPreferred;
+
+        public void SetGroupBagVisible(bool visible)
+        {
+            if (Settings != null)
+                Settings.Extra = visible ? Settings.Extra | GroupBagVisibleFlag : Settings.Extra & ~GroupBagVisibleFlag;
+
+            if (GameScene.Game?.GroupBagBox == null) return;
+
+            GroupBagDialog bag = GameScene.Game.GroupBagBox;
+            bag.Visible = visible && GameScene.Game.GroupLootEnabled && IsVisible;
+
+            if (!bag.Visible) return;
+
+            AnchorGroupBag();
+            bag.BringToFront();
+            BringToFront();
+        }
+
+        private void BagButton_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (!GameScene.Game.GroupLootEnabled || GameScene.Game.GroupBagBox == null) return;
+
+            SetGroupBagVisible(!GameScene.Game.GroupBagBox.Visible);
         }
 
         public override void OnKeyDown(KeyEventArgs e)
@@ -226,17 +303,11 @@ namespace Client.Scenes.Views
             Sort = true;
             DropShadow = true;
 
-            TitleLabel = new DXLabel
+            TitleLabel = new DXWindowTitleLabel
             {
                 Text = CEnvir.Language.GroupDialogTitle,
                 Parent = this,
-                Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Constants.PrimaryColour,
-                Outline = true,
-                OutlineColour = Color.Black,
-                IsControl = false,
             };
-            TitleLabel.Location = new Point((DisplayArea.Width - TitleLabel.Size.Width) / 2, 8);
 
             CloseButton = new DXButton
             {
@@ -394,15 +465,16 @@ namespace Client.Scenes.Views
                 }
             };
 
-            OptionsButton = new DXButton
+            BagButton = new DXButton
             {
-                Size = new Size(36, 36),
-                ButtonType = ButtonType.OptionsButton,
+                LibraryFile = LibraryFile.GameInter,
+                Index = 87,
                 Location = new Point(173, 217),
                 Parent = this,
-                Enabled = false,
-                Hint = "Settings"
+                Enabled = GameScene.Game.GroupLootEnabled,
+                Hint = CEnvir.Language.GroupLootTitle,
             };
+            BagButton.MouseClick += BagButton_MouseClick;
 
             LFGNameLabel = new DXLabel
             {
@@ -411,6 +483,7 @@ namespace Client.Scenes.Views
                 IsControl = false,
                 Size = new Size(101, 20),
                 Location = new Point(12, 272),
+                LabelStyle = DXLabelStyle.GoldTitle,
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter,
                 ForeColour = Constants.PrimaryColour
             };
@@ -422,6 +495,7 @@ namespace Client.Scenes.Views
                 IsControl = false,
                 Size = new Size(95, 20),
                 Location = new Point(114, 272),
+                LabelStyle = DXLabelStyle.GoldTitle,
                 DrawFormat = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter,
                 ForeColour = Constants.PrimaryColour
             };
@@ -622,6 +696,10 @@ namespace Client.Scenes.Views
 
             AddButton.Enabled = Members.Count == 0 || Members[0].ObjectID == GameScene.Game.User.ObjectID;
             LFGButton.Enabled = Members.Count == 0 || Members[0].ObjectID == GameScene.Game.User.ObjectID;
+            RefreshGroupLootAvailability();
+            GameScene.Game.GroupBagBox?.RefreshPermissions();
+            foreach (GroupLootSettingsDialog dialog in DXWindow.Windows.OfType<GroupLootSettingsDialog>().ToList())
+                dialog.RefreshPermissions();
             GameScene.Game.GroupHealthBox.UpdateMembers();
         }
         #endregion
@@ -675,6 +753,16 @@ namespace Client.Scenes.Views
                         RemoveButton.Dispose();
 
                     RemoveButton = null;
+                }
+
+                if (BagButton != null)
+                {
+                    BagButton.MouseClick -= BagButton_MouseClick;
+
+                    if (!BagButton.IsDisposed)
+                        BagButton.Dispose();
+
+                    BagButton = null;
                 }
 
                 if (MemberTab != null)
@@ -1110,6 +1198,7 @@ namespace Client.Scenes.Views
         public GroupLFGInputWindow()
         {
             HasFooter = true;
+            DropShadow = true;
 
             TitleLabel.Text = "Looking For Group";
 
@@ -1208,7 +1297,7 @@ namespace Client.Scenes.Views
             };
             CancelButton.MouseClick += (o, e) => Dispose();
 
-            Location = new Point((ActiveScene.DisplayArea.Width - DisplayArea.Width) / 2, (ActiveScene.DisplayArea.Height - DisplayArea.Height) / 2);
+            Location = new Point((SceneLayoutSize.Width - Size.Width) / 2, (SceneLayoutSize.Height - Size.Height) / 2);
         }
 
         #region Methods

@@ -636,16 +636,23 @@ namespace Client.Controls
             CountLabel.Location = new Point(Size.Width - CountLabel.Size.Width, Size.Height - CountLabel.Size.Height);
         }
 
-        protected override void OnClearTexture()
+        protected override void OnBeforeChildrenDraw()
         {
-            base.OnClearTexture();
+            base.OnBeforeChildrenDraw();
 
             if (!Border || BorderInformation == null)
-            {
                 return;
-            }
 
-            RenderingPipelineManager.DrawLine(BorderInformation, BorderColour);
+            if (RenderingPipelineManager.GetLineWidth() != BorderSize)
+                RenderingPipelineManager.SetLineWidth(BorderSize);
+
+            Rectangle area = DisplayArea;
+            Rectangle clipArea = GetBorderClipArea();
+
+            DrawClippedHorizontalLine(area.Left, area.Right - 1, area.Top, clipArea);
+            DrawClippedVerticalLine(area.Right - 1, area.Top, area.Bottom - 1, clipArea);
+            DrawClippedHorizontalLine(area.Left, area.Right - 1, area.Bottom - 1, clipArea);
+            DrawClippedVerticalLine(area.Left, area.Top, area.Bottom - 1, clipArea);
         }
         protected internal override void UpdateBorderInformation()
         {
@@ -1041,7 +1048,8 @@ namespace Client.Controls
             {
                 QuickInfo = null;
 
-                GameScene.Game.AutoPotionBox.Rows[toCell.Slot].SendUpdate();
+                // Clear the source potion link; the destination slot belongs to another grid.
+                GameScene.Game.AutoPotionBox.Rows[Slot].SendUpdate();
                 if (Selected) SelectedCell = null;
                 return;
             }

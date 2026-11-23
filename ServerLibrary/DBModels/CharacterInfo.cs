@@ -598,6 +598,27 @@ namespace Server.DBModels
         }
         private int _Fame;
 
+        public int CraftingLevel
+        {
+            get => _CraftingLevel;
+            set { if (_CraftingLevel == value) return; int oldValue = _CraftingLevel; _CraftingLevel = value; OnChanged(oldValue, value, "CraftingLevel"); }
+        }
+        private int _CraftingLevel = 1;
+
+        public long CraftingExperience
+        {
+            get => _CraftingExperience;
+            set { if (_CraftingExperience == value) return; long oldValue = _CraftingExperience; _CraftingExperience = value; OnChanged(oldValue, value, "CraftingExperience"); }
+        }
+        private long _CraftingExperience;
+
+        public CraftingRecipeInfo FavouriteCraftingRecipe
+        {
+            get => _FavouriteCraftingRecipe;
+            set { if (_FavouriteCraftingRecipe == value) return; CraftingRecipeInfo oldValue = _FavouriteCraftingRecipe; _FavouriteCraftingRecipe = value; OnChanged(oldValue, value, "FavouriteCraftingRecipe"); }
+        }
+        private CraftingRecipeInfo _FavouriteCraftingRecipe;
+
         public DateTime NextDeathDropChange
         {
             get { return _NextDeathDropChange; }
@@ -708,6 +729,96 @@ namespace Server.DBModels
             }
         }
         private CharacterInfo _Partner;
+
+        public GroupLootMode GroupLootMode
+        {
+            get { return _GroupLootMode; }
+            set
+            {
+                if (_GroupLootMode == value) return;
+
+                var oldValue = _GroupLootMode;
+                _GroupLootMode = value;
+
+                OnChanged(oldValue, value, "GroupLootMode");
+            }
+        }
+        private GroupLootMode _GroupLootMode;
+
+        public bool GroupLootBagEnabled
+        {
+            get { return _GroupLootBagEnabled; }
+            set
+            {
+                if (_GroupLootBagEnabled == value) return;
+
+                var oldValue = _GroupLootBagEnabled;
+                _GroupLootBagEnabled = value;
+
+                OnChanged(oldValue, value, "GroupLootBagEnabled");
+            }
+        }
+        private bool _GroupLootBagEnabled = true;
+
+        public bool GroupLootNeedRestrictions
+        {
+            get { return _GroupLootNeedRestrictions; }
+            set
+            {
+                if (_GroupLootNeedRestrictions == value) return;
+
+                var oldValue = _GroupLootNeedRestrictions;
+                _GroupLootNeedRestrictions = value;
+
+                OnChanged(oldValue, value, "GroupLootNeedRestrictions");
+            }
+        }
+        private bool _GroupLootNeedRestrictions;
+
+        public bool GroupLootAllowManualTaking
+        {
+            get { return _GroupLootAllowManualTaking; }
+            set
+            {
+                if (_GroupLootAllowManualTaking == value) return;
+
+                var oldValue = _GroupLootAllowManualTaking;
+                _GroupLootAllowManualTaking = value;
+
+                OnChanged(oldValue, value, "GroupLootAllowManualTaking");
+            }
+        }
+        private bool _GroupLootAllowManualTaking = true;
+
+        public string GroupLootRarities
+        {
+            get { return _GroupLootRarities; }
+            set
+            {
+                if (_GroupLootRarities == value) return;
+
+                var oldValue = _GroupLootRarities;
+                _GroupLootRarities = value;
+
+                OnChanged(oldValue, value, "GroupLootRarities");
+            }
+        }
+        private string _GroupLootRarities = "";
+
+        public string GroupLootItemTypes
+        {
+            get { return _GroupLootItemTypes; }
+            set
+            {
+                if (_GroupLootItemTypes == value) return;
+
+                var oldValue = _GroupLootItemTypes;
+                _GroupLootItemTypes = value;
+
+                OnChanged(oldValue, value, "GroupLootItemTypes");
+            }
+        }
+        private string _GroupLootItemTypes = "";
 
         public string FiltersClass
         {

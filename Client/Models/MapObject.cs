@@ -5380,6 +5380,9 @@ namespace Client.Models
 
         }
 
+        // Drawn after the map foreground so only the hover border remains visible through it.
+        public virtual void DrawOutline() { }
+
         public virtual void DrawBlend()
         {
 
@@ -5410,13 +5413,15 @@ namespace Client.Models
                 DrawFormat = TextFormatFlags.WordBreak | TextFormatFlags.WordEllipsis,
             };
             ChatLabel.Size = DXLabel.GetHeight(ChatLabel, chatWidth);
-            ChatLabel.Disposing += (o, e) => ChatLabels.Remove(ChatLabel);
+            ChatLabel.Disposing += (o, e) => ChatLabels.Remove((DXLabel)o);
             ChatLabels.Add(ChatLabel);
 
         }
 
         public virtual void NameChanged()
         {
+            // NameColour/Title changes can replace the shared label without changing Name.
+            highlightName = null;
             if (Race is ObjectType.Player && Caption is not null)
             {
                 CaptionLabel = new DXLabel
@@ -5454,7 +5459,7 @@ namespace Client.Models
                         IsVisible = true,
                     };
 
-                    NameLabel.Disposing += (o, e) => names.Remove(NameLabel);
+                    NameLabel.Disposing += (o, e) => names.Remove((DXLabel)o);
                     names.Add(NameLabel);
                 }
 
@@ -5496,7 +5501,7 @@ namespace Client.Models
                         IsVisible = true,
                     };
 
-                    TitleNameLabel.Disposing += (o, e) => titles.Remove(TitleNameLabel);
+                    TitleNameLabel.Disposing += (o, e) => titles.Remove((DXLabel)o);
                     titles.Add(TitleNameLabel);
                 }
 
@@ -5504,6 +5509,7 @@ namespace Client.Models
             }
         }
 
+        private string highlightSettings, highlightName;
         public virtual void DrawName()
         {
             if (NameLabel != null)
@@ -5520,17 +5526,12 @@ namespace Client.Models
                     y -= 13;
 
                 NameLabel.Location = new Point(x, y);
-                if (Config.HighlightedItems != string.Empty)
+                // Item highlighting must not overwrite NPCs' separate name and title colours.
+                if (Race == ObjectType.Item && (highlightSettings != Config.HighlightedItems || highlightName != Name))
                 {
-                    string[] items = Config.HighlightedItems.Split(',');
-                    for (int i = 0; i < items.Length; i++)
-                    {
-                        if (string.Equals(items[i].Replace(" ", ""), Name.Replace(" ", ""), StringComparison.OrdinalIgnoreCase))
-                        {
-                            NameLabel.ForeColour = Color.OrangeRed;
-                            break;
-                        }
-                    }
+                    highlightSettings = Config.HighlightedItems;
+                    highlightName = Name;
+                    NameLabel.ForeColour = ItemHighlights.Contains(Name) ? Color.OrangeRed : NameColour;
                 }
                 NameLabel.Draw();
             }

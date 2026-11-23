@@ -82,7 +82,9 @@ namespace Client.Models
                 FrameAction?.Invoke();
             }
         }
-        private int _DrawFrame;
+        // Effects can be added by packets or callbacks after this tick's effect
+        // pass. Image zero and the default coordinates are not a drawable frame.
+        private int _DrawFrame = -1;
 
         public DrawType DrawType = DrawType.Object;
 
@@ -94,11 +96,11 @@ namespace Client.Models
         public Color[] LightColours;
         public int StartLight, EndLight;
 
-        public float FrameLight
+        public virtual float FrameLight
         {
             get
             {
-                if (CEnvir.Now < StartTime) return 0;
+                if (DrawFrame < 0 || CEnvir.Now < StartTime) return 0;
 
                 TimeSpan elapsed = CEnvir.Now - StartTime;
 
@@ -132,6 +134,16 @@ namespace Client.Models
         }
 
         public MirEffect(int startIndex, int frameCount, TimeSpan frameDelay, LibraryFile file, int startLight, int endLight, Color lightColour)
+            : this(startIndex, frameCount, file, startLight, endLight)
+        {
+            Delays = new TimeSpan[frameCount];
+            LightColours = new Color[frameCount];
+            Array.Fill(Delays, frameDelay);
+            Array.Fill(LightColours, lightColour);
+        }
+
+        // Specialized effects supply their animation data before construction completes.
+        protected MirEffect(int startIndex, int frameCount, LibraryFile file, int startLight, int endLight)
         {
             StartIndex = startIndex;
             FrameCount = frameCount;
@@ -140,15 +152,6 @@ namespace Client.Models
             StartTime = CEnvir.Now;
             StartLight = startLight;
             EndLight = endLight;
-
-            Delays = new TimeSpan[FrameCount];
-            LightColours = new Color[FrameCount];
-            for (int i = 0; i < frameCount; i++)
-            {
-                Delays[i] = frameDelay;
-                //Light[i] = startLight + (endLight - startLight)/frameCount*i;
-                LightColours[i] = lightColour;
-            }
 
             CEnvir.LibraryList.TryGetValue(file, out Library);
 
@@ -229,7 +232,7 @@ namespace Client.Models
 
         public virtual void Draw()
         {
-            if (CEnvir.Now < StartTime || Library == null) return;
+            if (DrawFrame < 0 || CEnvir.Now < StartTime || Library == null) return;
 
             if (Blend)
                 Library.DrawBlend(DrawFrame, DrawX, DrawY, DrawColour, UseOffSet, BlendRate, ImageType.Image);

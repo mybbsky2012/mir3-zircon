@@ -101,7 +101,7 @@ namespace Client.Envir.Translations
         public override string GroupMemberLimit { get; set; } = "Group member limit has been reached";
         public override string GroupNotLeader { get; set; } = "You are not the leader of your group.";
         public override string GroupAlreadyGrouped { get; set; } = "You are already in a group.";
-        public override string GroupSelf { get; set; } = "You cannot group with yourself";
+        public override string GroupSelf { get; set; } = "You cannot group with yourself.";
         public override string GroupLFGRequestDelay { get; set; } = "Cannot request to join group for another {0} seconds.";
         public override string GroupLFGRequestSent { get; set; } = "Request to join group has been sent.";
         public override string GroupDialogNotAllowingGroupMessage { get; set; } = "You are not currently allowing group.";
@@ -131,6 +131,8 @@ namespace Client.Envir.Translations
         public override string CommonControlApply { get; set; } = "Apply";
         public override string CommonControlCancel { get; set; } = "Cancel";
         public override string CommonControlClose { get; set; } = "Close";
+        public override string CommonControlNoneSelected { get; set; } = "None selected";
+        public override string CommonControlSelectedCount { get; set; } = "{0} selected";
         public override string CommonControlMiniMapSizeHint { get; set; } = "Toggle Size";
         public override string CommonControlMiniMapTransparencyHint { get; set; } = "Toggle Transparency";
         public override string CommonControlMiniMapBigMapHint { get; set; } = "Toggle Big Map";
@@ -166,12 +168,15 @@ namespace Client.Envir.Translations
         public override string CommonControlConfigWindowGameSectionSettingsLabel { get; set; } = "Settings";
         public override string CommonControlConfigWindowNetworkSectionSettingsLabel { get; set; } = "Settings";
         public override string CommonControlConfigWindowUISectionSettingsLabel { get; set; } = "Settings";
+        public override string CommonControlConfigWindowUISectionScalingLabel { get; set; } = "Scaling";
         public override string CommonControlConfigWindowUISectionColoursLabel { get; set; } = "Chat Colours";
         public override string CommonControlConfigWindowUISectionTargetColoursLabel { get; set; } = "Outline Colours";
 
         public override string CommonControlConfigWindowGraphicsTabFullScreenLabel { get; set; } = "Full Screen";
         public override string CommonControlConfigWindowGraphicsTabBorderlessLabel { get; set; } = "Borderless";
         public override string CommonControlConfigWindowGraphicsTabGameSizeLabel { get; set; } = "Game Size";
+        public override string CommonControlConfigWindowScaleLabel { get; set; } = "Window Scale";
+        public override string CommonControlConfigWindowScaleAutomatic { get; set; } = "Follow Windows";
         public override string CommonControlConfigWindowGraphicsTabDefaultMonitorLabel { get; set; } = "Monitor";
         public override string CommonControlConfigWindowGraphicsTabVSyncLabel { get; set; } = "V-Sync";
         public override string CommonControlConfigWindowGraphicsTabLimitFPSLabel { get; set; } = "Limit FPS";
@@ -187,6 +192,10 @@ namespace Client.Envir.Translations
         public override string CommonControlConfigWindowSoundTabMonsterVolumeLabel { get; set; } = "Monster Volume";
         public override string CommonControlConfigWindowSoundTabMagicVolumeLabel { get; set; } = "Magic Volume";
         public override string CommonControlConfigWindowGameTabItemNameLabel { get; set; } = "Item Names";
+        public override string GroundLootDenseLabel { get; set; } = "Compact Loot Piles";
+        public override string GroundLootDenseHint { get; set; } = "Show one item and rarity glow per tile.";
+        public override string GroundLootCount { get; set; } = "{0} drops";
+        public override string GroundLootPage { get; set; } = "{0}-{1} / {2} (scroll)";
         public override string CommonControlConfigWindowGameTabMonsterNameLabel { get; set; } = "Monster Names";
         public override string CommonControlConfigWindowGameTabPlayerNameLabel { get; set; } = "Player Names";
         public override string CommonControlConfigWindowGameTabNPCNameLabel { get; set; } = "NPC Names";
@@ -195,6 +204,7 @@ namespace Client.Envir.Translations
         public override string CommonControlConfigWindowGameTabDamageNumbersLabel { get; set; } = "Dmg Numbers";
         public override string CommonControlConfigWindowGraphicsTabDrawParticlesLabel { get; set; } = "Draw Particles";
         public override string CommonControlConfigWindowGraphicsTabDisplayHelmetLabel { get; set; } = "Display Helmet";
+        public override string CommonControlConfigWindowUITabUIScaleLabel { get; set; } = "UI Scale";
         public override string CommonControlConfigWindowUITabHideChatBarLabel { get; set; } = "Hide Chat Bar";
         public override string CommonControlConfigWindowUITabEscapeCloseAllLabel { get; set; } = "Escape Close All";
         public override string CommonControlConfigWindowUITabShiftOpenChatLabel { get; set; } = "Shift+1 Open Chat";
@@ -205,9 +215,12 @@ namespace Client.Envir.Translations
         public override string CommonControlConfigWindowUITabLogChatLabel { get; set; } = "Log Chat";
         public override string CommonControlConfigWindowGraphicsTabDrawEffectsLabel { get; set; } = "Draw Effects";
         public override string CommonControlConfigWindowGraphicsTabDrawWeatherLabel { get; set; } = "Draw Weather";
+        public override string CommonControlConfigWindowGraphicsTabColourGradingLabel { get; set; } = "Colour Grading";
         public override string CommonControlConfigWindowGameTabShowTargetOutlineLabel { get; set; } = "Target Outline";
         public override string CommonControlConfigWindowGameTabObservableLabel { get; set; } = "Observable";
         public override string CommonControlConfigWindowUITabKeyBindButtonLabel { get; set; } = "Key Binds";
+        public override string CommonControlConfigWindowUITabFontSizeModifierLabel { get; set; } = "Font Modifier";
+        public override string CommonControlConfigWindowUITabFontSizeModifierHint { get; set; } = "Adjusts all in-game font sizes after restarting the client.";
         public override string CommonControlConfigWindowNetworkTabUseNetworkConfigLabel { get; set; } = "Use Config";
         public override string CommonControlConfigWindowNetworkTabUseIPAddressLabel { get; set; } = "IP Address";
         public override string CommonControlConfigWindowNetworkTabUsePortLabel { get; set; } = "Port";
@@ -491,7 +504,7 @@ namespace Client.Envir.Translations
 
         public override string FilterDialogTitle { get; set; } = "Filter Drop";
         public override string FilterDialogFilterLabel { get; set; } = "Item #{0}";
-        public override string FilterDialogSaveButtonLabel { get; set; } = "Save settings";
+        public override string FilterDialogSaveButtonLabel { get; set; } = "Save Settings";
 
         public override string FishingCatchDialogAutoCast { get; set; } = "Auto Cast:";
 
@@ -520,6 +533,24 @@ namespace Client.Envir.Translations
         public override string GroupDialogAddButtonConfirmCaption { get; set; } = "Invite Group Member";
         public override string GroupDialogAddButtonHint { get; set; } = "Add Member";
         public override string GroupDialogRemoveButtonHint { get; set; } = "Remove Member";
+        public override string GroupLootTitle { get; set; } = "Group Loot";
+        public override string GroupLootSettingsTitle { get; set; } = "Group Loot Settings";
+        public override string GroupLootSettingsHint { get; set; } = "Group Loot Settings";
+        public override string GroupLootMode { get; set; } = "Mode";
+        public override string GroupLootBagEnabled { get; set; } = "Enable Bag";
+        public override string GroupLootFilters { get; set; } = "Filters";
+        public override string GroupLootItemTypes { get; set; } = "Item Types";
+        public override string GroupLootRarities { get; set; } = "Rarities";
+        public override string GroupLootNeedRestrictions { get; set; } = "Restrict Need to equippable items";
+        public override string GroupLootAllowManualTaking { get; set; } = "Allow manual item taking";
+        public override string GroupLootShare { get; set; } = "Share";
+        public override string GroupLootNeed { get; set; } = "Need";
+        public override string GroupLootGreed { get; set; } = "Greed";
+        public override string GroupLootPass { get; set; } = "Pass";
+        public override string GroupLootVoteTitle { get; set; } = "Group Loot";
+        public override string GroupLootVoteTime { get; set; } = "Choose for {0} ({1}s)";
+        public override string GroupLootWon { get; set; } = "{0} received {1}.";
+        public override string GroupLootNoWinner { get; set; } = "No one received {0}.";
 
         public override string GuildDialogTitle { get; set; } = "Guild";
         public override string GuildDialogCreateTabLabel { get; set; } = "Create";
@@ -599,6 +630,7 @@ namespace Client.Envir.Translations
         public override string GuildRepairGuardsConfirmMsg { get; set; } = "Estimated cost to repair guards will be {0:#,##0}. Are you sure?";
         public override string GuildRepairGuardsConfirmCaption { get; set; } = "Repair Guards";
 
+        public override string HorseTameDialogTitle { get; set; } = "Lasso";
         public override string InventoryDialogTitle { get; set; } = "Inventory";
         public override string InventoryDialogPrimaryCurrencyTitle { get; set; } = "Gold";
         public override string InventoryDialogSecondaryCurrencyTitle { get; set; } = "GG";
@@ -825,5 +857,41 @@ namespace Client.Envir.Translations
 
         public override string SocketCombineDialogTitle { get; set; } = "Combine Gems";
         public override string SocketCombineDialogStartButtonLabel { get; set; } = "Start";
+
+        public override string CharacterCraftingTabLabel { get; set; } = "Crafting";
+        public override string CharacterCraftingMaterialsLabel { get; set; } = "Materials";
+        public override string CraftingLevelLabel { get; set; } = "Crafting Level";
+        public override string CraftingMaxLevelLabel { get; set; } = "Max";
+        public override string CraftingExperienceLabel { get; set; } = "Crafting Experience";
+        public override string CraftingFavouriteLabel { get; set; } = "Favourite";
+        public override string CraftingCraftButtonLabel { get; set; } = "Craft";
+        public override string CraftingOpenRecipesButtonLabel { get; set; } = "Open Recipes";
+        public override string CraftingRecipesTitle { get; set; } = "Crafting Recipes";
+        public override string CraftingRecipeListLabel { get; set; } = "Recipe List";
+        public override string CraftingProgressTitle { get; set; } = "Crafting Progress";
+        public override string CraftingResultLabel { get; set; } = "Result";
+        public override string CraftingRequiredMaterialsLabel { get; set; } = "Required";
+        public override string CraftingRequiredLevelTitleLabel { get; set; } = "Required Level";
+        public override string CraftingRequiredGoldTitleLabel { get; set; } = "Required Gold";
+        public override string CraftingExperienceRewardTitleLabel { get; set; } = "Experience Gained";
+        public override string CraftingOnlyCraftableLabel { get; set; } = "Only craftable";
+        public override string CraftingFavouriteButtonLabel { get; set; } = "Set Favourite";
+        public override string CraftingWeaponCategory { get; set; } = "Weapons";
+        public override string CraftingArmourCategory { get; set; } = "Armour";
+        public override string CraftingAccessoriesCategory { get; set; } = "Accessories";
+        public override string CraftingConsumableCategory { get; set; } = "Consumables";
+        public override string CraftingIngredientsCategory { get; set; } = "Ingredients";
+        public override string CraftingRequiredLevelLabel { get; set; } = "Required level: {0}";
+        public override string CraftingRequiredGoldLabel { get; set; } = "Required gold: {0:#,##0}";
+        public override string CraftingExperienceRewardLabel { get; set; } = "Experience gained: {0:#,##0}";
+        public override string CraftingSuccessRateLabel { get; set; } = "Success rate: {0}%";
+        public override string CraftingSuccessRateBonusLabel { get; set; } = "Success rate: {0}% (+{1}%)";
+        public override string CraftingDurationLabel { get; set; } = "Crafting time: {0}";
+        public override string CraftingDesignLabel { get; set; } = "Design {0}";
+        public override string CraftingInProgressLabel { get; set; } = "Crafting...";
+        public override string CraftingSuccessLabel { get; set; } = "Crafting successful";
+        public override string CraftingFailedLabel { get; set; } = "Crafting failed";
+        public override string CraftingCancelledLabel { get; set; } = "Crafting cancelled";
+        public override string CraftingRetryButtonLabel { get; set; } = "Retry";
     }
 }

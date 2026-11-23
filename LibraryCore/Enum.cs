@@ -45,6 +45,25 @@ namespace Library
         None = 4,
     }
 
+    public enum GroupLootMode : byte
+    {
+        [Description("Free For All")]
+        FreeForAll,
+        [Description("Random")]
+        Random,
+        [Description("Need / Greed")]
+        NeedGreed,
+        [Description("Round Robin")]
+        RoundRobin,
+    }
+
+    public enum GroupLootVote : byte
+    {
+        Pass,
+        Greed,
+        Need,
+    }
+
     public enum MirDirection : byte
     {
         Up = 0,
@@ -219,7 +238,8 @@ namespace Library
         SocketCombine1,
         SocketCombine2,
         SocketCombine3,
-        SocketCombineResult
+        SocketCombineResult,
+        GroupLoot
     }
 
     public enum InventoryMode
@@ -652,7 +672,7 @@ namespace Library
         AugmentDestructiveSurge = 119,
         AugmentDefiance = 120,
         AugmentReflectDamage = 121,
-        AdvancedPotionMastery = 122,
+        AugmentPotionMastery = 122,
         MassBeckon = 123,
         SeismicSlam = 124,
         Invincibility = 125,
@@ -1738,7 +1758,7 @@ namespace Library
         //EquipEffect_Item [180~199]
         //Reserved
 
-        //MonMagicEx26 [200~250] 
+        //MonMagicEx26 [200~249] 
         E_RedEyeRing = 200,
         E_BlueEyeRing = 201,
         E_GreenSpiralRing = 202,
@@ -2340,6 +2360,22 @@ namespace Library
         MissingItem,
         NoMap,
         Success
+    }
+
+    public enum CraftingCategory : byte
+    {
+        Weapons = 0,
+        Armour = 1,
+        Accessories = 2,
+        Consumables = 3,
+        Ingredients = 4,
+    }
+
+    public enum CraftingResult : byte
+    {
+        Success,
+        Failed,
+        Cancelled,
     }
 
     #endregion

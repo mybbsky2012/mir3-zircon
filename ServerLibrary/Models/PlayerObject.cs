@@ -120,6 +120,7 @@ namespace Server.Models
 
         public NPCObject NPC;
         public NPCPage NPCPage;
+        private NPCPage PendingNPCRollPage;
         public Dictionary<string, object> NPCVals = new Dictionary<string, object>();
 
         public HorseType Horse;
@@ -128,9 +129,9 @@ namespace Server.Models
         public bool CompanionLevelLock3, CompanionLevelLock5, CompanionLevelLock7, CompanionLevelLock10, CompanionLevelLock11, CompanionLevelLock13, CompanionLevelLock15;
         public bool ExtractorLock;
 
-        public override bool CanMove => base.CanMove && !Fishing;
-        public override bool CanAttack => base.CanAttack && Horse == HorseType.None;
-        public override bool CanCast => base.CanCast && !Fishing;
+        public override bool CanMove => base.CanMove && !Fishing && !Crafting;
+        public override bool CanAttack => base.CanAttack && Horse == HorseType.None && !Crafting;
+        public override bool CanCast => base.CanCast && !Fishing && !Crafting;
 
         private bool HideHead
         {
@@ -192,6 +193,9 @@ namespace Server.Models
             DisplayHP = CurrentHP;
 
             Character.LastStats = Stats = new Stats();
+
+            if (Character.CraftingLevel < 1)
+                Character.CraftingLevel = 1;
 
             foreach (UserItem item in Character.Account.Items)
             {
@@ -315,6 +319,8 @@ namespace Server.Models
             {
                 ResetFishing();
             }
+
+            ProcessCrafting();
 
             ProcessRegen();
 
@@ -889,8 +895,13 @@ namespace Server.Models
                 FiltersRarity = Character.FiltersRarity,
                 FiltersItemType = Character.FiltersItemType,
 
+                CraftingLevel = Math.Max(1, Character.CraftingLevel),
+                CraftingExperience = Character.CraftingExperience,
+                FavouriteCraftingRecipeIndex = Character.FavouriteCraftingRecipe?.Index ?? 0,
+
                 StruckEnabled = Config.EnableStruck,
                 HermitEnabled = Config.EnableHermit,
+                GroupLootEnabled = Config.EnableGroupLoot,
 
                 MaxGemPurity = Config.MaxGemPurity
             };
@@ -950,6 +961,7 @@ namespace Server.Models
 
         public void StopGame()
         {
+            CancelCrafting(false);
             Character.LastLogin = SEnvir.Now;
 
             if (Character.Account.GuildMember != null)
@@ -2105,7 +2117,12 @@ namespace Server.Models
                 }
             }
 
-            Enqueue(new S.WeightUpdate { BagWeight = BagWeight, WearWeight = WearWeight, HandWeight = HandWeight });
+            if (GroupMembers != null && GroupLoot != null)
+                BroadcastGroupLootUpdate();
+            else
+            {
+                Enqueue(new S.WeightUpdate { BagWeight = BagWeight, WearWeight = WearWeight, HandWeight = HandWeight });
+            }
         }
         public override void RefreshStats()
         {
@@ -2791,6 +2808,7 @@ namespace Server.Models
 
         public override bool Teleport(Map map, Point location, bool leaveEffect = true, bool enterEffect = true)
         {
+            CancelCrafting();
             bool res = base.Teleport(map, location, leaveEffect, enterEffect);
 
             if (Fishing) return false;
@@ -3897,7 +3915,7 @@ namespace Server.Models
             if (p.Link.Slot < 0 || p.Link.Slot >= array.Length) return;
             UserItem item = array[p.Link.Slot];
 
-            if (item == null || p.Link.Count > item.Count) return; //trying to sell more than owned.
+            if (item == null || p.Link.Count > item.Count || !item.Info.CanTrade) return; //trying to sell more than owned.
 
             if ((item.Flags & UserItemFlags.Bound) == UserItemFlags.Bound) return;
             if ((item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage) return;
@@ -4090,6 +4108,7 @@ namespace Server.Models
 
             long cost = p.Count;
 
+            if (info.Price <= 0 || cost > long.MaxValue / info.Price) return;
             cost *= info.Price;
 
             if (p.GuildFunds)
@@ -4268,6 +4287,7 @@ namespace Server.Models
 
             int price = p.UseHuntGold ? (info.HuntGoldPrice == 0 ? info.Price : info.HuntGoldPrice) : info.Price;
 
+            if (p.Count <= 0 || price < 0 || (price > 0 && cost > long.MaxValue / price)) return;
             cost *= price;
 
 
@@ -4300,7 +4320,7 @@ namespace Server.Models
                         return;
                     }
 
-                    HuntGold.Amount -= (int)cost;
+                    HuntGold.Amount -= cost;
 
                     HuntGoldChanged();
                 }
@@ -4312,7 +4332,7 @@ namespace Server.Models
                         return;
                     }
 
-                    GameGold.Amount -= (int)cost;
+                    GameGold.Amount -= cost;
 
                     GameGoldChanged();
                 }
@@ -4411,6 +4431,11 @@ namespace Server.Models
 
             p.Count = Math.Min(p.Count, info.Item.StackSize);
             int price = p.UseHuntGold && info.HuntGoldPrice > 0 ? info.HuntGoldPrice : info.Price;
+            if (p.Count <= 0 || price <= 0 || p.Count > long.MaxValue / price)
+            {
+                EnqueueGameShopGiftResult(GameStoreGiftResult.InvalidItem);
+                return;
+            }
             long cost = p.Count * price;
 
             if (price <= 0 || (!Config.TestServer && cost > (p.UseHuntGold ? HuntGold.Amount : GameGold.Amount)))
@@ -4430,12 +4455,12 @@ namespace Server.Models
             {
                 if (p.UseHuntGold)
                 {
-                    HuntGold.Amount -= (int)cost;
+                    HuntGold.Amount -= cost;
                     HuntGoldChanged();
                 }
                 else
                 {
-                    GameGold.Amount -= (int)cost;
+                    GameGold.Amount -= cost;
                     GameGoldChanged();
                 }
             }
@@ -5778,6 +5803,7 @@ namespace Server.Models
 
                 GroupInvitation.GroupSwitch(true);
                 GroupInvitation.GroupMembers = new List<PlayerObject> { GroupInvitation };
+                GroupInvitation.GroupLoot = GroupInvitation.CreateGroupLootState();
                 GroupInvitation.Enqueue(new S.GroupMember { ObjectID = GroupInvitation.ObjectID, Name = GroupInvitation.Name }); //<-- Setting group leader?
             }
             else if (GroupInvitation.GroupMembers[0] != GroupInvitation)
@@ -5807,6 +5833,7 @@ namespace Server.Models
             }
 
             GroupMembers = GroupInvitation.GroupMembers;
+            GroupLoot = GroupInvitation.GroupLoot ??= GroupInvitation.CreateGroupLootState();
             GroupMembers.Add(this);
 
             foreach (PlayerObject ob in GroupMembers)
@@ -5836,6 +5863,7 @@ namespace Server.Models
 
             RefreshStats();
             Enqueue(new S.GroupMember { ObjectID = ObjectID, Name = Name });
+            BroadcastGroupLootUpdate();
         }
         public void GroupDecline(string name)
         {
@@ -5859,10 +5887,13 @@ namespace Server.Models
         public void GroupLeave(bool disableLFG = true)
         {
             Packet p = new S.GroupRemove { ObjectID = ObjectID };
+            GroupLootState oldLoot = GroupLoot;
 
             GroupMembers.Remove(this);
             List<PlayerObject> oldGroup = GroupMembers;
             GroupMembers = null;
+            GroupLoot = null;
+            SendGroupLootUpdate();
 
             if (Buffs.Any(x => x.Type == BuffType.SoulResonance))
                 SoulResonance.Remove(this);
@@ -5878,7 +5909,12 @@ namespace Server.Models
             if (oldGroup.Count > 0)
                 oldGroup[0].LFGSettings.NeedUpdate = true;
 
-            if (oldGroup.Count == 1) oldGroup[0].GroupLeave(false);
+            if (oldGroup.Count == 1)
+                oldGroup[0].GroupLeave(false);
+            else if (oldGroup.Count == 0)
+                DropGroupLoot(oldLoot);
+            else
+                oldGroup[0].BroadcastGroupLootUpdate();
 
             GroupMembers = null;
 
@@ -5917,6 +5953,8 @@ namespace Server.Models
 
         public void ProcessGroup()
         {
+            ProcessGroupLoot();
+
             if (LFGSettings.Enabled && SEnvir.Now > LFGSettings.EnabledDateTime)
             {
                 LFGSettings.Enabled = false;
@@ -6044,6 +6082,7 @@ namespace Server.Models
                     continue;
                 }
 
+                if (link.Count > long.MaxValue - tempLink.Count) return false;
                 tempLink.Count += link.Count;
             }
 
@@ -6084,14 +6123,29 @@ namespace Server.Models
 
         public bool CanGainItems(bool checkWeight, params ItemCheck[] checks)
         {
+            if (checks == null) return false;
             int index = 0;
+            var reserved = new Dictionary<UserItem, long>();
+            var currencyGains = new Dictionary<UserCurrency, long>();
             foreach (ItemCheck check in checks)
             {
+                if (check?.Info == null || check.Count <= 0) return false;
+
                 if ((check.Flags & UserItemFlags.QuestItem) == UserItemFlags.QuestItem) continue;
 
                 if (check.Info.ItemEffect == ItemEffect.Experience) continue;
 
-                if (SEnvir.IsCurrencyItem(check.Info)) continue;
+                UserCurrency currency = GetCurrency(check.Info);
+                if (currency != null)
+                {
+                    currencyGains.TryGetValue(currency, out long gain);
+                    if (check.Count > long.MaxValue - gain || currency.Amount > long.MaxValue - gain - check.Count) return false;
+                    currencyGains[currency] = gain + check.Count;
+                    continue;
+                }
+
+                // Only inventory items need a positive stack size; currency and experience bypass stacks.
+                if (check.Info.StackSize <= 0) return false;
 
                 long count = check.Count;
 
@@ -6101,10 +6155,10 @@ namespace Server.Models
                     {
                         case ItemType.Amulet:
                         case ItemType.Poison:
-                            if (BagWeight + check.Info.Weight > Stats[Stat.BagWeight]) return false;
+                            if (!CanCarryInventoryWeight(check.Info.Weight)) return false;
                             break;
                         default:
-                            if (BagWeight + check.Info.Weight * count > Stats[Stat.BagWeight]) return false;
+                            if (!CanCarryInventoryWeight(check.Info.Weight * count)) return false;
                             break;
                     }
                 }
@@ -6123,12 +6177,15 @@ namespace Server.Models
                         if ((oldItem.Flags & UserItemFlags.NonRefinable) != (check.Flags & UserItemFlags.NonRefinable)) continue;
                         if (!oldItem.Stats.Compare(check.Stats)) continue;
 
-                        count -= check.Info.StackSize - oldItem.Count;
+                        reserved.TryGetValue(oldItem, out long used);
+                        long take = Math.Min(count, check.Info.StackSize - oldItem.Count - used);
+                        reserved[oldItem] = used + take;
+                        count -= take;
 
                         if (count <= 0) break;
                     }
 
-                    if (count <= 0) break;
+                    if (count <= 0) continue;
                 }
 
                 //Start Index
@@ -6209,6 +6266,7 @@ namespace Server.Models
                 if (currency != null)
                 {
                     currency.Amount += item.Count;
+                    CurrencyChanged(currency);
                     item.SetTemporary(true);
                     item.Delete();
 
@@ -6239,7 +6297,7 @@ namespace Server.Models
                         if ((oldItem.Flags & UserItemFlags.NonRefinable) != (item.Flags & UserItemFlags.NonRefinable)) continue;
                         if (!oldItem.Stats.Compare(item.Stats)) continue;
 
-                        if (oldItem.Count + item.Count <= item.Info.StackSize)
+                        if (item.Count <= item.Info.StackSize - oldItem.Count)
                         {
                             oldItem.Count += item.Count;
                             item.SetTemporary(true);
@@ -6367,7 +6425,7 @@ namespace Server.Models
                                     LevelMagic(potionMastery.Magic);
                             }
 
-                            if (GetMagic(MagicType.AdvancedPotionMastery, out AdvancedPotionMastery advancedPotionMastery))
+                            if (GetMagic(MagicType.AugmentPotionMastery, out AugmentPotionMastery advancedPotionMastery))
                             {
                                 health += health * advancedPotionMastery.Magic.GetPower() / 100;
                                 mana += mana * advancedPotionMastery.Magic.GetPower() / 100;
@@ -7626,6 +7684,7 @@ namespace Server.Models
             }
 
             Packet guildpacket;
+            if (p.ToGrid == GridType.GuildStorage && (!fromItem.Info.CanTrade || (fromItem.Flags & UserItemFlags.Bound) != 0)) return;
             if (p.MergeItem)
             {
                 if (toItem == null || toItem.Info != fromItem.Info || toItem.Count >= toItem.Info.StackSize || toItem.ExpireTime != fromItem.ExpireTime) return;
@@ -7637,7 +7696,7 @@ namespace Server.Models
                 if (!toItem.Stats.Compare(fromItem.Stats)) return;
 
                 long fromCount, toCount;
-                if (toItem.Count + fromItem.Count <= toItem.Info.StackSize)
+                if (fromItem.Count <= toItem.Info.StackSize - toItem.Count)
                 {
                     toItem.Count += fromItem.Count;
 
@@ -7948,9 +8007,7 @@ namespace Server.Models
                 items.Add(item);
 
                 if (item.Info.StackSize <= 1) continue;
-                if (item.Count == item.Info.StackSize) continue;
-
-                var count = item.Count;
+                if (item.Count >= item.Info.StackSize) continue;
 
                 for (int j = i + 1; j < length; j++)
                 {
@@ -7959,6 +8016,7 @@ namespace Server.Models
                     if (otherItem == null) continue;
 
                     if (item.Info != otherItem.Info) continue;
+                    if (otherItem.Count > item.Info.StackSize) continue;
                     if (item.ExpireTime != otherItem.ExpireTime) continue;
 
                     if ((item.Flags & UserItemFlags.Expirable) != (otherItem.Flags & UserItemFlags.Expirable)) continue;
@@ -7967,13 +8025,18 @@ namespace Server.Models
                     if ((item.Flags & UserItemFlags.NonRefinable) != (otherItem.Flags & UserItemFlags.NonRefinable)) continue;
                     if (!item.Stats.Compare(otherItem.Stats)) continue;
 
-                    count += otherItem.Count;
+                    long moved = Math.Min(otherItem.Count, item.Info.StackSize - item.Count);
+                    item.Count += moved;
+                    otherItem.Count -= moved;
 
-                    array[j] = null;
-                    otherItem.Delete();
+                    if (otherItem.Count == 0)
+                    {
+                        array[j] = null;
+                        otherItem.Delete();
+                    }
+
+                    if (item.Count == item.Info.StackSize) break;
                 }
-
-                item.Count = count;
             }
 
             var sorted = items
@@ -7989,6 +8052,7 @@ namespace Server.Models
 
             int index = 0;
             int slot = 0;
+            int freeSlots = length - sorted.Length;
 
             if (p.Grid == GridType.PartsStorage)
             {
@@ -7999,12 +8063,21 @@ namespace Server.Models
             {
                 var item = sorted[i];
 
-                while (item.Count > item.Info.StackSize)
+                int stackSize = item.Info.StackSize;
+                // Reserve one slot for every item and only split a stack if all its pieces fit.
+                long extraSlots = stackSize > 0 && item.Count > stackSize
+                    ? (item.Count - 1) / stackSize
+                    : 0;
+
+                if (extraSlots > freeSlots) extraSlots = 0;
+                freeSlots -= (int)extraSlots;
+
+                for (int split = 0; split < extraSlots; split++)
                 {
                     UserItem newItem = SEnvir.CreateFreshItem(item);
-                    newItem.Count = item.Info.StackSize;
+                    newItem.Count = stackSize;
 
-                    item.Count -= item.Info.StackSize;
+                    item.Count -= stackSize;
 
                     array[index] = newItem;
                     newItem.Slot = slot;
@@ -8518,7 +8591,7 @@ namespace Server.Models
             AutoPotions.Add(aLink);
             AutoPotions.Sort((x1, x2) => x1.Slot.CompareTo(x2.Slot));
         }
-        public void PickUp()
+        public void PickUp(uint objectID = 0)
         {
             if (Dead) return;
 
@@ -8545,6 +8618,7 @@ namespace Server.Models
                             if (cellObject.Race != ObjectType.Item) continue;
 
                             ItemObject item = (ItemObject)cellObject;
+                            if (objectID != 0 && item.ObjectID != objectID) continue;
 
                             if (item.PickUpItem(this)) return;
                         }
@@ -9685,7 +9759,7 @@ namespace Server.Models
 
             Enqueue(result);
 
-            if (!ParseLinks(cell) || TradePartner == null || TradeItems.Count >= 15) return;
+            if (!ParseLinks(cell) || TradePartner == null || TradeConfirmed || TradePartner.TradeConfirmed || TradeItems.Count >= 15) return;
 
             UserItem[] fromArray;
 
@@ -9770,7 +9844,7 @@ namespace Server.Models
             };
             Enqueue(p);
 
-            if (TradePartner == null || TradeGold >= gold) return;
+            if (TradePartner == null || TradeConfirmed || TradePartner.TradeConfirmed || TradeGold >= gold) return;
 
             if (gold <= 0 || gold > Gold.Amount) return;
 
@@ -9789,6 +9863,15 @@ namespace Server.Models
         public void TradeConfirm()
         {
             if (TradePartner == null) return;
+
+            if (TradePartner.TradePartner != this || TradeGold < 0 || TradeGold > Gold.Amount ||
+                TradePartner.TradeGold < 0 || TradePartner.TradeGold > TradePartner.Gold.Amount ||
+                Gold.Amount - TradeGold > long.MaxValue - TradePartner.TradeGold ||
+                TradePartner.Gold.Amount - TradePartner.TradeGold > long.MaxValue - TradeGold)
+            {
+                TradeClose();
+                return;
+            }
 
             TradeConfirmed = true;
 
@@ -9872,7 +9955,12 @@ namespace Server.Models
 
                 UserItem item = fromArray[pair.Value.Slot];
 
-                if ((item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage) return;
+                if ((item.Flags & UserItemFlags.Marriage) != 0 ||
+                    (!Character.Account.IsAdmin(true) && !TradePartner.Character.Account.IsAdmin(true) && ((item.Flags & UserItemFlags.Bound) != 0 || !item.Info.CanTrade)))
+                {
+                    TradeClose();
+                    return;
+                }
 
                 bool handled = false;
 
@@ -9952,7 +10040,12 @@ namespace Server.Models
                 }
 
                 UserItem item = fromArray[pair.Value.Slot];
-                if ((item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage) return;
+                if ((item.Flags & UserItemFlags.Marriage) != 0 ||
+                    (!Character.Account.IsAdmin(true) && !TradePartner.Character.Account.IsAdmin(true) && ((item.Flags & UserItemFlags.Bound) != 0 || !item.Info.CanTrade)))
+                {
+                    TradeClose();
+                    return;
+                }
 
                 bool handled = false;
 
@@ -10099,6 +10192,7 @@ namespace Server.Models
         {
             if (Dead) return;
 
+            PendingNPCRollPage = null;
             NPC = null;
             NPCPage = null;
 
@@ -10121,6 +10215,7 @@ namespace Server.Models
             {
                 if (button.ButtonID != buttonID || button.DestinationPage == null) continue;
 
+                PendingNPCRollPage = null;
                 NPC.NPCCall(this, button.DestinationPage);
                 return;
             }
@@ -10129,9 +10224,12 @@ namespace Server.Models
         public void NPCRoll(int type)
         {
             if (Dead || NPC == null || NPCPage == null || NPCPage.SuccessPage == null) return;
+            if (PendingNPCRollPage == NPCPage) return;
+            if (!((NPCPage.DialogType == NPCDialogType.RollDie && type == 0) || (NPCPage.DialogType == NPCDialogType.RollYut && type == 1))) return;
 
             var roll = SEnvir.Random.Next(1, 7);
 
+            PendingNPCRollPage = NPCPage;
             NPCVals["ROLLRESULT"] = roll;
 
             Enqueue(new S.NPCRoll { Type = type, Result = roll });
@@ -10140,7 +10238,9 @@ namespace Server.Models
         public void NPCRollResult()
         {
             if (Dead || NPC == null || NPCPage == null || NPCPage.SuccessPage == null) return;
+            if (PendingNPCRollPage != NPCPage) return;
 
+            PendingNPCRollPage = null;
             NPC.NPCCall(this, NPCPage.SuccessPage);
         }
 
@@ -10158,11 +10258,18 @@ namespace Server.Models
             {
                 if (good.Index != p.Index || good.Item == null || good.GoodsIndex != NPC.NPCInfo.GoodsIndex) continue;
 
-                long amountToBuy = good.NormaliseCurrencyPurchaseAmount(currency, p.Amount);
-
-                if (!good.IsCurrencyGood && amountToBuy > good.Item.StackSize) return;
-
-                long cost = good.CostFor(currency, amountToBuy);
+                long amountToBuy;
+                long cost;
+                try
+                {
+                    amountToBuy = good.NormaliseCurrencyPurchaseAmount(currency, p.Amount);
+                    if (amountToBuy <= 0 || (!good.IsCurrencyGood && amountToBuy > good.Item.StackSize)) return;
+                    cost = good.CostFor(currency, amountToBuy);
+                }
+                catch (OverflowException)
+                {
+                    return;
+                }
 
                 if (p.GuildFunds && currency.Type != CurrencyType.Gold)
                 {
@@ -10294,13 +10401,22 @@ namespace Server.Models
                 if (!NPCPage.Types.Any(x => x.ItemType == item.Info.ItemType)) return;
 
                 decimal exchangeRate = currency.ExchangeRate <= 0M ? 1M : currency.ExchangeRate;
-                var price = (long)(item.Price(link.Count) / exchangeRate);
+                long price;
+                try
+                {
+                    price = (long)(item.Price(link.Count) / exchangeRate);
+                }
+                catch (OverflowException)
+                {
+                    return;
+                }
 
+                if (price < 0 || price > long.MaxValue - amount || link.Count > long.MaxValue - count) return;
                 count += link.Count;
                 amount += price;
             }
 
-            if (amount < 0)
+            if (amount < 0 || userCurrency.Amount > long.MaxValue - amount)
             {
                 Connection.ReceiveChatWithObservers(con => con.Language.NPCSellWorthless, MessageType.System);
 
@@ -10484,6 +10600,7 @@ namespace Server.Models
             if (Dead || NPC == null || NPCPage == null || NPCPage.DialogType != NPCDialogType.AccessoryRefineLevel) return;
 
             if (!ParseLinks(p.Links, 0, 100) || !ParseLinks(p.Target)) return;
+            if (p.Links.Any(x => x.GridType == p.Target.GridType && x.Slot == p.Target.Slot)) return;
 
 
             UserItem[] targetArray = null;
@@ -11285,7 +11402,11 @@ namespace Server.Models
 
             if (Dead || NPC == null || NPCPage == null || NPCPage.DialogType != NPCDialogType.AccessoryRefine) return;
 
-            if (!ParseLinks(p.Target)) return;
+            if (!ParseLinks(p.Target) || !ParseLinks(p.OreTarget) || !ParseLinks(p.Links, 2, 2)) return;
+            if (p.Target.Count != 1 || p.OreTarget.Count != 1 || p.Links.Count != 2 || p.Links.Any(x => x.Count != 1)) return;
+            var submitted = p.Links.Concat(new[] { p.Target, p.OreTarget }).ToList();
+            if (submitted.Select(x => (x.GridType, x.Slot)).Distinct().Count() != submitted.Count) return;
+            if (p.RefineType < RefineType.DC || p.RefineType > RefineType.ManaPercent || p.RefineType == RefineType.Reset) return;
 
             if (Gold.Amount < 50000) return;
 
@@ -11316,6 +11437,7 @@ namespace Server.Models
 
             if (targetItem == null || p.Target.Count > targetItem.Count) return; //Already Leveled.
             if ((targetItem.Flags & UserItemFlags.NonRefinable) == UserItemFlags.NonRefinable) return;
+            if ((targetItem.Flags & (UserItemFlags.Refinable | UserItemFlags.Marriage)) != 0) return;
             if (targetItem.Level > 1) return; //No refine on levelled items
 
             switch (targetItem.Info.ItemType)
@@ -11348,56 +11470,32 @@ namespace Server.Models
                 default:
                     return;
             }
-            if (p.OreTarget.Slot < 0 || p.OreTarget.Slot >= targetArray.Length) return;
+            if (p.OreTarget.Slot < 0 || p.OreTarget.Slot >= targetOreArray.Length) return;
             UserItem oretargetItem = targetOreArray[p.OreTarget.Slot];
+            // Random.Next(0) is valid: purity 100 guarantees success and the extra stat point.
+            if (oretargetItem == null || oretargetItem.Count != 1 || oretargetItem.Info.ItemEffect != ItemEffect.Corundum ||
+                (oretargetItem.Flags & (UserItemFlags.NonRefinable | UserItemFlags.Marriage)) != 0 ||
+                oretargetItem.CurrentDurability < 0 || oretargetItem.CurrentDurability / 1000 > 100) return;
 
             S.ItemsChanged result = new S.ItemsChanged { Links = new List<CellLinkInfo>(), Success = true };
             Enqueue(result);
 
-            foreach (CellLinkInfo link in p.Links) //loop through to check level and added stats on each material vs target
+            foreach (CellLinkInfo link in p.Links)
             {
-                UserItem[] fromArray = null;
-
-                switch (link.GridType)
+                UserItem[] fromArray = link.GridType switch
                 {
-                    case GridType.Inventory:
-                        fromArray = Inventory;
-                        break;
-                    case GridType.Storage:
-                        fromArray = Storage;
-                        break;
-                    case GridType.CompanionInventory:
-                        if (Companion == null) continue;
-
-                        fromArray = Companion.Inventory;
-                        break;
-                    default:
-                        continue;
-                }
-
-                if (link.Slot < 0 || link.Slot >= fromArray.Length) continue;
-                UserItem refItem = fromArray[link.Slot];
-
-                if (refItem.Level > 1) return; //if material is levelled dont refine
-                if (targetItem.AddedStats.Count != refItem.AddedStats.Count) return; //if material has different amount of added stats to target dont refine
-
-                if (targetItem.AddedStats.Count > 1) //if target has added stats loop through to check material has same stats
-                {
-                    int count = 0;
-                    foreach (UserItemStat addStat in targetItem.AddedStats)
-                    {
-                        foreach (UserItemStat raddStat in refItem.AddedStats)
-                        {
-                            if (addStat.Stat == raddStat.Stat && addStat.StatSource == raddStat.StatSource && addStat.Amount == raddStat.Amount)
-                            {
-                                count++;
-                            }
-                        }
-                    }
-                    if (count != targetItem.AddedStats.Count) return;
-
-                }
-
+                    GridType.Inventory => Inventory,
+                    GridType.Storage => Storage,
+                    GridType.CompanionInventory => Companion?.Inventory,
+                    _ => null,
+                };
+                if (fromArray == null || link.Slot < 0 || link.Slot >= fromArray.Length) return;
+                UserItem material = fromArray[link.Slot];
+                if (material == null || material.Count < link.Count || material.Info != targetItem.Info || material.Level > 1 ||
+                    (material.Flags & (UserItemFlags.Locked | UserItemFlags.Marriage | UserItemFlags.NonRefinable)) != 0 ||
+                    ((material.Flags & UserItemFlags.Bound) != 0 && (targetItem.Flags & UserItemFlags.Bound) == 0)) return;
+                if (targetItem.AddedStats.Count != material.AddedStats.Count || targetItem.AddedStats.Any(stat =>
+                    !material.AddedStats.Any(other => other.Stat == stat.Stat && other.StatSource == stat.StatSource && other.Amount == stat.Amount))) return;
             }
 
             foreach (CellLinkInfo link in p.Links) //now loop through to remove materials
@@ -11690,8 +11788,18 @@ namespace Server.Models
                 }
 
 
+                long repairCost;
+                try
+                {
+                    repairCost = item.RepairCost(p.Special);
+                }
+                catch (OverflowException)
+                {
+                    return;
+                }
+                if (repairCost < 0 || repairCost > long.MaxValue - cost) return;
                 count++;
-                cost += array[link.Slot].RepairCost(p.Special);
+                cost += repairCost;
             }
 
             if (p.GuildFunds)
@@ -11813,6 +11921,10 @@ namespace Server.Models
             if (!ParseLinks(p.GoldOres, 2, 2)) return;
             if (!ParseLinks(p.Crystal, 1, 1)) return;
 
+            if (p.IronOres.Count != 4 || p.SilverOres.Count != 4 || p.DiamondOres.Count != 4 || p.GoldOres.Count != 2 || p.Crystal.Count != 1) return;
+            if (result.Links.Any(x => x.Count != 1)) return;
+            if (result.Links.Select(x => (x.GridType, x.Slot)).Distinct().Count() != result.Links.Count) return;
+
             if (p.Gold < 0) return;
 
             if (p.Gold > Gold.Amount)
@@ -11856,7 +11968,7 @@ namespace Server.Models
                 if (link.Slot < 0 || link.Slot >= array.Length) return;
                 UserItem item = array[link.Slot];
 
-                if (item == null || item.Info.ItemEffect != ItemEffect.IronOre) return;
+                if (item == null || link.Count > item.Count || item.Info.ItemEffect != ItemEffect.IronOre) return;
 
                 ironPurity += item.CurrentDurability;
             }
@@ -11883,7 +11995,7 @@ namespace Server.Models
                 if (link.Slot < 0 || link.Slot >= array.Length) return;
                 UserItem item = array[link.Slot];
 
-                if (item == null || item.Info.ItemEffect != ItemEffect.SilverOre) return;
+                if (item == null || link.Count > item.Count || item.Info.ItemEffect != ItemEffect.SilverOre) return;
 
                 silverPurity += item.CurrentDurability;
             }
@@ -11910,7 +12022,7 @@ namespace Server.Models
                 if (link.Slot < 0 || link.Slot >= array.Length) return;
                 UserItem item = array[link.Slot];
 
-                if (item == null || item.Info.ItemEffect != ItemEffect.Diamond) return;
+                if (item == null || link.Count > item.Count || item.Info.ItemEffect != ItemEffect.Diamond) return;
 
                 diamondPurity += item.CurrentDurability;
             }
@@ -11937,7 +12049,7 @@ namespace Server.Models
                 if (link.Slot < 0 || link.Slot >= array.Length) return;
                 UserItem item = array[link.Slot];
 
-                if (item == null || item.Info.ItemEffect != ItemEffect.GoldOre) return;
+                if (item == null || link.Count > item.Count || item.Info.ItemEffect != ItemEffect.GoldOre) return;
 
                 goldPurity += item.CurrentDurability;
             }
@@ -11964,7 +12076,7 @@ namespace Server.Models
                 if (link.Slot < 0 || link.Slot >= array.Length) return;
                 UserItem item = array[link.Slot];
 
-                if (item == null || item.Info.ItemEffect != ItemEffect.Crystal) return;
+                if (item == null || link.Count > item.Count || item.Info.ItemEffect != ItemEffect.Crystal) return;
             }
 
             long chance = p.Gold / 25000; // 250k / 10%, 2,500,000 for 100%
@@ -12232,7 +12344,7 @@ namespace Server.Models
                 if (link.Slot < 0 || link.Slot >= array.Length) return;
                 UserItem item = array[link.Slot];
 
-                if (item == null || item.Info.ItemEffect != ItemEffect.BlackIronOre) return;
+                if (item == null || link.Count > item.Count || item.Info.ItemEffect != ItemEffect.BlackIronOre) return;
 
                 if ((item.Flags & UserItemFlags.NonRefinable) == UserItemFlags.NonRefinable) return;
 
@@ -12262,7 +12374,7 @@ namespace Server.Models
                 if (link.Slot < 0 || link.Slot >= array.Length) return;
                 UserItem item = array[link.Slot];
 
-                if (item == null) return;
+                if (item == null || link.Count > item.Count) return;
                 if ((item.Flags & UserItemFlags.Marriage) == UserItemFlags.Marriage) return;
 
                 if ((item.Flags & UserItemFlags.NonRefinable) == UserItemFlags.NonRefinable) return;
@@ -12306,7 +12418,7 @@ namespace Server.Models
                 if (link.Slot < 0 || link.Slot >= array.Length) return;
                 UserItem item = array[link.Slot];
 
-                if (item == null || item.Info.ItemType != ItemType.RefineSpecial) return;
+                if (item == null || link.Count > item.Count || item.Info.ItemType != ItemType.RefineSpecial) return;
 
                 if (item.Info.Shape != 1) return;
                 if ((item.Flags & UserItemFlags.NonRefinable) == UserItemFlags.NonRefinable) return;
@@ -13504,6 +13616,18 @@ namespace Server.Models
             Enqueue(result);
 
 
+            if (Dead || NPC == null || NPCPage == null || NPCPage.DialogType != NPCDialogType.WeaponCraft) return;
+            if (p.Class != RequiredClass.Warrior && p.Class != RequiredClass.Wizard && p.Class != RequiredClass.Taoist && p.Class != RequiredClass.Assassin) return;
+            var materials = new[] { p.Template, p.Yellow, p.Blue, p.Red, p.Purple, p.Green, p.Grey }.Where(x => x != null).ToList();
+            if (materials.Select(x => (x.GridType, x.Slot)).Distinct().Count() != materials.Count) return;
+            foreach (CellLinkInfo link in materials)
+            {
+                if (link.GridType != GridType.Inventory || link.Slot < 0 || link.Slot >= Inventory.Length || link.Count != 1) return;
+                UserItem material = Inventory[link.Slot];
+                if (material == null || material.Count < 1 || (material.Flags & UserItemFlags.Marriage) != 0) return;
+            }
+            bool bound = materials.Any(x => (Inventory[x.Slot].Flags & UserItemFlags.Bound) != 0);
+
             int statCount = 0;
 
             bool isTemplate = false;
@@ -13546,6 +13670,8 @@ namespace Server.Models
                 }
             }
 
+
+            if (cost < 0 || cost > Gold.Amount) return;
 
             #region Yellow Check
 
@@ -13857,6 +13983,7 @@ namespace Server.Models
 
             item.StatsChanged();
 
+            if (bound) item.Flags |= UserItemFlags.Bound;
             GainItem(item);
         }
         #endregion
@@ -15665,6 +15792,8 @@ namespace Server.Models
                 }
             }
 
+            CancelCrafting(interrupted: true);
+
             CombatTime = SEnvir.Now;
 
             if (attacker.Race == ObjectType.Player)
@@ -17452,6 +17581,7 @@ namespace Server.Models
             if (lootBoxInfo == null) return;
 
             if (p.Choice < 0 || p.Choice >= LootBoxInfo.SlotSize) return;
+            if (item.Stats[Stat.Counter2] != 2 || (item.CurrentDurability & (1 << p.Choice)) != 0) return;
 
             var openCount = 0;
 

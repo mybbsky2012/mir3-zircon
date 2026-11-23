@@ -55,6 +55,7 @@ namespace Client.Scenes.Views
             if (!HideChat)
             {
                 chatFade = 1F;
+                TextPanel.IsControl = true;
 
                 foreach (var item in History)
                 {
@@ -183,6 +184,7 @@ namespace Client.Scenes.Views
                 chatFade -= 0.2F;
 
                 chatFade = Math.Max(0F, chatFade);
+                TextPanel.IsControl = chatFade > 0F;
 
                 foreach (var item in History)
                 {
@@ -369,6 +371,7 @@ namespace Client.Scenes.Views
                 AutoSize = false,
                 Text = message,
                 Outline = false,
+                SeparateBackground = true,
                 DrawFormat = TextFormatFlags.WordBreak | TextFormatFlags.WordEllipsis,
                 Parent = TextPanel,
             };
@@ -432,6 +435,7 @@ namespace Client.Scenes.Views
                         AutoSize = false,
                         Text = "You have died, Click here to revive in town.",
                         Outline = false,
+                        SeparateBackground = true,
                         DrawFormat = TextFormatFlags.WordBreak | TextFormatFlags.WordEllipsis,
                         Parent = TextPanel,
                     };

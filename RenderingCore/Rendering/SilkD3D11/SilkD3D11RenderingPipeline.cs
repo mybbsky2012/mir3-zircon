@@ -33,6 +33,7 @@ namespace Shared.Rendering.SilkD3D11
         private const string SpriteShaderFileName = "SpriteD3D11.hlsl";
         private const string OutlineShaderFileName = "OutlineD3D11.hlsl";
         private const string GrayscaleShaderFileName = "GrayscaleD3D11.hlsl";
+        private const string ColourGradeShaderFileName = "ColourGradeD3D11.hlsl";
         private const string DropShadowShaderFileName = "DropShadowD3D11.hlsl";
         private const string SolidShadowFillShaderFileName = "SolidShadowFillD3D11.hlsl";
         private static readonly Size MinimumResolution = new(1024, 768);
@@ -77,6 +78,7 @@ namespace Shared.Rendering.SilkD3D11
 
         private RenderingPipelineContext _context;
         private Graphics _graphics;
+        private Bitmap _measurementBitmap;
         private D3D11 _d3d;
         private DXGI _dxgi;
         private ComPtr<ID3D11Device> _device;
@@ -100,13 +102,13 @@ namespace Shared.Rendering.SilkD3D11
         private float _lineWidth = 1F;
         private TextureFilterMode _textureFilter = TextureFilterMode.Point;
         private bool _resetRequested;
-        private Size _pendingResetSize;
         private readonly DisplayModeManager _displayMode = new DisplayModeManager();
 
         private ComPtr<ID3D11VertexShader> _vertexShader;
         private ComPtr<ID3D11PixelShader> _pixelShader;
         private ComPtr<ID3D11PixelShader> _outlinePixelShader;
         private ComPtr<ID3D11PixelShader> _grayscalePixelShader;
+        private ComPtr<ID3D11PixelShader> _colourGradePixelShader;
         private ComPtr<ID3D11PixelShader> _dropShadowPixelShader;
         private ComPtr<ID3D11PixelShader> _solidShadowFillPixelShader;
         private ComPtr<ID3D11InputLayout> _inputLayout;
@@ -123,9 +125,12 @@ namespace Shared.Rendering.SilkD3D11
         public void Initialize(RenderingPipelineContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _graphics = Graphics.FromHwnd(IntPtr.Zero);
+            _measurementBitmap = new Bitmap(1, 1);
+            _measurementBitmap.SetResolution(96F, 96F);
+            _graphics = Graphics.FromImage(_measurementBitmap);
             ConfigureGraphics(_graphics);
 
+            EnsureValidGameSize();
             ApplyWindowStyle();
             ApplyWindowBounds(true);
 
@@ -164,7 +169,7 @@ namespace Shared.Rendering.SilkD3D11
 
                 ApplyWindowStyle();
                 ApplyWindowBounds(true);
-                RequestReset(RenderingPipelineManager.HostSettings.ActiveSceneSize);
+                RequestReset();
 
                 RenderingPipelineManager.HostSettings.GameSize = configuredGameSize;
             }
@@ -195,7 +200,9 @@ namespace Shared.Rendering.SilkD3D11
                 SetD3DRenderTarget(_currentTarget);
                 Clear(RenderClearFlags.Target, GdiColor.Black, 0, 0);
 
-                drawScene();
+                RenderDiagnostics.BeginScene();
+                try { drawScene(); }
+                finally { RenderDiagnostics.EndScene(); }
 
                 EndSpriteBatch();
                 FlushLines();
@@ -220,17 +227,18 @@ namespace Shared.Rendering.SilkD3D11
 
         public void SetResolution(Size size)
         {
-            bool targetAlreadySized = _context.RenderTarget == null || _context.RenderTarget.ClientSize == size || RenderingPipelineManager.HostSettings.FullScreen;
-            if (targetAlreadySized && _backBufferSize == size && RenderingPipelineManager.HostSettings.GameSize == size)
+            Size physicalSize = RenderingPipelineManager.HostSettings.ScaleToPhysical(size, RenderingPipelineManager.GetSelectedScreen());
+            bool targetAlreadySized = _context.RenderTarget == null || _context.RenderTarget.ClientSize == physicalSize || RenderingPipelineManager.HostSettings.FullScreen;
+            if (targetAlreadySized && _backBufferSize == physicalSize && RenderingPipelineManager.HostSettings.GameSize == size)
                 return;
 
             RenderingPipelineManager.HostSettings.GameSize = size;
-            if (!RenderingPipelineManager.HostSettings.FullScreen && _context.RenderTarget != null && _context.RenderTarget.ClientSize != size)
-                _context.RenderTarget.ClientSize = size;
+            if (!RenderingPipelineManager.HostSettings.FullScreen && _context.RenderTarget != null && _context.RenderTarget.ClientSize != physicalSize)
+                _context.RenderTarget.ClientSize = physicalSize;
 
             ApplyWindowStyle();
             ApplyWindowBounds(false);
-            RequestReset(size);
+            RequestReset();
         }
 
         public void SetTargetMonitor(int monitorIndex)
@@ -253,8 +261,31 @@ namespace Shared.Rendering.SilkD3D11
         {
         }
 
-        public IReadOnlyList<Size> GetSupportedResolutions() =>
-            DisplayModeManager.GetSupportedSizes(RenderingPipelineManager.GetSelectedScreen(), MinimumResolution, RenderingPipelineManager.HostSettings.GameSize);
+        public IReadOnlyList<Size> GetSupportedResolutions()
+        {
+            Screen screen = RenderingPipelineManager.GetSelectedScreen();
+            Size physicalMinimum = MinimumResolution;
+            Size physicalDesktop = RenderingPipelineManager.GetMonitorDisplayBounds(screen).Size;
+
+            return DisplayModeManager.GetSupportedSizes(screen, physicalMinimum, physicalDesktop)
+                .Distinct()
+                .OrderBy(x => (long)x.Width * x.Height)
+                .ToArray();
+        }
+
+        private void EnsureValidGameSize()
+        {
+            IReadOnlyList<Size> supported = GetSupportedResolutions();
+            Size configured = RenderingPipelineManager.HostSettings.GameSize;
+            if (supported.Count == 0 || supported.Contains(configured))
+                return;
+
+            long configuredArea = (long)configured.Width * configured.Height;
+            RenderingPipelineManager.HostSettings.GameSize = supported
+                .OrderBy(x => Math.Abs((long)x.Width * x.Height - configuredArea))
+                .ThenBy(x => Math.Abs(x.Width - configured.Width) + Math.Abs(x.Height - configured.Height))
+                .First();
+        }
 
         public Size MeasureText(string text, Font font) => TextRenderer.MeasureText(_graphics, text, font);
 
@@ -344,6 +375,7 @@ namespace Shared.Rendering.SilkD3D11
                 }
             }
 
+            RenderDiagnostics.Count(RenderDiagnostics.Counter.LineBatches);
             _lineBatch.Clear();
         }
 
@@ -351,26 +383,67 @@ namespace Shared.Rendering.SilkD3D11
         {
             width = Math.Max(1F, width);
             float half = width * 0.5F;
-            float x1 = Snap(a.X);
-            float y1 = Snap(a.Y);
-            float x2 = Snap(b.X);
-            float y2 = Snap(b.Y);
+            Size drawingSize = GetDrawingSize(_currentTarget);
+            float scaleX = _currentTarget.Size.Width / (float)drawingSize.Width;
+            float scaleY = _currentTarget.Size.Height / (float)drawingSize.Height;
 
-            RectangleF rect;
+            // Line widths are framebuffer pixels, so align and size the stroke there before
+            // converting its rectangle back into the target's logical coordinate space.
+            float x1 = Snap(a.X * scaleX);
+            float y1 = Snap(a.Y * scaleY);
+            float x2 = Snap(b.X * scaleX);
+            float y2 = Snap(b.Y * scaleY);
+
+            if (x1 != x2 && y1 != y2)
+            {
+                // Build a stroke perpendicular to the segment in framebuffer space.
+                // Axis-aligned rectangles lose one endpoint coordinate on diagonal lines.
+                float dx = x2 - x1, dy = y2 - y1;
+                float length = MathF.Sqrt(dx * dx + dy * dy);
+                float normalX = -dy / length * half, normalY = dx / length * half;
+                Matrix3x2 transform = new(
+                    dx / scaleX, dy / scaleY,
+                    normalX * 2F / scaleX, normalY * 2F / scaleY,
+                    (x1 - normalX) / scaleX, (y1 - normalY) / scaleY);
+
+                EnsureSolidTexture();
+                RenderDiagnostics.Count(RenderDiagnostics.Counter.LineVertices, 6);
+                DrawSprite(CreateSpriteBatchItem(_solidWhiteTexture, new Rectangle(0, 0, 1, 1),
+                    new RectangleF(0, 0, 1, 1), transform, colour, opacity, null, BlendMode.NONE, 1F));
+                return;
+            }
+
+            // Retain pixel-aligned UI border rendering for horizontal and vertical lines.
+            RectangleF physicalRectangle;
             if (Math.Abs(x2 - x1) >= Math.Abs(y2 - y1))
             {
-                rect = new RectangleF(Math.Min(x1, x2), y1 - half, Math.Max(width, Math.Abs(x2 - x1)), width);
+                physicalRectangle = new RectangleF(Math.Min(x1, x2), y1 - half, Math.Max(width, Math.Abs(x2 - x1)), width);
             }
             else
             {
-                rect = new RectangleF(x1 - half, Math.Min(y1, y2), width, Math.Max(width, Math.Abs(y2 - y1)));
+                physicalRectangle = new RectangleF(x1 - half, Math.Min(y1, y2), width, Math.Max(width, Math.Abs(y2 - y1)));
             }
 
-            DrawSolidRectangle(rect, colour, opacity);
+            RectangleF logicalRectangle = new(
+                physicalRectangle.X / scaleX,
+                physicalRectangle.Y / scaleY,
+                physicalRectangle.Width / scaleX,
+                physicalRectangle.Height / scaleY);
+
+            RenderDiagnostics.Count(RenderDiagnostics.Counter.LineVertices, 6);
+            DrawSolidRectangle(logicalRectangle, colour, opacity);
         }
+
+        public bool IsPresentationSurface => _currentTarget?.IsBackBuffer == true;
 
         public void DrawTexture(RenderTexture texture, Rectangle sourceRectangle, RectangleF destinationRectangle, GdiColor colour)
         {
+            if (_currentTarget?.IsBackBuffer == true)
+            {
+                destinationRectangle = RenderingPipelineManager.AlignTextDestination(destinationRectangle, _currentTarget.Size, sourceRectangle.Size);
+                destinationRectangle = RenderingPipelineManager.AlignBorderBackground(destinationRectangle, _currentTarget.Size);
+            }
+            destinationRectangle = RenderingPipelineManager.MapUICacheDestination(destinationRectangle, sourceRectangle.Size);
             DrawTextureCore(texture, sourceRectangle, destinationRectangle, Matrix3x2.Identity, colour);
         }
 
@@ -387,6 +460,7 @@ namespace Shared.Rendering.SilkD3D11
 
             finalTransform.M31 += translation.X;
             finalTransform.M32 += translation.Y;
+            finalTransform = RenderingPipelineManager.MapUICacheTransform(finalTransform);
             DrawTextureCore(texture, source, destination, finalTransform, colour);
         }
 
@@ -405,7 +479,8 @@ namespace Shared.Rendering.SilkD3D11
                     if (_spriteBatch.Count >= MaxSprites)
                         EndSpriteBatch();
 
-                    _spriteBatch.Add(CreateSpriteBatchItem(resource, sourceRectangle, destinationRectangle, Matrix3x2.Identity, colour, _opacity, null));
+                    RenderDiagnostics.Count(RenderDiagnostics.Counter.SpritesQueued);
+                    _spriteBatch.Add(CreateSpriteBatchItem(resource, sourceRectangle, destinationRectangle, RenderingPipelineManager.MapUICacheTransform(Matrix3x2.Identity), colour, _opacity, null));
                 }
             }
         }
@@ -443,6 +518,7 @@ namespace Shared.Rendering.SilkD3D11
 
             EndSpriteBatch();
             FlushLines();
+            RenderDiagnostics.Count(RenderDiagnostics.Counter.TargetSwitches);
             _currentTarget = target;
             SetD3DRenderTarget(_currentTarget);
         }
@@ -510,6 +586,7 @@ namespace Shared.Rendering.SilkD3D11
                 return;
             }
 
+            RenderDiagnostics.Count(RenderDiagnostics.Counter.TargetClears);
             _deviceContext.ClearRenderTargetView(_currentTarget.RenderTargetView, (float*)&color);
         }
 
@@ -688,6 +765,7 @@ namespace Shared.Rendering.SilkD3D11
             _dropShadowPixelShader.Dispose();
             _solidShadowFillPixelShader.Dispose();
             _grayscalePixelShader.Dispose();
+            _colourGradePixelShader.Dispose();
             _outlinePixelShader.Dispose();
             _pixelShader.Dispose();
             _vertexShader.Dispose();
@@ -696,6 +774,8 @@ namespace Shared.Rendering.SilkD3D11
             _deviceContext.Dispose();
             _device.Dispose();
             _graphics?.Dispose();
+            _measurementBitmap?.Dispose();
+            _measurementBitmap = null;
         }
 
         private void DrawTextureCore(RenderTexture texture, Rectangle source, RectangleF destination, Matrix3x2 transform, GdiColor colour)
@@ -705,7 +785,9 @@ namespace Shared.Rendering.SilkD3D11
 
             FlushLinesIfNeeded();
 
-            SpriteEffect? effect = null;
+            SpriteEffect? effect = RenderingPipelineManager.DrawingPremultipliedTexture
+                ? new SpriteEffect(SpriteEffectMode.PremultipliedCache, 0, resource.Size, Vector4.Zero, null)
+                : null;
             RenderingPipelineManager.SpriteShaderEffectRequest? request = RenderingPipelineManager.GetSpriteShaderEffect();
             if (request.HasValue)
             {
@@ -714,6 +796,8 @@ namespace Shared.Rendering.SilkD3D11
                     case RenderingPipelineManager.SpriteShaderEffectKind.Outline:
                         EndSpriteBatch();
                         DrawSprite(CreateSpriteBatchItem(resource, source, destination, transform, request.Value.Outline.Colour, 1F, new SpriteEffect(SpriteEffectMode.Outline, request.Value.Outline.Thickness, resource.Size, ToSourceUv(source, resource.Size), null, request.Value.Outline.Thickness, true), BlendMode.NONE, 1F));
+                        // Skip the base sprite when drawing the world outline overlay.
+                        if (request.Value.Outline.OutlineOnly) return;
                         break;
                     case RenderingPipelineManager.SpriteShaderEffectKind.Grayscale:
                         effect = new SpriteEffect(SpriteEffectMode.Grayscale, 0, resource.Size, Vector4.Zero, null);
@@ -727,6 +811,16 @@ namespace Shared.Rendering.SilkD3D11
                         EndSpriteBatch();
                         DrawSprite(CreateSpriteBatchItem(resource, source, destination, transform, shadow.Colour, _opacity, new SpriteEffect(SpriteEffectMode.DropShadow, shadow.Width, resource.Size, new Vector4(shadowBounds.Left, shadowBounds.Top, shadowBounds.Right, shadowBounds.Bottom), shadow.StartOpacity, shadow.Width, false)));
                         break;
+                    case RenderingPipelineManager.SpriteShaderEffectKind.ColourGrade:
+                        RenderingPipelineManager.ColourGradeEffectSettings grade = request.Value.ColourGrade;
+                        effect = new SpriteEffect(
+                            SpriteEffectMode.ColourGrade,
+                            0F,
+                            resource.Size,
+                            new Vector4(grade.Exposure, grade.Contrast, grade.Saturation, grade.TintStrength),
+                            null,
+                            effectColour: ToColorVector(grade.Tint));
+                        break;
                 }
             }
 
@@ -735,6 +829,7 @@ namespace Shared.Rendering.SilkD3D11
                 if (_spriteBatch.Count >= MaxSprites)
                     EndSpriteBatch();
 
+                RenderDiagnostics.Count(RenderDiagnostics.Counter.SpritesQueued);
                 _spriteBatch.Add(CreateSpriteBatchItem(resource, source, destination, transform, colour, _opacity, effect));
             }
         }
@@ -832,8 +927,9 @@ namespace Shared.Rendering.SilkD3D11
         private void SubmitSpriteBatch(SpriteBatchItem item, int spriteCount, IReadOnlyList<SilkD3D11TextureResource> textureSlots)
         {
             Matrix4x4 projection = Matrix4x4.Identity;
-            projection.M11 = 2.0f / _currentTarget.Size.Width;
-            projection.M22 = -2.0f / _currentTarget.Size.Height;
+            Size drawingSize = GetDrawingSize(_currentTarget);
+            projection.M11 = 2.0f / drawingSize.Width;
+            projection.M22 = -2.0f / drawingSize.Height;
             projection.M41 = -1.0f;
             projection.M42 = 1.0f;
             projection = Matrix4x4.Transpose(projection);
@@ -863,10 +959,14 @@ namespace Shared.Rendering.SilkD3D11
                 srvs[i] = textureSlots[i].ShaderResourceView.Handle;
 
             _deviceContext.PSSetShaderResources(0, MaxBatchTextures, srvs);
-            ID3D11SamplerState* sampler = (_textureFilter == TextureFilterMode.Linear ? _linearSampler : _pointSampler).Handle;
+            bool useLinearSampler = !item.ForcePointSampling &&
+                                    (_textureFilter == TextureFilterMode.Linear || UsesFractionalBackBufferScale(_currentTarget) || RenderingPipelineManager.CacheUsesFractionalScale || item.UseLinearSampling);
+            ID3D11SamplerState* sampler = (useLinearSampler ? _linearSampler : _pointSampler).Handle;
             _deviceContext.PSSetSamplers(0, 1, &sampler);
 
             ApplyBlendState(item.BlendMode, item.BlendRate);
+            RenderDiagnostics.Count(RenderDiagnostics.Counter.SpriteSubmissions);
+            RenderDiagnostics.Count(RenderDiagnostics.Counter.SpritesSubmitted, spriteCount);
             _deviceContext.Draw((uint)(6 * spriteCount), 0);
 
             ID3D11ShaderResourceView** nullSrvs = stackalloc ID3D11ShaderResourceView*[MaxBatchTextures];
@@ -880,6 +980,9 @@ namespace Shared.Rendering.SilkD3D11
 
         private static bool CanBatchTogether(SpriteBatchItem first, SpriteBatchItem next)
         {
+            if (first.ForcePointSampling != next.ForcePointSampling)
+                return false;
+
             if (!HasSameBlendState(first, next))
                 return false;
 
@@ -939,7 +1042,10 @@ namespace Shared.Rendering.SilkD3D11
         private void FlushLinesIfNeeded()
         {
             if (_lineBatch.Count > 0)
+            {
+                RenderDiagnostics.Count(RenderDiagnostics.Counter.PendingLineFlushes);
                 FlushLines();
+            }
         }
 
         private void CreateDevice()
@@ -994,6 +1100,7 @@ namespace Shared.Rendering.SilkD3D11
 
         private void CreateBackBuffer()
         {
+            RenderingPipelineManager.InvalidateUICacheGeneration();
             ComPtr<ID3D11Texture2D> texture = default;
             texture = _swapChain.GetBuffer<ID3D11Texture2D>(0);
             Texture2DDesc desc;
@@ -1009,12 +1116,11 @@ namespace Shared.Rendering.SilkD3D11
             if (!force && size == _backBufferSize)
                 return;
 
-            RecreateSwapChain(size);
+            RecreateSwapChain();
         }
 
-        private void RequestReset(Size? requestedSize = null)
+        private void RequestReset()
         {
-            _pendingResetSize = requestedSize ?? RenderingPipelineManager.HostSettings.GameSize;
             _resetRequested = true;
         }
 
@@ -1024,20 +1130,10 @@ namespace Shared.Rendering.SilkD3D11
                 return;
 
             _resetRequested = false;
-            Size configuredGameSize = RenderingPipelineManager.HostSettings.GameSize;
-
-            try
-            {
-                RenderingPipelineManager.HostSettings.GameSize = _pendingResetSize;
-                RecreateSwapChain(_pendingResetSize);
-            }
-            finally
-            {
-                RenderingPipelineManager.HostSettings.GameSize = configuredGameSize;
-            }
+            RecreateSwapChain();
         }
 
-        private void RecreateSwapChain(Size size)
+        private void RecreateSwapChain()
         {
             EndSpriteBatch();
             FlushLines();
@@ -1047,11 +1143,8 @@ namespace Shared.Rendering.SilkD3D11
             if (IsSwapChainFullscreen())
                 Check(_swapChain.SetFullscreenState(new Bool32(false), (IDXGIOutput*)null), "exit D3D11 fullscreen before resize");
 
-            ApplyWindowStyle();
-            ApplyWindowBounds(RenderingPipelineManager.HostSettings.FullScreen);
-
-            if (!RenderingPipelineManager.HostSettings.FullScreen && _context.RenderTarget != null && _context.RenderTarget.ClientSize != size)
-                _context.RenderTarget.ClientSize = size;
+            // Window sizing belongs to the caller. Rebuild resources for the current
+            // target without reapplying the saved game resolution.
 
             _swapChain.Dispose();
             _swapChain = default;
@@ -1156,7 +1249,7 @@ namespace Shared.Rendering.SilkD3D11
         private void ReadTexture(SilkD3D11TextureResource resource)
         {
             EnsureStagingTexture(resource);
-            _deviceContext.CopyResource((ID3D11Resource*)resource.Texture.Handle, (ID3D11Resource*)resource.StagingTexture.Handle);
+            _deviceContext.CopyResource((ID3D11Resource*)resource.StagingTexture.Handle, (ID3D11Resource*)resource.Texture.Handle);
             MappedSubresource mapped = default;
             Check(_deviceContext.Map((ID3D11Resource*)resource.StagingTexture.Handle, 0, D3DMap.Read, 0, &mapped), "map D3D11 staging texture");
             try
@@ -1200,6 +1293,7 @@ namespace Shared.Rendering.SilkD3D11
             byte[] psBlob = CompileShaderFromFile(SpriteShaderFileName, "PS", "ps_5_0");
             byte[] outlineBlob = CompileShaderFromFile(OutlineShaderFileName, "PS_OUTLINE", "ps_5_0");
             byte[] grayscaleBlob = CompileShaderFromFile(GrayscaleShaderFileName, "PS_GRAY", "ps_5_0");
+            byte[] colourGradeBlob = CompileShaderFromFile(ColourGradeShaderFileName, "PS_COLOUR_GRADE", "ps_5_0");
             byte[] shadowBlob = CompileShaderFromFile(DropShadowShaderFileName, "PS_SHADOW", "ps_5_0");
             byte[] solidShadowFillBlob = CompileShaderFromFile(SolidShadowFillShaderFileName, "PS_SOLID_SHADOW", "ps_5_0");
 
@@ -1207,12 +1301,14 @@ namespace Shared.Rendering.SilkD3D11
             ID3D11PixelShader* pixelShader = null;
             ID3D11PixelShader* outlinePixelShader = null;
             ID3D11PixelShader* grayscalePixelShader = null;
+            ID3D11PixelShader* colourGradePixelShader = null;
             ID3D11PixelShader* dropShadowPixelShader = null;
             ID3D11PixelShader* solidShadowFillPixelShader = null;
             fixed (byte* vsPointer = vsBlob)
             fixed (byte* psPointer = psBlob)
             fixed (byte* outlinePointer = outlineBlob)
             fixed (byte* grayscalePointer = grayscaleBlob)
+            fixed (byte* colourGradePointer = colourGradeBlob)
             fixed (byte* shadowPointer = shadowBlob)
             fixed (byte* solidShadowFillPointer = solidShadowFillBlob)
             {
@@ -1220,6 +1316,7 @@ namespace Shared.Rendering.SilkD3D11
                 Check(_device.CreatePixelShader(psPointer, (nuint)psBlob.Length, (ID3D11ClassLinkage*)null, &pixelShader), "create D3D11 pixel shader");
                 Check(_device.CreatePixelShader(outlinePointer, (nuint)outlineBlob.Length, (ID3D11ClassLinkage*)null, &outlinePixelShader), "create D3D11 outline shader");
                 Check(_device.CreatePixelShader(grayscalePointer, (nuint)grayscaleBlob.Length, (ID3D11ClassLinkage*)null, &grayscalePixelShader), "create D3D11 grayscale shader");
+                Check(_device.CreatePixelShader(colourGradePointer, (nuint)colourGradeBlob.Length, (ID3D11ClassLinkage*)null, &colourGradePixelShader), "create D3D11 colour grade shader");
                 Check(_device.CreatePixelShader(shadowPointer, (nuint)shadowBlob.Length, (ID3D11ClassLinkage*)null, &dropShadowPixelShader), "create D3D11 shadow shader");
                 Check(_device.CreatePixelShader(solidShadowFillPointer, (nuint)solidShadowFillBlob.Length, (ID3D11ClassLinkage*)null, &solidShadowFillPixelShader), "create D3D11 solid shadow fill shader");
             }
@@ -1227,6 +1324,7 @@ namespace Shared.Rendering.SilkD3D11
             _pixelShader = new ComPtr<ID3D11PixelShader>(pixelShader);
             _outlinePixelShader = new ComPtr<ID3D11PixelShader>(outlinePixelShader);
             _grayscalePixelShader = new ComPtr<ID3D11PixelShader>(grayscalePixelShader);
+            _colourGradePixelShader = new ComPtr<ID3D11PixelShader>(colourGradePixelShader);
             _dropShadowPixelShader = new ComPtr<ID3D11PixelShader>(dropShadowPixelShader);
             _solidShadowFillPixelShader = new ComPtr<ID3D11PixelShader>(solidShadowFillPixelShader);
 
@@ -1403,15 +1501,19 @@ namespace Shared.Rendering.SilkD3D11
             CreateBlendState(BlendMode.EFFECTMASK, D3DBlend.DestAlpha, D3DBlend.One, D3DBlend.DestAlpha, D3DBlend.One);
             CreateBlendState(BlendMode.HIGHLIGHT, D3DBlend.BlendFactor, D3DBlend.One, D3DBlend.BlendFactor, D3DBlend.One);
             CreateBlendState(BlendMode.LIGHTMAP, D3DBlend.Zero, D3DBlend.SrcColor, D3DBlend.Zero, D3DBlend.SrcAlpha);
+            // Preserve world alpha while resolving colour-specific glow transmission.
+            CreateBlendState(BlendMode.SUBTRACT_COLOUR, D3DBlend.One, D3DBlend.One, D3DBlend.Zero, D3DBlend.One, BlendOp.RevSubtract);
+            CreateBlendState(BlendMode.ADD_COLOUR, D3DBlend.One, D3DBlend.One, D3DBlend.Zero, D3DBlend.One);
+            CreateBlendState(BlendMode.ERASE_COLOUR, D3DBlend.Zero, D3DBlend.InvSrcColor, D3DBlend.Zero, D3DBlend.One);
         }
 
-        private void CreateBlendState(BlendMode mode, D3DBlend source, D3DBlend destination, D3DBlend sourceAlpha, D3DBlend destinationAlpha)
+        private void CreateBlendState(BlendMode mode, D3DBlend source, D3DBlend destination, D3DBlend sourceAlpha, D3DBlend destinationAlpha, BlendOp colourOperation = BlendOp.Add)
         {
             BlendDesc desc = default;
             desc.RenderTarget[0].BlendEnable = new Bool32(true);
             desc.RenderTarget[0].SrcBlend = source;
             desc.RenderTarget[0].DestBlend = destination;
-            desc.RenderTarget[0].BlendOp = BlendOp.Add;
+            desc.RenderTarget[0].BlendOp = colourOperation;
             desc.RenderTarget[0].SrcBlendAlpha = sourceAlpha;
             desc.RenderTarget[0].DestBlendAlpha = destinationAlpha;
             desc.RenderTarget[0].BlendOpAlpha = BlendOp.Add;
@@ -1562,7 +1664,7 @@ namespace Shared.Rendering.SilkD3D11
         private EffectConstants CreateEffectConstants(SpriteBatchItem item)
         {
             SpriteEffect effect = item.Effect ?? default;
-            Vector4 outlineColour = effect.Mode == SpriteEffectMode.None ? Vector4.Zero : ToColorVector(item.Colour);
+            Vector4 outlineColour = effect.EffectColour ?? (effect.Mode == SpriteEffectMode.None ? Vector4.Zero : ToColorVector(item.Colour));
             if (effect.Mode == SpriteEffectMode.DropShadow)
             {
                 return new EffectConstants
@@ -1592,6 +1694,7 @@ namespace Shared.Rendering.SilkD3D11
                 SpriteEffectMode.Outline => _outlinePixelShader,
                 SpriteEffectMode.DropShadow => _dropShadowPixelShader,
                 SpriteEffectMode.SolidShadowFill => _solidShadowFillPixelShader,
+                SpriteEffectMode.ColourGrade => _colourGradePixelShader,
                 _ => _pixelShader
             };
         }
@@ -1609,6 +1712,29 @@ namespace Shared.Rendering.SilkD3D11
                 size = RenderingPipelineManager.HostSettings.GameSize;
 
             return new Size(Math.Max(1, size.Width), Math.Max(1, size.Height));
+        }
+
+        private Size GetDrawingSize(SilkD3D11RenderTarget target)
+        {
+            if (target != null && target.IsBackBuffer)
+            {
+                Size logicalSize = RenderingPipelineManager.HostSettings.ActiveSceneSize;
+                return new Size(Math.Max(1, logicalSize.Width), Math.Max(1, logicalSize.Height));
+            }
+
+            return target?.Size ?? new Size(1, 1);
+        }
+
+        private bool UsesFractionalBackBufferScale(SilkD3D11RenderTarget target)
+        {
+            if (target?.IsBackBuffer != true)
+                return false;
+
+            Size logicalSize = GetDrawingSize(target);
+            float scaleX = target.Size.Width / (float)logicalSize.Width;
+            float scaleY = target.Size.Height / (float)logicalSize.Height;
+            return Math.Abs(scaleX - MathF.Round(scaleX)) > 0.001F ||
+                   Math.Abs(scaleY - MathF.Round(scaleY)) > 0.001F;
         }
 
         private void ApplyWindowStyle()
@@ -1631,8 +1757,9 @@ namespace Shared.Rendering.SilkD3D11
             {
                 Screen screen = RenderingPipelineManager.GetSelectedScreen();
                 string deviceName = screen.DeviceName;
+                Size physicalSize = RenderingPipelineManager.HostSettings.ScaleToPhysical(RenderingPipelineManager.HostSettings.GameSize, screen);
 
-                if (!_displayMode.Apply(screen, RenderingPipelineManager.HostSettings.GameSize))
+                if (!_displayMode.Apply(screen, physicalSize))
                     return;
 
                 screen = DisplayModeManager.GetScreenByDeviceName(deviceName, RenderingPipelineManager.GetSelectedScreen());
@@ -1643,7 +1770,8 @@ namespace Shared.Rendering.SilkD3D11
 
             _displayMode.Restore();
 
-            form.ClientSize = RenderingPipelineManager.HostSettings.GameSize;
+            Screen selectedScreen = RenderingPipelineManager.GetSelectedScreen();
+            form.ClientSize = RenderingPipelineManager.HostSettings.ScaleToPhysical(RenderingPipelineManager.HostSettings.GameSize, selectedScreen);
             CenterOnSelectedMonitor(forceCenter);
         }
 
@@ -1773,6 +1901,8 @@ namespace Shared.Rendering.SilkD3D11
             public readonly BlendMode BlendMode;
             public readonly float BlendRate;
             public readonly SpriteEffect? Effect;
+            public readonly bool ForcePointSampling;
+            public readonly bool UseLinearSampling;
 
             public SpriteBatchItem(SilkD3D11TextureResource texture, Rectangle source, RectangleF destination, Matrix3x2 transform, GdiColor colour, float opacity, BlendMode blendMode, float blendRate, SpriteEffect? effect)
             {
@@ -1785,6 +1915,8 @@ namespace Shared.Rendering.SilkD3D11
                 BlendMode = blendMode;
                 BlendRate = blendRate;
                 Effect = effect;
+                ForcePointSampling = RenderingPipelineManager.ForcePointSampling;
+                UseLinearSampling = RenderingPipelineManager.UsesFractionalUIScale;
             }
         }
 
@@ -1797,8 +1929,9 @@ namespace Shared.Rendering.SilkD3D11
             public readonly float? Extra;
             public readonly float GeometryExpand;
             public readonly bool ExpandUvs;
+            public readonly Vector4? EffectColour;
 
-            public SpriteEffect(SpriteEffectMode mode, float amount, Size textureSize, Vector4 source, float? extra, float geometryExpand = 0F, bool expandUvs = false)
+            public SpriteEffect(SpriteEffectMode mode, float amount, Size textureSize, Vector4 source, float? extra, float geometryExpand = 0F, bool expandUvs = false, Vector4? effectColour = null)
             {
                 Mode = mode;
                 Amount = amount;
@@ -1807,6 +1940,7 @@ namespace Shared.Rendering.SilkD3D11
                 Extra = extra;
                 GeometryExpand = geometryExpand;
                 ExpandUvs = expandUvs;
+                EffectColour = effectColour;
             }
         }
 

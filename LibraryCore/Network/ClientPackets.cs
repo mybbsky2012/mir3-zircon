@@ -232,7 +232,10 @@ namespace Library.Network.ClientPackets
         public bool Enabled { get; set; }
     }
 
-    public sealed class PickUp : Packet { }
+    public sealed class PickUp : Packet
+    {
+        public uint ObjectID { get; set; }
+    }
 
     public sealed class Chat : Packet
     {
@@ -393,6 +396,31 @@ namespace Library.Network.ClientPackets
     public sealed class GroupNotify : Packet
     {
         public bool Receive { get; set; }
+    }
+
+    public sealed class GroupLootSettings : Packet
+    {
+        public GroupLootMode Mode { get; set; }
+        public bool BagEnabled { get; set; }
+        public bool NeedRestrictions { get; set; }
+        public bool AllowManualTaking { get; set; }
+        public List<ItemType> ItemTypes { get; set; }
+        public List<Rarity> Rarities { get; set; }
+    }
+
+    public sealed class GroupLootShare : Packet
+    {
+    }
+
+    public sealed class GroupLootTake : Packet
+    {
+        public int ItemIndex { get; set; }
+    }
+
+    public sealed class GroupLootVote : Packet
+    {
+        public int ItemIndex { get; set; }
+        public Library.GroupLootVote Vote { get; set; }
     }
 
     public sealed class Inspect : Packet
@@ -857,5 +885,20 @@ namespace Library.Network.ClientPackets
     public sealed class MilestoneClaim : Packet
     {
         public int Index { get; set; }
+    }
+
+    public sealed class CraftingSetFavourite : Packet
+    {
+        public int RecipeIndex { get; set; }
+    }
+
+    public sealed class CraftingStart : Packet
+    {
+        public int RecipeIndex { get; set; }
+        public int Design { get; set; }
+    }
+
+    public sealed class CraftingCancel : Packet
+    {
     }
 }

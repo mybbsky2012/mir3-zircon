@@ -125,7 +125,9 @@ namespace Client.Models
                 if (!NameLabels.TryGetValue(Name, out List<DXLabel> names))
                     NameLabels[Name] = names = new List<DXLabel>();
 
-                NameLabel = names.FirstOrDefault(x => x.ForeColour == NameColour && x.BackColour == Color.Empty);
+                // Match the displayed row colour so shared labels keep their own colour.
+                Color nameColour = string.IsNullOrEmpty(Title) ? NameColour : Color.White;
+                NameLabel = names.FirstOrDefault(x => x.ForeColour == nameColour && x.BackColour == Color.Empty);
 
                 if (NameLabel == null)
                 {
@@ -139,11 +141,11 @@ namespace Client.Models
                         IsVisible = true,
                     };
 
-                    NameLabel.Disposing += (o, e) => names.Remove(NameLabel);
+                    NameLabel.Disposing += (o, e) => names.Remove((DXLabel)o);
                     names.Add(NameLabel);
                 }
 
-                NameLabel.ForeColour = string.IsNullOrEmpty(Title) ? NameColour : Color.White;
+                NameLabel.ForeColour = nameColour;
             }
 
             if (string.IsNullOrEmpty(Title))
@@ -171,7 +173,7 @@ namespace Client.Models
                         IsVisible = true,
                     };
 
-                    TitleNameLabel.Disposing += (o, e) => titles.Remove(TitleNameLabel);
+                    TitleNameLabel.Disposing += (o, e) => titles.Remove((DXLabel)o);
                     titles.Add(TitleNameLabel);
                 }
 
@@ -192,6 +194,13 @@ namespace Client.Models
         {
             BodyLibrary.Draw(BodyFrame, DrawX, DrawY, Color.White, true, ObjectShadowOpacity, ImageType.Shadow);
         }
+        public override void DrawOutline()
+        {
+            if (BodyLibrary == null || !Config.ShowTargetOutline) return;
+
+            DrawBody(true);
+        }
+
         private void DrawBody(bool mouseOver = false)
         {
             bool outlineEnabled = false;
@@ -202,10 +211,13 @@ namespace Client.Models
 
                 if (result != Color.FromArgb(0, 0, 0, 0))
                 {
-                    RenderingPipelineManager.EnableOutlineEffect(result, 2f);
+                    RenderingPipelineManager.EnableOutlineEffect(result, 2f, outlineOnly: true);
                     outlineEnabled = true;
                 }
             }
+
+            // A disabled outline colour must not redraw the body in the overlay pass.
+            if (mouseOver && !outlineEnabled) return;
 
             BodyLibrary.Draw(BodyFrame, DrawX, DrawY, DrawColour, true, 1F, ImageType.Image);
 
@@ -223,7 +235,7 @@ namespace Client.Models
             if (BodyLibrary == null) return;
 
             RenderingPipelineManager.SetBlend(true, 0.20F, BlendMode.HIGHLIGHT);//0.60F
-            DrawBody(true);
+            DrawBody();
             RenderingPipelineManager.SetBlend(false);
         }
 

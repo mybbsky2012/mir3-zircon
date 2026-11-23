@@ -258,12 +258,17 @@ void main()
         float distBottom = vScreenPos.y - boundsMax.y;
         float shadowDistance = max(max(distLeft, distTop), max(distRight, distBottom));
 
-        if (shadowDistance <= 0.0)
+        // Keep the boundary covered: at fractional scales it can lie on a pixel
+        // centre excluded by the image's bottom/right rasterization edges. Allow
+        // a tiny overlap (in screen pixels) for interpolation roundoff as well.
+        vec2 pixelSize = fwidth(vScreenPos);
+        float edgeTolerance = 0.001 * max(pixelSize.x, pixelSize.y);
+        if (shadowDistance < -edgeTolerance)
             discard;
 
         float shadowSize = max(pushConstants.uEffect.y, 0.0001);
         float maxAlpha = pushConstants.uEffect.z;
-        float alpha = clamp(1.0 - shadowDistance / shadowSize, 0.0, 1.0) * maxAlpha * pushConstants.uOutlineColour.a * vColour.a;
+        float alpha = clamp(1.0 - max(shadowDistance, 0.0) / shadowSize, 0.0, 1.0) * maxAlpha * pushConstants.uOutlineColour.a * vColour.a;
 
         outColour = vec4(pushConstants.uOutlineColour.rgb * alpha, alpha);
         return;
@@ -271,6 +276,24 @@ void main()
 
     vec4 texel = effectMode == 4 ? FillShadowHatch(vTexCoord) : texture(uTexture, vTexCoord);
     float sourceAlpha = pushConstants.uTint.x > 0.5 ? texel.a : 1.0;
+
+    if (effectMode == 5)
+    {
+        float alpha = texel.a * vColour.a;
+        vec3 colour = texel.a > 0.0001 ? texel.rgb / texel.a : vec3(0.0);
+
+        colour *= exp2(pushConstants.uSource.x);
+        colour = (colour - 0.5) * pushConstants.uSource.y + 0.5;
+
+        float luminance = dot(colour, vec3(0.2126, 0.7152, 0.0722));
+        colour = mix(vec3(luminance), colour, pushConstants.uSource.z);
+
+        vec3 tint = mix(vec3(1.0), pushConstants.uOutlineColour.rgb, pushConstants.uSource.w);
+        colour = clamp(colour * tint, 0.0, 1.0);
+
+        outColour = vec4(colour * vColour.rgb * alpha, alpha);
+        return;
+    }
 
     if (effectMode == 1)
     {

@@ -132,6 +132,8 @@ namespace Client.Envir.Translations
         public override string CommonControlApply { get; set; } = "应用";
         public override string CommonControlCancel { get; set; } = "取消";
         public override string CommonControlClose { get; set; } = "关闭";
+        public override string CommonControlNoneSelected { get; set; } = "未选择";
+        public override string CommonControlSelectedCount { get; set; } = "已选择 {0} 项";
         public override string CommonControlMiniMapSizeHint { get; set; } = "切换小地图大小";
         public override string CommonControlMiniMapTransparencyHint { get; set; } = "切换小地图透明度";
         public override string CommonControlMiniMapBigMapHint { get; set; } = "打开或关闭大地图";
@@ -166,11 +168,14 @@ namespace Client.Envir.Translations
         public override string CommonControlConfigWindowGameSectionSettingsLabel { get; set; } = "设置";
         public override string CommonControlConfigWindowNetworkSectionSettingsLabel { get; set; } = "设置";
         public override string CommonControlConfigWindowUISectionSettingsLabel { get; set; } = "设置";
+        public override string CommonControlConfigWindowUISectionScalingLabel { get; set; } = "缩放";
         public override string CommonControlConfigWindowUISectionColoursLabel { get; set; } = "颜色";
         public override string CommonControlConfigWindowUISectionTargetColoursLabel { get; set; } = "目标颜色";
         public override string CommonControlConfigWindowGraphicsTabFullScreenLabel { get; set; } = "全屏";
         public override string CommonControlConfigWindowGraphicsTabBorderlessLabel { get; set; } = "无边框";
         public override string CommonControlConfigWindowGraphicsTabGameSizeLabel { get; set; } = "分辨率";
+        public override string CommonControlConfigWindowScaleLabel { get; set; } = "窗口缩放";
+        public override string CommonControlConfigWindowScaleAutomatic { get; set; } = "跟随系统";
         public override string CommonControlConfigWindowGraphicsTabDefaultMonitorLabel { get; set; } = "显示器";
         public override string CommonControlConfigWindowGraphicsTabVSyncLabel { get; set; } = "垂直同步";
         public override string CommonControlConfigWindowGraphicsTabLimitFPSLabel { get; set; } = "帧率限制";
@@ -186,6 +191,10 @@ namespace Client.Envir.Translations
         public override string CommonControlConfigWindowSoundTabMonsterVolumeLabel { get; set; } = "怪物音量";
         public override string CommonControlConfigWindowSoundTabMagicVolumeLabel { get; set; } = "魔法音量";
         public override string CommonControlConfigWindowGameTabItemNameLabel { get; set; } = "物品显名";
+        public override string GroundLootDenseLabel { get; set; } = "精简地面物品";
+        public override string GroundLootDenseHint { get; set; } = "每格只显示一个物品及品质光效";
+        public override string GroundLootCount { get; set; } = "{0}件掉落";
+        public override string GroundLootPage { get; set; } = "{0}-{1} / {2}（滚轮翻页）";
         public override string CommonControlConfigWindowGameTabMonsterNameLabel { get; set; } = "怪物显名";
         public override string CommonControlConfigWindowGameTabPlayerNameLabel { get; set; } = "人物显名";
         public override string CommonControlConfigWindowGameTabNPCNameLabel { get; set; } = "NPC 显名";
@@ -194,6 +203,7 @@ namespace Client.Envir.Translations
         public override string CommonControlConfigWindowGameTabDamageNumbersLabel { get; set; } = "伤害数字";
         public override string CommonControlConfigWindowGraphicsTabDrawParticlesLabel { get; set; } = "粒子绘制";
         public override string CommonControlConfigWindowGraphicsTabDisplayHelmetLabel { get; set; } = "显示头盔";
+        public override string CommonControlConfigWindowUITabUIScaleLabel { get; set; } = "界面缩放";
         public override string CommonControlConfigWindowUITabHideChatBarLabel { get; set; } = "隐藏聊天框";
         public override string CommonControlConfigWindowUITabEscapeCloseAllLabel { get; set; } = "按 Esc 关闭所有窗口";
         public override string CommonControlConfigWindowUITabShiftOpenChatLabel { get; set; } = "Shift+1 打开聊天";
@@ -204,9 +214,12 @@ namespace Client.Envir.Translations
         public override string CommonControlConfigWindowUITabLogChatLabel { get; set; } = "聊天日志";
         public override string CommonControlConfigWindowGraphicsTabDrawEffectsLabel { get; set; } = "特效绘制";
         public override string CommonControlConfigWindowGraphicsTabDrawWeatherLabel { get; set; } = "天气绘制";
+        public override string CommonControlConfigWindowGraphicsTabColourGradingLabel { get; set; } = "色彩分级";
         public override string CommonControlConfigWindowGameTabShowTargetOutlineLabel { get; set; } = "目标轮廓";
         public override string CommonControlConfigWindowGameTabObservableLabel { get; set; } = "允许观察";
         public override string CommonControlConfigWindowUITabKeyBindButtonLabel { get; set; } = "按键绑定";
+        public override string CommonControlConfigWindowUITabFontSizeModifierLabel { get; set; } = "字体调整（重启）";
+        public override string CommonControlConfigWindowUITabFontSizeModifierHint { get; set; } = "重启客户端后调整所有游戏内字体大小。";
         public override string CommonControlConfigWindowNetworkTabUseNetworkConfigLabel { get; set; } = "开启网络配置";
         public override string CommonControlConfigWindowNetworkTabUseIPAddressLabel { get; set; } = "IP地址";
         public override string CommonControlConfigWindowNetworkTabUsePortLabel { get; set; } = "端口";
@@ -519,6 +532,24 @@ namespace Client.Envir.Translations
         public override string GroupDialogAddButtonConfirmCaption { get; set; } = "邀请编组成员";
         public override string GroupDialogAddButtonHint { get; set; } = "添加成员";
         public override string GroupDialogRemoveButtonHint { get; set; } = "移除成员";
+        public override string GroupLootTitle { get; set; } = "队伍背包";
+        public override string GroupLootSettingsTitle { get; set; } = "队伍战利品设置";
+        public override string GroupLootSettingsHint { get; set; } = "队伍战利品设置";
+        public override string GroupLootMode { get; set; } = "分配模式";
+        public override string GroupLootBagEnabled { get; set; } = "启用队伍背包";
+        public override string GroupLootFilters { get; set; } = "战利品筛选";
+        public override string GroupLootItemTypes { get; set; } = "物品类型";
+        public override string GroupLootRarities { get; set; } = "稀有度";
+        public override string GroupLootNeedRestrictions { get; set; } = "仅允许需求可装备的物品";
+        public override string GroupLootAllowManualTaking { get; set; } = "允许手动取出物品";
+        public override string GroupLootShare { get; set; } = "分配";
+        public override string GroupLootNeed { get; set; } = "需求";
+        public override string GroupLootGreed { get; set; } = "贪婪";
+        public override string GroupLootPass { get; set; } = "放弃";
+        public override string GroupLootVoteTitle { get; set; } = "队伍战利品";
+        public override string GroupLootVoteTime { get; set; } = "选择 {0}（{1}秒）";
+        public override string GroupLootWon { get; set; } = "{0}获得了{1}。";
+        public override string GroupLootNoWinner { get; set; } = "无人获得{0}。";
 
         public override string GuildDialogTitle { get; set; } = "行会";
         public override string GuildDialogCreateTabLabel { get; set; } = "创建";
@@ -598,6 +629,7 @@ namespace Client.Envir.Translations
         public override string GuildRepairGuardsConfirmMsg { get; set; } = "修复守卫会消耗 {0:#,##0}. 你确定吗?";
         public override string GuildRepairGuardsConfirmCaption { get; set; } = "修复守卫";
 
+        public override string HorseTameDialogTitle { get; set; } = "套索";
         public override string InventoryDialogTitle { get; set; } = "背包";
         public override string InventoryDialogPrimaryCurrencyTitle { get; set; } = "金币";
         public override string InventoryDialogSecondaryCurrencyTitle { get; set; } = "游戏币";
@@ -824,5 +856,41 @@ namespace Client.Envir.Translations
 
         public override string SocketCombineDialogTitle { get; set; } = "宝石合成";
         public override string SocketCombineDialogStartButtonLabel { get; set; } = "开始";
+
+        public override string CharacterCraftingTabLabel { get; set; } = "制造";
+        public override string CharacterCraftingMaterialsLabel { get; set; } = "材料";
+        public override string CraftingLevelLabel { get; set; } = "制造等级";
+        public override string CraftingMaxLevelLabel { get; set; } = "最高";
+        public override string CraftingExperienceLabel { get; set; } = "制造经验";
+        public override string CraftingFavouriteLabel { get; set; } = "收藏配方";
+        public override string CraftingCraftButtonLabel { get; set; } = "制造";
+        public override string CraftingOpenRecipesButtonLabel { get; set; } = "打开配方";
+        public override string CraftingRecipesTitle { get; set; } = "制造配方";
+        public override string CraftingProgressTitle { get; set; } = "制造进度";
+        public override string CraftingRecipeListLabel { get; set; } = "配方列表";
+        public override string CraftingResultLabel { get; set; } = "结果";
+        public override string CraftingRequiredMaterialsLabel { get; set; } = "所需";
+        public override string CraftingRequiredLevelTitleLabel { get; set; } = "所需制造等级";
+        public override string CraftingRequiredGoldTitleLabel { get; set; } = "所需金币";
+        public override string CraftingExperienceRewardTitleLabel { get; set; } = "获得制造经验";
+        public override string CraftingOnlyCraftableLabel { get; set; } = "只显示可制造";
+        public override string CraftingFavouriteButtonLabel { get; set; } = "设为收藏";
+        public override string CraftingWeaponCategory { get; set; } = "武器";
+        public override string CraftingArmourCategory { get; set; } = "衣服";
+        public override string CraftingAccessoriesCategory { get; set; } = "饰品";
+        public override string CraftingConsumableCategory { get; set; } = "消耗品";
+        public override string CraftingIngredientsCategory { get; set; } = "材料";
+        public override string CraftingRequiredLevelLabel { get; set; } = "需要制造等级：{0}";
+        public override string CraftingRequiredGoldLabel { get; set; } = "需要金币：{0:#,##0}";
+        public override string CraftingExperienceRewardLabel { get; set; } = "获得经验：{0:#,##0}";
+        public override string CraftingSuccessRateLabel { get; set; } = "成功率：{0}%";
+        public override string CraftingSuccessRateBonusLabel { get; set; } = "成功率：{0}% (+{1}%)";
+        public override string CraftingDurationLabel { get; set; } = "制造时间：{0}";
+        public override string CraftingDesignLabel { get; set; } = "设计 {0}";
+        public override string CraftingInProgressLabel { get; set; } = "制造中...";
+        public override string CraftingSuccessLabel { get; set; } = "制造成功";
+        public override string CraftingFailedLabel { get; set; } = "制造失败";
+        public override string CraftingCancelledLabel { get; set; } = "制造取消";
+        public override string CraftingRetryButtonLabel { get; set; } = "重试";
     }
 }

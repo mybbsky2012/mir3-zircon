@@ -758,6 +758,26 @@ namespace Library.Network.ServerPackets
         public ClientLookingForGroup Group { get; set; }
     }
 
+    public sealed class GroupLootUpdate : Packet
+    {
+        public ClientGroupLootInfo Loot { get; set; }
+    }
+
+    public sealed class GroupLootVotePrompt : Packet
+    {
+        public ClientUserItem Item { get; set; }
+        public TimeSpan Duration { get; set; }
+        public bool CanNeed { get; set; }
+    }
+
+    public sealed class GroupLootResult : Packet
+    {
+        public int ItemIndex { get; set; }
+        public string ItemName { get; set; }
+        public string Winner { get; set; }
+        public GroupLootVote Vote { get; set; }
+    }
+
     public sealed class BuffAdd : Packet
     {
         public ClientBuffInfo Buff { get; set; }
@@ -1488,6 +1508,28 @@ namespace Library.Network.ServerPackets
     public sealed class MilestoneEarned : Packet
     {
         public int Index { get; set; }
+    }
+
+    public sealed class CraftingState : Packet
+    {
+        public int Level { get; set; }
+        public long Experience { get; set; }
+        public int FavouriteRecipeIndex { get; set; }
+    }
+
+    public sealed class CraftingStarted : Packet
+    {
+        public int RecipeIndex { get; set; }
+        public int Design { get; set; }
+        public TimeSpan Duration { get; set; }
+    }
+
+    public sealed class CraftingEnded : Packet
+    {
+        public CraftingResult Result { get; set; }
+        public bool Interrupted { get; set; }
+        public int Level { get; set; }
+        public long Experience { get; set; }
     }
 }
 

@@ -11,3 +11,13 @@ licenses.licx
 /.codex/skills/*
 /milestones
 /tmp
+/Exports/*
+/artifacts
+/docs/changes
+/.build
+/.codex-build
+/.artifacts/*
+/.codex-tmp
+/.rules
+/knowledge
+/AGENTS.md

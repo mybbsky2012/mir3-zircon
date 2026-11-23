@@ -353,17 +353,11 @@ namespace Client.Scenes.Views
             CloseButton.Location = new Point(DisplayArea.Width - CloseButton.Size.Width - 3, 3);
             CloseButton.MouseClick += (o, e) => Visible = false;
 
-            TitleLabel = new DXLabel
+            TitleLabel = new DXWindowTitleLabel
             {
                 Text = CEnvir.Language.GuildDialogTitle,
                 Parent = this,
-                Font = new Font(Config.FontName, CEnvir.FontSize(10F), FontStyle.Bold),
-                ForeColour = Constants.PrimaryColour,
-                Outline = true,
-                OutlineColour = Color.Black,
-                IsControl = false,
             };
-            TitleLabel.Location = new Point((DisplayArea.Width - TitleLabel.Size.Width) / 2, 8);
 
             GuildTabs = new DXTabControl
             {
@@ -462,7 +456,6 @@ namespace Client.Scenes.Views
         public void RefreshGuildDisplay()
         {
             TitleLabel.Text = GuildInfo.GuildName;
-            TitleLabel.Location = new Point((DisplayArea.Width - TitleLabel.Size.Width) / 2, 8);
 
             if (!NoticeTextBox.Editable)
                 NoticeTextBox.TextBox.Text = GuildInfo.Notice;
@@ -641,6 +634,7 @@ namespace Client.Scenes.Views
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
+                AutoSize = false,
                 Size = new Size(CreateTab.Size.Width, 22),
                 DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter,
                 Location = new Point(0, 20)
@@ -675,6 +669,7 @@ namespace Client.Scenes.Views
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
+                AutoSize = false,
                 Size = new Size(CreateTab.Size.Width, 22),
                 DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter,
                 Location = new Point(0, label.Location.Y + 50)
@@ -720,6 +715,7 @@ namespace Client.Scenes.Views
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
+                AutoSize = false,
                 Size = new Size(CreateTab.Size.Width, 22),
                 DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter,
                 Location = new Point(0, HornCheckBox.Location.Y + 50)
@@ -800,6 +796,7 @@ namespace Client.Scenes.Views
                 Outline = true,
                 OutlineColour = Color.Black,
                 IsControl = false,
+                AutoSize = false,
                 Size = new Size(CreateTab.Size.Width, 22),
                 DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter,
                 Location = new Point(0, StorageTextBox.Location.Y + 50)
@@ -1415,7 +1412,7 @@ namespace Client.Scenes.Views
                 Font = new Font(Config.FontName, CEnvir.FontSize(8F), FontStyle.Regular),
                 Size = new Size(110, 16),
                 Border = false,
-                Location = new Point(label.Location.X + label.Size.Width + 2, label.Location.Y),
+                Location = new Point(label.Location.X + label.Size.Width + 6, label.Location.Y),
             };
             ItemNameTextBox.TextBox.TextChanged += (o, e) => ApplyStorageFilter();
 
@@ -1430,7 +1427,7 @@ namespace Client.Scenes.Views
             {
                 Border = false,
                 Parent = filterPanel,
-                Location = new Point(label.Location.X + label.Size.Width + 1, label.Location.Y + 1),
+                Location = new Point(label.Location.X + label.Size.Width + 6, label.Location.Y + 1),
                 Size = new Size(122, DXComboBox.DefaultNormalHeight)
             };
             ItemTypeComboBox.SelectedItemChanged += (o, e) => ApplyStorageFilter();
